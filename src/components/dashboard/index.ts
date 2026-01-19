@@ -1,0 +1,8 @@
+export { StatCard } from './StatCard';
+export { QuickActions } from './QuickActions';
+export { SystemDashboard } from './SystemDashboard';
+export { ClinicAdminDashboard } from './ClinicAdminDashboard';
+export { DoctorDashboard } from './DoctorDashboard';
+export { ReceptionistDashboard } from './ReceptionistDashboard';
+export { NurseDashboard } from './NurseDashboard';
+export { EmployeeDashboard } from './EmployeeDashboard';

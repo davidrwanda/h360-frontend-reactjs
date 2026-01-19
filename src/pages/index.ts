@@ -1,0 +1,9 @@
+export { LoginPage } from './LoginPage';
+export { DashboardPage } from './DashboardPage';
+export { ClinicsPage } from './ClinicsPage';
+export { DeletedClinicsPage } from './DeletedClinicsPage';
+export { CreateClinicPage } from './CreateClinicPage';
+export { ClinicDetailPage } from './ClinicDetailPage';
+export { EditClinicPage } from './EditClinicPage';
+export { MenuOverviewPage } from './MenuOverviewPage';
+export { PlaceholderPage } from './PlaceholderPage';
