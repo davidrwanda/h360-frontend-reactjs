@@ -5,13 +5,36 @@ import type { LoginRequest, ChangePasswordRequest, User, UserRole } from '@/type
 import { useNavigate } from 'react-router-dom';
 
 /**
+ * Normalize role to uppercase format (Admin -> ADMIN, Manager -> MANAGER, etc.)
+ */
+const normalizeRole = (role?: string): UserRole | undefined => {
+  if (!role) return undefined;
+  
+  // Normalize common role formats to uppercase
+  const normalized = role.toUpperCase();
+  
+  // Map to valid UserRole types
+  if (normalized === 'ADMIN') return 'ADMIN';
+  if (normalized === 'MANAGER') return 'MANAGER';
+  if (normalized === 'RECEPTIONIST') return 'RECEPTIONIST';
+  if (normalized === 'DOCTOR') return 'DOCTOR';
+  if (normalized === 'NURSE') return 'NURSE';
+  
+  return undefined;
+};
+
+/**
  * Map permissions/user_type to role for navigation filtering
  */
 const mapUserToRole = (user: User | null): UserRole | undefined => {
   if (!user) return undefined;
   
-  // If user has explicit role, use it
-  if (user.role) return user.role;
+  // If user has explicit role, normalize and use it
+  // Cast to string to handle API returning "Admin" instead of "ADMIN"
+  if (user.role) {
+    const normalized = normalizeRole(String(user.role));
+    if (normalized) return normalized;
+  }
   
   // If permissions is ALL, treat as ADMIN
   if (user.permissions === 'ALL') return 'ADMIN';
@@ -27,7 +50,7 @@ const mapUserToRole = (user: User | null): UserRole | undefined => {
  * Hook to get current authentication state
  */
 export const useAuth = () => {
-  const { user, token, isAuthenticated, isLoading: storeLoading } = useAuthStore();
+  const { user, token, refreshToken, isAuthenticated, isLoading: storeLoading } = useAuthStore();
 
   // Fetch current user if token exists but user is not loaded
   const { data: currentUser, isLoading: queryLoading } = useQuery({
@@ -50,6 +73,7 @@ export const useAuth = () => {
   return {
     user: normalizedUser,
     token,
+    refreshToken,
     isAuthenticated: isAuthenticated || !!currentUser,
     isLoading: storeLoading || queryLoading,
     // Helper to get role for navigation
@@ -71,8 +95,9 @@ export const useLogin = () => {
       setIsLoading(true);
     },
     onSuccess: (data) => {
-      // Store token in localStorage
-      localStorage.setItem('token', data.access_token);
+      // Store tokens in localStorage
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
       
       // Normalize user data (ensure username exists)
       const normalizedUser = {
@@ -81,7 +106,7 @@ export const useLogin = () => {
       };
       
       // Update auth store
-      login(normalizedUser, data.access_token);
+      login(normalizedUser, data.access_token, data.refresh_token);
       
       // Invalidate and refetch user data
       queryClient.setQueryData(['auth', 'me'], normalizedUser);
@@ -107,16 +132,17 @@ export const useLogin = () => {
 export const useLogout = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout: storeLogout } = useAuthStore();
+  const { logout: storeLogout, refreshToken } = useAuthStore();
 
   return useMutation({
-    mutationFn: () => authApi.logout(),
+    mutationFn: () => authApi.logout(refreshToken || undefined),
     onSuccess: () => {
       // Clear auth store
       storeLogout();
       
-      // Clear token from localStorage
-      localStorage.removeItem('token');
+      // Clear tokens from localStorage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       
       // Clear all queries
       queryClient.clear();
@@ -127,7 +153,8 @@ export const useLogout = () => {
     onError: () => {
       // Even if API call fails, logout locally
       storeLogout();
-      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       queryClient.clear();
       navigate('/login', { replace: true });
     },

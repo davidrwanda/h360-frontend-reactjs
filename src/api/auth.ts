@@ -6,6 +6,8 @@ import type {
   ChangePasswordRequest,
   User,
   ApiResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
 } from '@/types/auth';
 
 export const authApi = {
@@ -47,10 +49,29 @@ export const authApi = {
   },
 
   /**
-   * Logout
+   * Refresh access token using refresh token
    */
-  logout: async (): Promise<{ message: string }> => {
-    const response = await apiClient.post<{ message: string }>('/auth/logout');
+  refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
+    const response = await apiClient.post<ApiResponse<RefreshTokenResponse> | RefreshTokenResponse>(
+      '/auth/refresh',
+      { refresh_token: refreshToken } as RefreshTokenRequest
+    );
+    // Handle wrapped response
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<RefreshTokenResponse>).data;
+    }
+    // Fallback for direct response
+    return response.data as RefreshTokenResponse;
+  },
+
+  /**
+   * Logout - revoke refresh tokens
+   */
+  logout: async (refreshToken?: string): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/logout',
+      refreshToken ? { refresh_token: refreshToken } : undefined
+    );
     return response.data;
   },
 };

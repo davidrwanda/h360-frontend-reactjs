@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 
 export const SystemDashboard = () => {
   const { stats, isLoading } = useDashboardStats();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -19,6 +19,9 @@ export const SystemDashboard = () => {
         </h1>
         <p className="text-sm text-carbon/60">
           Welcome back, <span className="font-medium">{user?.username || user?.email}</span>!
+        </p>
+        <p className="text-xs text-carbon/50 mt-1">
+          Manage clinics and users across the system
         </p>
       </div>
 
@@ -85,7 +88,11 @@ export const SystemDashboard = () => {
             <div className="mt-4 pt-4 border-t border-carbon/10">
               <div className="rounded-md bg-azure-dragon/10 p-2.5">
                 <p className="text-xs font-medium text-azure-dragon">
-                  System User - Full system access
+                  {user?.user_type === 'SYSTEM' 
+                    ? 'System User - Full system access'
+                    : role === 'ADMIN'
+                    ? 'Admin User - Full system access'
+                    : 'Full system access'}
                 </p>
               </div>
             </div>

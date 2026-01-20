@@ -23,7 +23,7 @@ interface QuickAction {
 }
 
 export const QuickActions = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   // SYSTEM user actions
   const systemActions: QuickAction[] = [
@@ -41,8 +41,8 @@ export const QuickActions = () => {
       variant: 'outline',
     },
     {
-      label: 'Manage Employees',
-      path: '/employees',
+      label: 'Manage Users',
+      path: '/users',
       icon: <MdPerson className="h-4 w-4" />,
       variant: 'outline',
     },
@@ -167,15 +167,20 @@ export const QuickActions = () => {
   // Determine actions based on role
   let actions: QuickAction[] = employeeActions;
 
-  if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL') {
+  // Normalize role for comparison (handle both "Admin" and "ADMIN")
+  const normalizedRole = role?.toUpperCase();
+  const normalizedUserRole = user?.role?.toUpperCase();
+
+  // SYSTEM users and Admin role users see system actions (clinics and users only)
+  if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') {
     actions = systemActions;
-  } else if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+  } else if (normalizedUserRole === 'MANAGER') {
     actions = adminActions;
-  } else if (user?.role === 'DOCTOR') {
+  } else if (normalizedUserRole === 'DOCTOR') {
     actions = doctorActions;
-  } else if (user?.role === 'RECEPTIONIST') {
+  } else if (normalizedUserRole === 'RECEPTIONIST') {
     actions = receptionistActions;
-  } else if (user?.role === 'NURSE') {
+  } else if (normalizedUserRole === 'NURSE') {
     actions = nurseActions;
   }
 
@@ -202,10 +207,10 @@ export const QuickActions = () => {
               </Button>
             </Link>
           ))}
-          {user?.user_type === 'SYSTEM' && (
+          {(user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') && (
             <div className="pt-2 mt-2 border-t border-carbon/10">
               <p className="text-xs text-carbon/60">
-                Create and manage clinics and their administrators.
+                Create and manage clinics and users. Admins manage system-level resources only.
               </p>
             </div>
           )}

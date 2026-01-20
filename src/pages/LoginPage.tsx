@@ -1,20 +1,18 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginForm } from '@/components/auth/LoginForm';
 
 export const LoginPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    // If already authenticated, redirect to intended page or dashboard
+    // If already authenticated, always redirect to dashboard
     if (isAuthenticated) {
-      const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, navigate]);
 
   if (isAuthenticated) {
     return null; // Will redirect

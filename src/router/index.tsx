@@ -10,6 +10,11 @@ import { ClinicsPage } from '@/pages/ClinicsPage';
 import { DeletedClinicsPage } from '@/pages/DeletedClinicsPage';
 import { ClinicDetailPage } from '@/pages/ClinicDetailPage';
 import { EditClinicPage } from '@/pages/EditClinicPage';
+import { UsersPage } from '@/pages/UsersPage';
+import { CreateClinicAdminPage } from '@/pages/CreateClinicAdminPage';
+import { EditClinicAdminPage } from '@/pages/EditClinicAdminPage';
+import { ActivityLogsPage } from '@/pages/ActivityLogsPage';
+import { SettingsPage } from '@/pages/SettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -137,11 +142,31 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/employees',
+    path: '/clinics/:id/admins/create',
     element: (
       <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
         <MainLayout>
-          <PlaceholderPage title="Employees" />
+          <CreateClinicAdminPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/clinics/:id/admins/:adminId/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <EditClinicAdminPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/users',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <UsersPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -161,7 +186,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
         <MainLayout>
-          <PlaceholderPage title="Activity Logs" />
+          <ActivityLogsPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -171,7 +196,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <PlaceholderPage title="Settings" />
+          <SettingsPage />
         </MainLayout>
       </ProtectedRoute>
     ),

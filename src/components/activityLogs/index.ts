@@ -1,0 +1,1 @@
+export { ActivityLogsTable } from './ActivityLogsTable';

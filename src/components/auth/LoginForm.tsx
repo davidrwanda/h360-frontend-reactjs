@@ -53,7 +53,7 @@ export const LoginForm = () => {
         {/* Login Card */}
         <Card className="w-full shadow-2xl border-0 rounded-xl" variant="elevated">
           <CardContent className="p-7 md:p-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               {error && (
                 <div className="rounded-md bg-smudged-lips/8 border border-smudged-lips/25 px-3.5 py-2.5 mb-3">
                   <p className="text-xs text-smudged-lips font-ui leading-relaxed">{error}</p>
@@ -66,6 +66,7 @@ export const LoginForm = () => {
                   type="text"
                   placeholder="Enter your username or email"
                   error={errors.username?.message}
+                  helperText="Username can contain letters, numbers, underscores, @, dots, and plus signs"
                   autoComplete="username"
                   {...register('username')}
                 />

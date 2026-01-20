@@ -27,6 +27,19 @@ export interface ApiResponse<T> {
 
 export interface LoginResponseData {
   access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: string;
+  user: User;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
   token_type: string;
   expires_in: string;
   user: User;
@@ -43,6 +56,7 @@ export interface ChangePasswordRequest {
 export interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

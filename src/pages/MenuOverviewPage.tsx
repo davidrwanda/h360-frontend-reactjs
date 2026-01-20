@@ -28,7 +28,7 @@ export const MenuOverviewPage = () => {
     {
       title: 'Administration',
       items: navigationItems.filter((item) =>
-        ['clinics', 'employees'].includes(item.id)
+        ['clinics', 'users'].includes(item.id)
       ),
     },
     {

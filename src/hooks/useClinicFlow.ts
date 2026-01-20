@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clinicsApi, type CreateClinicRequest } from '@/api/clinics';
-import { employeesApi, type CreateEmployeeRequest } from '@/api/employees';
+import { usersApi, type CreateUserRequest } from '@/api/users';
 
 interface CreateClinicWithAdminRequest {
   clinic: CreateClinicRequest;
@@ -28,31 +28,32 @@ export const useCreateClinicWithAdmin = () => {
       // Step 1: Create clinic
       const clinic = await clinicsApi.create(data.clinic);
 
-      // Step 2: Create ADMIN employee for the clinic
-      const adminEmployee: CreateEmployeeRequest = {
+      // Step 2: Create MANAGER (clinic admin) for the clinic
+      const adminUser: CreateUserRequest = {
         first_name: data.admin.first_name,
         last_name: data.admin.last_name,
         email: data.admin.email,
         username: data.admin.username,
         password: data.admin.password,
-        role: 'ADMIN',
+        role: 'MANAGER', // Clinic admins are Managers
         clinic_id: clinic.clinic_id,
         phone: data.admin.phone,
         department: data.admin.department || 'Administration',
         position: data.admin.position || 'Clinic Administrator',
       };
 
-      const employee = await employeesApi.create(adminEmployee);
+      const user = await usersApi.create(adminUser);
 
       return {
         clinic,
-        employee,
+        employee: user, // Keep 'employee' key for backward compatibility
       };
     },
     onSuccess: () => {
-      // Invalidate clinics and employees queries to refresh lists
+      // Invalidate clinics and users queries to refresh lists
       queryClient.invalidateQueries({ queryKey: ['clinics'] });
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['clinicAdmins'] });
     },
     onError: (error) => {
       console.error('Error creating clinic with admin:', error);
@@ -76,15 +77,16 @@ export const useCreateClinic = () => {
 };
 
 /**
- * Hook for creating an employee for a clinic
+ * Hook for creating a user (employee) for a clinic
  */
 export const useCreateEmployee = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateEmployeeRequest) => employeesApi.create(data),
+    mutationFn: (data: CreateUserRequest) => usersApi.create(data),
     onSuccess: (_data) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['clinicAdmins'] });
     },
   });
 };

@@ -10,7 +10,8 @@ export const DashboardPage = () => {
   const { user, role } = useAuth();
 
   // Show different dashboard based on user type and role
-  if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL') {
+  // SYSTEM users and Admin role users see SystemDashboard
+  if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || role === 'ADMIN') {
     return (
       <div className="mx-auto max-w-7xl px-4 py-6">
         <SystemDashboard />

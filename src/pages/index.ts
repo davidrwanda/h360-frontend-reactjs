@@ -7,3 +7,5 @@ export { ClinicDetailPage } from './ClinicDetailPage';
 export { EditClinicPage } from './EditClinicPage';
 export { MenuOverviewPage } from './MenuOverviewPage';
 export { PlaceholderPage } from './PlaceholderPage';
+export { UsersPage } from './UsersPage';
+export { ActivityLogsPage } from './ActivityLogsPage';

@@ -33,9 +33,9 @@ export const navigationConfig: NavigationConfig = [
     roles: ['ADMIN', 'MANAGER'], // SYSTEM users have access
   },
   {
-    id: 'employees',
-    label: 'Employees',
-    path: '/employees',
+    id: 'users',
+    label: 'Users',
+    path: '/users',
     icon: MdPerson,
     roles: ['ADMIN', 'MANAGER'], // SYSTEM users have access
   },
@@ -125,18 +125,20 @@ export const getFilteredNavigation = (
 ): NavigationConfig => {
   if (!userRole) return [];
 
-  // SYSTEM users only see: Dashboard, Clinics, Employees, Activity Logs, Settings
-  if (userType === 'SYSTEM') {
+  // SYSTEM users and Admin role users see: Dashboard, Clinics, Users, Activity Logs, Settings
+  // Normalize role for comparison (handle both "Admin" and "ADMIN")
+  const normalizedRole = userRole?.toUpperCase();
+  if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
     const allowedItems = [
       'dashboard',
       'clinics',
-      'employees',
+      'users',
       'activity-logs',
       'settings',
     ];
 
     const filtered = navigationConfig.filter((item) => {
-      // Allow only specific items for SYSTEM users
+      // Allow only specific items for SYSTEM users and Admin role
       return allowedItems.includes(item.id);
     });
 
@@ -152,8 +154,8 @@ export const getFilteredNavigation = (
         cleaned.push({ id: 'divider-1', label: '', path: '' });
       }
       
-      // Add divider before activity-logs (after employees)
-      if (item.id === 'activity-logs' && filtered[i - 1]?.id === 'employees') {
+      // Add divider before activity-logs (after users)
+      if (item.id === 'activity-logs' && filtered[i - 1]?.id === 'users') {
         cleaned.push({ id: 'divider-2', label: '', path: '' });
       }
       
