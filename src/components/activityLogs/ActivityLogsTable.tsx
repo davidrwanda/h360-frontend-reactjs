@@ -96,7 +96,7 @@ export const ActivityLogsTable = ({
                   <MdPerson className="h-4 w-4 text-azure-dragon" />
                   <div>
                     <div className="text-sm font-medium text-carbon">
-                      {log.employee_name || 'System'}
+                      {log.user_name || log.employee_name || (log.is_system_user ? 'System' : 'Unknown')}
                     </div>
                     {log.employee_email && (
                       <div className="text-xs text-carbon/60">{log.employee_email}</div>

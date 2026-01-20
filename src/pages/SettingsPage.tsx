@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser, useUpdateUser } from '@/hooks/useUsers';
 import { useChangePassword } from '@/hooks/useAuth';
+import { useClinic } from '@/hooks/useClinics';
+import { useToastStore } from '@/store/toastStore';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import {
   MdPerson,
@@ -55,12 +57,17 @@ export const SettingsPage = () => {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Fetch current user data
-  const { data: userData } = useUser(user?.employee_id || '', {
-    enabled: !!user?.employee_id,
+  const { data: userData } = useUser(user?.user_id || '', {
+    enabled: !!user?.user_id,
   });
+
+  // Fetch clinic data to get clinic_code
+  const clinicId = userData?.clinic_id || (user?.clinic_id ? user.clinic_id : undefined);
+  const { data: clinicData } = useClinic(clinicId);
 
   const updateUserMutation = useUpdateUser();
   const changePasswordMutation = useChangePassword();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -88,14 +95,14 @@ export const SettingsPage = () => {
   const handleProfileSubmit = async (data: ProfileFormData) => {
     setProfileError(null);
 
-    if (!user?.employee_id) {
+    if (!user?.user_id) {
       setProfileError('User ID not found');
       return;
     }
 
     try {
       await updateUserMutation.mutateAsync({
-        id: user.employee_id,
+        id: user.user_id,
         data: {
           first_name: data.first_name,
           last_name: data.last_name,
@@ -103,13 +110,12 @@ export const SettingsPage = () => {
           phone: data.phone,
         },
       });
+      showSuccess('Profile updated successfully!');
       // Success - form will update via useUser query
     } catch (error) {
-      if (error instanceof Error) {
-        setProfileError(error.message);
-      } else {
-        setProfileError('Failed to update profile. Please try again.');
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
+      setProfileError(errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -124,14 +130,13 @@ export const SettingsPage = () => {
         confirm_password: data.confirm_password,
       });
       setPasswordSuccess(true);
+      showSuccess('Password changed successfully!');
       passwordForm.reset();
       setTimeout(() => setPasswordSuccess(false), 5000);
     } catch (error) {
-      if (error instanceof Error) {
-        setPasswordError(error.message);
-      } else {
-        setPasswordError('Failed to change password. Please try again.');
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to change password. Please try again.';
+      setPasswordError(errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -307,10 +312,12 @@ export const SettingsPage = () => {
                       <label className="block text-xs font-medium text-carbon/60 mb-1">Role</label>
                       <p className="text-sm text-carbon capitalize">{user?.role || user?.user_type || '—'}</p>
                     </div>
-                    {userData?.clinic_id && (
+                    {(userData?.clinic_id || user?.clinic_id) && (
                       <div>
-                        <label className="block text-xs font-medium text-carbon/60 mb-1">Clinic ID</label>
-                        <p className="text-xs text-carbon font-mono">{userData.clinic_id}</p>
+                        <label className="block text-xs font-medium text-carbon/60 mb-1">Clinic Code</label>
+                        <p className="text-sm text-carbon font-medium">
+                          {clinicData?.clinic_code || '—'}
+                        </p>
                       </div>
                     )}
                     <div>

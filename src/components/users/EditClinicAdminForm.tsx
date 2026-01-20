@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUpdateUser } from '@/hooks/useUsers';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { useToastStore } from '@/store/toastStore';
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
 
@@ -11,6 +12,9 @@ const editClinicAdminSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email').min(1, 'Email is required'),
+  role: z.enum(['MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'], {
+    required_error: 'Role is required',
+  }),
 });
 
 type EditClinicAdminFormData = z.infer<typeof editClinicAdminSchema>;
@@ -32,10 +36,12 @@ export const EditClinicAdminForm = ({
 }: EditClinicAdminFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateUser();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<EditClinicAdminFormData>({
@@ -45,10 +51,13 @@ export const EditClinicAdminForm = ({
   // Update form when admin data loads
   useEffect(() => {
     if (admin) {
+      // Normalize role to uppercase format for form
+      const normalizedRole = admin.role?.toUpperCase() as 'MANAGER' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | undefined;
       reset({
         first_name: admin.first_name,
         last_name: admin.last_name,
         email: admin.email,
+        role: normalizedRole || 'MANAGER',
       });
     }
   }, [admin, reset]);
@@ -63,18 +72,18 @@ export const EditClinicAdminForm = ({
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email,
+          role: data.role,
         },
       });
 
+      showSuccess('User updated successfully!');
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to update clinic admin. Please try again.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update user. Please try again.';
+      setError(errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -84,7 +93,7 @@ export const EditClinicAdminForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Edit Clinic Admin
+            Edit User
             {clinicName && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
                 for {clinicName}
@@ -125,6 +134,25 @@ export const EditClinicAdminForm = ({
                 required
                 {...register('email')}
               />
+
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    label="Role"
+                    required
+                    error={errors.role?.message}
+                    options={[
+                      { value: 'MANAGER', label: 'Manager' },
+                      { value: 'DOCTOR', label: 'Doctor' },
+                      { value: 'NURSE', label: 'Nurse' },
+                      { value: 'RECEPTIONIST', label: 'Receptionist' },
+                    ]}
+                    {...field}
+                  />
+                )}
+              />
             </div>
 
             {/* Form Actions */}
@@ -135,7 +163,7 @@ export const EditClinicAdminForm = ({
                 size="md"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update Clinic Admin'}
+                {updateMutation.isPending ? 'Updating...' : 'Update User'}
               </Button>
               {onCancel && (
                 <Button

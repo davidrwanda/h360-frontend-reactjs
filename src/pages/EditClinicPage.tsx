@@ -4,6 +4,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClinic, useUpdateClinic } from '@/hooks/useClinics';
+import { useAuth } from '@/hooks/useAuth';
+import { useToastStore } from '@/store/toastStore';
 import { Input, Select, Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { OperatingHoursEditor } from '@/components/clinics/OperatingHoursEditor';
@@ -159,8 +161,21 @@ type ClinicFormData = z.infer<typeof clinicSchema>;
 export const EditClinicPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, role } = useAuth();
   const { data: clinic, isLoading } = useClinic(id);
   const updateMutation = useUpdateClinic();
+
+  // Check if clinic manager is trying to edit their own clinic
+  const normalizedRole = role?.toUpperCase();
+  const isClinicManager = normalizedRole === 'MANAGER';
+  const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
+  
+  // Clinic managers can only edit their own clinic
+  useEffect(() => {
+    if (clinic && isClinicManager && !isSystemAdmin && user?.clinic_id !== clinic.clinic_id) {
+      navigate('/clinic-info', { replace: true });
+    }
+  }, [clinic, isClinicManager, isSystemAdmin, user?.clinic_id, navigate]);
 
   const {
     register,
@@ -240,9 +255,12 @@ export const EditClinicPage = () => {
         id,
         data: payload,
       });
+      useToastStore.getState().success('Clinic updated successfully!');
       navigate(`/clinics/${id}`);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update clinic';
       console.error('Failed to update clinic:', error);
+      useToastStore.getState().error(errorMessage);
     }
   };
 

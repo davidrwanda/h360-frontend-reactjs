@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateUser } from '@/hooks/useUsers';
+import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson, MdRefresh, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
@@ -70,6 +71,7 @@ export const CreateSystemAdminForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const createMutation = useCreateUser();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const {
     register,
@@ -101,15 +103,14 @@ export const CreateSystemAdminForm = ({
       });
 
       reset();
+      showSuccess('System admin created successfully!');
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to create system admin. Please try again.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create system admin. Please try again.';
+      setError(errorMessage);
+      showError(errorMessage);
     }
   };
 

@@ -53,7 +53,7 @@ export const SystemAdminsTable = ({
         <tbody>
           {admins.map((admin) => (
             <tr
-              key={admin.employee_id}
+              key={admin.user_id}
               className="border-b border-carbon/5 hover:bg-white-smoke transition-colors"
             >
               <td className="py-3 px-4">

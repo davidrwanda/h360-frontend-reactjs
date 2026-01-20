@@ -10,6 +10,7 @@ import {
   MdNotifications,
   MdHistory,
   MdSettings,
+  MdInfo,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
 
@@ -30,14 +31,14 @@ export const navigationConfig: NavigationConfig = [
     label: 'Clinics',
     path: '/clinics',
     icon: MdBusiness,
-    roles: ['ADMIN', 'MANAGER'], // SYSTEM users have access
+    roles: ['ADMIN'], // Only for SYSTEM/Admin users, not clinic managers
   },
   {
-    id: 'users',
-    label: 'Users',
-    path: '/users',
-    icon: MdPerson,
-    roles: ['ADMIN', 'MANAGER'], // SYSTEM users have access
+    id: 'clinic-info',
+    label: 'Clinic Info',
+    path: '/clinic-info',
+    icon: MdInfo,
+    roles: ['MANAGER'], // Only for clinic managers/admins
   },
   {
     id: 'divider-2',
@@ -83,6 +84,13 @@ export const navigationConfig: NavigationConfig = [
     path: '/queue',
     icon: MdQueue,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE'],
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    path: '/users',
+    icon: MdPerson,
+    roles: ['ADMIN', 'MANAGER'], // Only for clinic admins/managers, not system admins
   },
   {
     id: 'divider-4',
@@ -170,8 +178,9 @@ export const getFilteredNavigation = (
     return cleaned;
   }
 
-  // Regular role-based filtering for EMPLOYEE users
-  return navigationConfig.filter((item) => {
+  // Regular role-based filtering for EMPLOYEE users (clinic admins/managers)
+  const normalizedUserRole = userRole?.toUpperCase();
+  const filtered = navigationConfig.filter((item) => {
     // Skip dividers
     if (item.id.startsWith('divider')) return true;
     // If no roles specified, accessible to all
@@ -179,4 +188,66 @@ export const getFilteredNavigation = (
     // Check if user role is in allowed roles
     return item.roles.includes(userRole as 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE');
   });
+
+  // For clinic managers, reorder menu: Dashboard, then start from Patients
+  // Remove "Clinics" menu for clinic managers (they use "Clinic Info" instead)
+  if (normalizedUserRole === 'MANAGER') {
+    const reordered: NavigationConfig = [];
+    
+    // Always start with Dashboard
+    const dashboard = filtered.find(item => item.id === 'dashboard');
+    if (dashboard) {
+      reordered.push(dashboard);
+      reordered.push({ id: 'divider-1', label: '', path: '' });
+    }
+
+    // Then add: Patients, Doctors, Services
+    const clinicalItems = ['patients', 'doctors', 'services'];
+    clinicalItems.forEach(id => {
+      const item = filtered.find(i => i.id === id);
+      if (item) reordered.push(item);
+    });
+
+    // Add divider
+    reordered.push({ id: 'divider-2', label: '', path: '' });
+
+    // Then: Appointments, Queue
+    const operationalItems = ['appointments', 'queue'];
+    operationalItems.forEach(id => {
+      const item = filtered.find(i => i.id === id);
+      if (item) reordered.push(item);
+    });
+
+    // Then: Users (below Queue)
+    const usersItem = filtered.find(item => item.id === 'users');
+    if (usersItem) reordered.push(usersItem);
+
+    // Add divider
+    reordered.push({ id: 'divider-3', label: '', path: '' });
+
+    // Then: Clinic Info (instead of Clinics)
+    const clinicInfoItem = filtered.find(item => item.id === 'clinic-info');
+    if (clinicInfoItem) reordered.push(clinicInfoItem);
+
+    // Add divider
+    reordered.push({ id: 'divider-4', label: '', path: '' });
+
+    // Then: Notifications, Activity Logs
+    const systemItems = ['notifications', 'activity-logs'];
+    systemItems.forEach(id => {
+      const item = filtered.find(i => i.id === id);
+      if (item) reordered.push(item);
+    });
+
+    // Add divider
+    reordered.push({ id: 'divider-5', label: '', path: '' });
+
+    // Finally: Settings
+    const settingsItem = filtered.find(item => item.id === 'settings');
+    if (settingsItem) reordered.push(settingsItem);
+
+    return reordered;
+  }
+
+  return filtered;
 };

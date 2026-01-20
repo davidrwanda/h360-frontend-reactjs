@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUpdateUser } from '@/hooks/useUsers';
+import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
@@ -29,6 +30,7 @@ export const EditSystemAdminForm = ({
 }: EditSystemAdminFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateUser();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const {
     register,
@@ -55,7 +57,7 @@ export const EditSystemAdminForm = ({
 
     try {
       await updateMutation.mutateAsync({
-        id: admin.employee_id,
+        id: admin.user_id,
         data: {
           first_name: data.first_name,
           last_name: data.last_name,
@@ -63,15 +65,14 @@ export const EditSystemAdminForm = ({
         },
       });
 
+      showSuccess('System admin updated successfully!');
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to update system admin. Please try again.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update system admin. Please try again.';
+      setError(errorMessage);
+      showError(errorMessage);
     }
   };
 

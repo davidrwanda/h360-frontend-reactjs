@@ -3,7 +3,7 @@ export type UserType = 'EMPLOYEE' | 'SYSTEM';
 export type Permissions = 'ALL' | string;
 
 export interface User {
-  employee_id?: string;
+  user_id?: string;
   email: string;
   username?: string;
   role?: UserRole;

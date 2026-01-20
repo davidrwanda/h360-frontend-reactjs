@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateClinicWithAdmin } from '@/hooks/useClinicFlow';
+import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { AddressInput } from './AddressInput';
@@ -80,6 +81,7 @@ export const CreateClinicWithAdminForm = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const createMutation = useCreateClinicWithAdmin();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const {
     register,
@@ -133,6 +135,7 @@ export const CreateClinicWithAdminForm = ({
       });
 
       setSuccess(true);
+      showSuccess('Clinic and admin created successfully!');
       reset();
 
       if (onSuccess) {
@@ -141,11 +144,11 @@ export const CreateClinicWithAdminForm = ({
         }, 2000);
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to create clinic and admin. Please try again.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
+      const errorMessage = err instanceof Error 
+        ? (err.message || 'Failed to create clinic and admin. Please try again.')
+        : 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      showError(errorMessage);
     }
   };
 

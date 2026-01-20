@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useActivityLogs } from '@/hooks/useActivityLogs';
 import { useUsers } from '@/hooks/useUsers';
 import { useClinics } from '@/hooks/useClinics';
@@ -59,6 +60,13 @@ const ENTITY_TYPES: { value: EntityType | ''; label: string }[] = [
 ];
 
 export const ActivityLogsPage = () => {
+  const { user, role } = useAuth();
+  
+  // Determine if user is a manager
+  const normalizedRole = role?.toUpperCase();
+  const isManager = normalizedRole === 'MANAGER' && user?.clinic_id;
+  const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
+  
   const [search, setSearch] = useState('');
   const [actionType, setActionType] = useState<ActionType | ''>('');
   const [entityType, setEntityType] = useState<EntityType | ''>('');
@@ -71,33 +79,89 @@ export const ActivityLogsPage = () => {
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
   const limit = 50;
 
-  // Fetch users for employee filter
-  const { data: usersData } = useUsers({ limit: 100, is_active: true });
+  // Fetch users for employee filter (only for managers/system admins)
+  const { data: usersData } = useUsers({ 
+    limit: 100, 
+    is_active: true,
+    clinic_id: isManager && user?.clinic_id ? user.clinic_id : undefined,
+  });
   
-  // Fetch clinics for clinic filter
+  // Fetch clinics for clinic filter (only for system admins)
   const { data: clinicsData } = useClinics({ limit: 100, is_active: true });
 
+  // Auto-set filters based on user role
+  useEffect(() => {
+    if (isManager && user?.clinic_id && !clinicId) {
+      // Manager: filter by clinic_id
+      setClinicId(user.clinic_id);
+    } else if (!isManager && !isSystemAdmin && user?.user_id && !employeeId) {
+      // Regular user: filter by user_id
+      setEmployeeId(user.user_id);
+    }
+  }, [isManager, isSystemAdmin, user?.clinic_id, user?.user_id, clinicId, employeeId]);
+
+  // Determine which filters to apply based on user role
+  // Managers: filter by clinic_id (auto-set)
+  // Regular users: filter by user_id (auto-set)
+  // System admins: no auto-filter (can see all)
+  const effectiveUserId = isSystemAdmin ? employeeId : (isManager ? employeeId : (user?.user_id || employeeId));
+  const effectiveClinicId = isSystemAdmin ? clinicId : (isManager ? (user?.clinic_id || clinicId) : undefined);
+
   // Fetch activity logs
-  const { data: logsData, isLoading, error } = useActivityLogs({
-    page,
-    limit,
+  // For clinic managers, fetch more records to filter out system users properly
+  const fetchLimit = isManager ? 1000 : limit;
+  const { data: logsDataRaw, isLoading, error } = useActivityLogs({
+    page: isManager ? 1 : page, // Always fetch page 1 for managers since we'll paginate after filtering
+    limit: fetchLimit,
     search: search || undefined,
     action_type: actionType || undefined,
     entity_type: entityType || undefined,
-    employee_id: employeeId || undefined,
-    clinic_id: clinicId || undefined,
+    user_id: effectiveUserId || undefined,
+    clinic_id: effectiveClinicId || undefined,
     start_date: startDate || undefined,
     end_date: endDate || undefined,
     sortBy: 'created_at',
     sortOrder: 'DESC',
   });
 
+  // For clinic managers, filter out system user activities
+  // Only show activities from users in their clinic (not system users)
+  // System users have is_system_user=true or no user_id
+  const filteredLogs = logsDataRaw?.data
+    ? isManager
+      ? logsDataRaw.data.filter(
+          (log) => 
+            !log.is_system_user && 
+            log.clinic_id === user?.clinic_id &&
+            log.user_id !== null &&
+            log.user_id !== undefined
+        )
+      : logsDataRaw.data
+    : [];
+
+  // Apply pagination to filtered logs for clinic managers
+  const paginatedLogs = isManager
+    ? filteredLogs.slice((page - 1) * limit, page * limit)
+    : filteredLogs;
+
+  const logsData = logsDataRaw
+    ? {
+        ...logsDataRaw,
+        data: paginatedLogs,
+        total: isManager ? filteredLogs.length : logsDataRaw.total,
+        page: isManager ? page : logsDataRaw.page,
+        limit: limit,
+        totalPages: isManager ? Math.ceil(filteredLogs.length / limit) : logsDataRaw.totalPages,
+      }
+    : undefined;
+
+  // Don't count auto-set filters as "active" filters
   const hasActiveFilters =
     search ||
     actionType ||
     entityType ||
-    employeeId ||
-    clinicId ||
+    (isSystemAdmin && employeeId) ||
+    (isSystemAdmin && clinicId) ||
     startDate ||
     endDate;
 
@@ -105,8 +169,11 @@ export const ActivityLogsPage = () => {
     setSearch('');
     setActionType('');
     setEntityType('');
-    setEmployeeId('');
-    setClinicId('');
+    // Only clear employee/clinic filters for system admins
+    if (isSystemAdmin) {
+      setEmployeeId('');
+      setClinicId('');
+    }
     setStartDate('');
     setEndDate('');
     setPage(1);
@@ -200,7 +267,12 @@ export const ActivityLogsPage = () => {
             Activity Logs
           </h1>
           <p className="text-sm text-carbon/60">
-            Monitor and track all system activities and user actions
+            {isManager 
+              ? 'Monitor and track all activities for your clinic'
+              : isSystemAdmin
+              ? 'Monitor and track all system activities and user actions'
+              : 'View your activity logs'
+            }
           </p>
         </div>
         <Button variant="outline" size="md" onClick={handleExport}>
@@ -218,13 +290,16 @@ export const ActivityLogsPage = () => {
               Filters & Search
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              >
-                {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
-              </Button>
+              {/* Only show advanced filters button for managers and system admins */}
+              {(isManager || isSystemAdmin) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                >
+                  {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+                </Button>
+              )}
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-xs">
                   <MdClear className="h-3 w-3 mr-1" />
@@ -270,36 +345,42 @@ export const ActivityLogsPage = () => {
 
           {showAdvancedFilters && (
             <div className="mt-4 grid gap-4 md:grid-cols-4 border-t border-carbon/10 pt-4">
-              <Select
-                label="User"
-                value={employeeId}
-                onChange={(e) => {
-                  setEmployeeId(e.target.value);
-                  setPage(1);
-                }}
-                options={[
-                  { value: '', label: 'All Users' },
-                  ...(usersData?.data.map((user) => ({
-                    value: user.employee_id,
-                    label: `${user.first_name} ${user.last_name}`,
-                  })) || []),
-                ]}
-              />
-              <Select
-                label="Clinic"
-                value={clinicId}
-                onChange={(e) => {
-                  setClinicId(e.target.value);
-                  setPage(1);
-                }}
-                options={[
-                  { value: '', label: 'All Clinics' },
-                  ...(clinicsData?.data.map((clinic) => ({
-                    value: clinic.clinic_id,
-                    label: clinic.name,
-                  })) || []),
-                ]}
-              />
+              {/* Only show User filter for managers and system admins */}
+              {(isManager || isSystemAdmin) && (
+                <Select
+                  label="User"
+                  value={employeeId}
+                  onChange={(e) => {
+                    setEmployeeId(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: '', label: 'All Users' },
+                    ...(usersData?.data.map((user) => ({
+                      value: user.user_id,
+                      label: `${user.first_name} ${user.last_name}`,
+                    })) || []),
+                  ]}
+                />
+              )}
+              {/* Only show Clinic filter for system admins */}
+              {isSystemAdmin && (
+                <Select
+                  label="Clinic"
+                  value={clinicId}
+                  onChange={(e) => {
+                    setClinicId(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: '', label: 'All Clinics' },
+                    ...(clinicsData?.data.map((clinic) => ({
+                      value: clinic.clinic_id,
+                      label: clinic.name,
+                    })) || []),
+                  ]}
+                />
+              )}
               <div className="relative">
                 <Input
                   label="Start Date"

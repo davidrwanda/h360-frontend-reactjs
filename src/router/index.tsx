@@ -9,12 +9,17 @@ import { CreateClinicPage } from '@/pages/CreateClinicPage';
 import { ClinicsPage } from '@/pages/ClinicsPage';
 import { DeletedClinicsPage } from '@/pages/DeletedClinicsPage';
 import { ClinicDetailPage } from '@/pages/ClinicDetailPage';
+import { ClinicInfoPage } from '@/pages/ClinicInfoPage';
 import { EditClinicPage } from '@/pages/EditClinicPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { CreateClinicAdminPage } from '@/pages/CreateClinicAdminPage';
 import { EditClinicAdminPage } from '@/pages/EditClinicAdminPage';
 import { ActivityLogsPage } from '@/pages/ActivityLogsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { PatientsPage } from '@/pages/PatientsPage';
+import { PatientDetailPage } from '@/pages/PatientDetailPage';
+import { CreatePatientPage } from '@/pages/CreatePatientPage';
+import { EditPatientPage } from '@/pages/EditPatientPage';
 
 export const router = createBrowserRouter([
   {
@@ -44,9 +49,39 @@ export const router = createBrowserRouter([
   {
     path: '/patients',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
-          <PlaceholderPage title="Patients" />
+          <PatientsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/patients/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST']}>
+        <MainLayout>
+          <CreatePatientPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/patients/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
+        <MainLayout>
+          <PatientDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/patients/:id/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST']}>
+        <MainLayout>
+          <EditPatientPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -197,6 +232,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <MainLayout>
           <SettingsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/clinic-info',
+    element: (
+      <ProtectedRoute requiredRole={['MANAGER']}>
+        <MainLayout>
+          <ClinicInfoPage />
         </MainLayout>
       </ProtectedRoute>
     ),

@@ -11,6 +11,7 @@ export interface DeleteConfirmationModalProps {
   itemName?: string;
   isLoading?: boolean;
   actionLabel?: string;
+  confirmText?: string; // Custom text for confirm button
   variant?: 'delete' | 'deactivate';
 }
 
@@ -23,6 +24,7 @@ export const DeleteConfirmationModal = ({
   itemName,
   isLoading = false,
   actionLabel,
+  confirmText,
   variant = 'delete',
 }: DeleteConfirmationModalProps) => {
   const handleConfirm = () => {
@@ -30,6 +32,7 @@ export const DeleteConfirmationModal = ({
   };
 
   const defaultActionLabel = variant === 'deactivate' ? 'Deactivate' : 'Delete';
+  const buttonText = confirmText || actionLabel || defaultActionLabel;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
@@ -86,7 +89,7 @@ export const DeleteConfirmationModal = ({
             disabled={isLoading}
           >
             <MdDelete className="h-4 w-4 mr-2" />
-            {actionLabel || defaultActionLabel}
+            {buttonText}
           </Button>
         </div>
       </div>

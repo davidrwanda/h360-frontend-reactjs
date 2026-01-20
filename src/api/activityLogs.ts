@@ -34,8 +34,9 @@ export type EntityType =
 
 export interface ActivityLog {
   log_id: string;
-  employee_id?: string | null;
-  employee_name?: string;
+  user_id?: string | null;
+  user_name?: string; // API returns user_name
+  employee_name?: string; // Legacy field, kept for backward compatibility
   employee_email?: string;
   action_type: ActionType;
   entity_type: EntityType;
@@ -64,7 +65,7 @@ export interface ActivityLog {
 export interface ActivityLogListParams {
   page?: number;
   limit?: number;
-  employee_id?: string;
+  user_id?: string;
   action_type?: ActionType;
   entity_type?: EntityType;
   entity_id?: string;

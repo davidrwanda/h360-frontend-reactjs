@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateUser } from '@/hooks/useUsers';
+import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson, MdRefresh, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
@@ -73,6 +74,7 @@ export const CreateClinicAdminForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const createMutation = useCreateUser();
+  const { success: showSuccess, error: showError } = useToastStore();
 
   const {
     register,
@@ -105,15 +107,14 @@ export const CreateClinicAdminForm = ({
       });
 
       reset();
+      showSuccess('User created successfully!');
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to create clinic admin. Please try again.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create user. Please try again.';
+      setError(errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -123,7 +124,7 @@ export const CreateClinicAdminForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Clinic Admin Information
+            User Information
             {clinicName && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
                 for {clinicName}
@@ -264,7 +265,7 @@ export const CreateClinicAdminForm = ({
                 size="md"
                 disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Clinic Admin'}
+                {createMutation.isPending ? 'Creating...' : 'Create User'}
               </Button>
               {onCancel && (
                 <Button

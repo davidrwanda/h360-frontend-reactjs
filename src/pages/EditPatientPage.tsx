@@ -1,28 +1,20 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useClinic } from '@/hooks/useClinics';
-import { useUser } from '@/hooks/useUsers';
-import { EditClinicAdminForm } from '@/components/users/EditClinicAdminForm';
+import { usePatient } from '@/hooks/usePatients';
+import { EditPatientForm } from '@/components/patients';
 import { Loading, Button } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
 
-export const EditClinicAdminPage = () => {
+export const EditPatientPage = () => {
   const navigate = useNavigate();
-  const { id: clinicId, adminId } = useParams<{ id: string; adminId: string }>();
-  const { data: clinic, isLoading: clinicLoading } = useClinic(clinicId);
-  const { data: admin, isLoading: adminLoading } = useUser(
-    adminId || '',
-    { enabled: !!adminId }
-  );
-
-  const isLoading = clinicLoading || adminLoading;
+  const { id: patientId } = useParams<{ id: string }>();
+  const { data: patient, isLoading } = usePatient(patientId);
 
   const handleSuccess = () => {
-    // Navigate back to users page
-    navigate('/users');
+    navigate('/patients');
   };
 
   const handleCancel = () => {
-    navigate('/users');
+    navigate('/patients');
   };
 
   if (isLoading) {
@@ -33,32 +25,32 @@ export const EditClinicAdminPage = () => {
     );
   }
 
-  if (!clinicId || !adminId) {
+  if (!patientId) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Invalid Parameters</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">Invalid Patient</h1>
           <p className="text-body text-carbon/70 mb-4">
-            Clinic ID or Admin ID is missing from the URL.
+            Patient ID is missing from the URL.
           </p>
-          <Button variant="outline" onClick={() => navigate('/users')}>
-            Back to Users
+          <Button variant="outline" onClick={() => navigate('/patients')}>
+            Back to Patients
           </Button>
         </div>
       </div>
     );
   }
 
-  if (!admin) {
+  if (!patient) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">User Not Found</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">Patient Not Found</h1>
           <p className="text-body text-carbon/70 mb-4">
-            The user you're looking for doesn't exist.
+            The patient you're looking for doesn't exist.
           </p>
-          <Button variant="outline" onClick={() => navigate('/users')}>
-            Back to Users
+          <Button variant="outline" onClick={() => navigate('/patients')}>
+            Back to Patients
           </Button>
         </div>
       </div>
@@ -71,27 +63,24 @@ export const EditClinicAdminPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/users')}
+          onClick={() => navigate('/patients')}
           className="h-8 w-8 p-0"
         >
           <MdArrowBack className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Edit User
+            Edit Patient
           </h1>
           <p className="text-sm text-carbon/60">
-            {clinic
-              ? `Update user information for ${clinic.name}`
-              : 'Update user information'}
+            Update patient information
           </p>
         </div>
       </div>
 
-      <EditClinicAdminForm
-        adminId={adminId}
-        admin={admin}
-        clinicName={clinic?.name}
+      <EditPatientForm
+        patientId={patientId}
+        patient={patient}
         onSuccess={handleSuccess}
         onCancel={handleCancel}
       />

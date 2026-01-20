@@ -1,26 +1,29 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useClinic } from '@/hooks/useClinics';
-import { CreateClinicAdminForm } from '@/components/users/CreateClinicAdminForm';
-import { Loading } from '@/components/ui';
+import { CreatePatientForm } from '@/components/patients';
+import { Loading, Button } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
-import { Button } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
 
-export const CreateClinicAdminPage = () => {
+export const CreatePatientPage = () => {
   const navigate = useNavigate();
-  const { id: clinicId } = useParams<{ id: string }>();
-  const { data: clinic, isLoading } = useClinic(clinicId);
+  const [searchParams] = useSearchParams();
+  const { user, role } = useAuth();
+  
+  // Get clinic_id from URL params or user's clinic_id for clinic managers
+  const normalizedRole = role?.toUpperCase();
+  const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
+  const clinicIdFromUrl = searchParams.get('clinic_id');
+  const clinicId = clinicIdFromUrl || (isClinicManager ? user?.clinic_id : undefined);
+  
+  const { data: clinic, isLoading } = useClinic(clinicId || undefined);
 
   const handleSuccess = () => {
-    // Navigate back to users page or clinic detail
-    if (clinicId) {
-      navigate(`/users`);
-    } else {
-      navigate('/users');
-    }
+    navigate('/patients');
   };
 
   const handleCancel = () => {
-    navigate('/users');
+    navigate('/patients');
   };
 
   if (isLoading) {
@@ -37,10 +40,10 @@ export const CreateClinicAdminPage = () => {
         <div className="text-center">
           <h1 className="text-h2 text-smudged-lips mb-4">Invalid Clinic</h1>
           <p className="text-body text-carbon/70 mb-4">
-            Clinic ID is missing from the URL.
+            Clinic ID is missing. Please select a clinic first.
           </p>
-          <Button variant="outline" onClick={() => navigate('/users')}>
-            Back to Users
+          <Button variant="outline" onClick={() => navigate('/patients')}>
+            Back to Patients
           </Button>
         </div>
       </div>
@@ -53,24 +56,24 @@ export const CreateClinicAdminPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/users')}
+          onClick={() => navigate('/patients')}
           className="h-8 w-8 p-0"
         >
           <MdArrowBack className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Create User
+            Create Patient
           </h1>
           <p className="text-sm text-carbon/60">
             {clinic
-              ? `Add a new user for ${clinic.name}`
-              : 'Add a new user'}
+              ? `Add a new patient for ${clinic.name}`
+              : 'Add a new patient'}
           </p>
         </div>
       </div>
 
-      <CreateClinicAdminForm
+      <CreatePatientForm
         clinicId={clinicId}
         clinicName={clinic?.name}
         onSuccess={handleSuccess}
