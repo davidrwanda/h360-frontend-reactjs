@@ -67,7 +67,21 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               <div className="absolute right-0 top-full z-50 mt-1.5 w-44 rounded-md border border-carbon/10 bg-white shadow-xl">
                 <div className="p-1.5">
                   <div className="border-b border-carbon/8 px-3 py-2.5">
-                    <p className="text-sm font-medium text-carbon">{user?.username || user?.email}</p>
+                    <p className="text-sm font-medium text-carbon">
+                      {user?.patient?.full_name ||
+                       (user?.patient?.first_name && user?.patient?.last_name
+                         ? `${user.patient.first_name} ${user.patient.last_name}`
+                         : user?.employee?.full_name ||
+                           (user?.employee?.first_name && user?.employee?.last_name
+                             ? `${user.employee.first_name} ${user.employee.last_name}`
+                             : user?.full_name || 
+                               (user?.first_name && user?.last_name 
+                                 ? `${user.first_name} ${user.last_name}`
+                                 : user?.employee_profile?.full_name ||
+                                   (user?.employee_profile?.first_name && user?.employee_profile?.last_name
+                                     ? `${user.employee_profile.first_name} ${user.employee_profile.last_name}`
+                                     : user?.username || user?.email))))}
+                    </p>
                     <p className="text-xs text-carbon/60 mt-0.5">{user?.email}</p>
                     <p className="mt-1.5 text-[11px] text-carbon/50 capitalize font-medium">
                       {user?.role || user?.user_type || 'N/A'}

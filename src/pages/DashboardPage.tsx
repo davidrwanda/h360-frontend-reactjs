@@ -5,6 +5,7 @@ import { DoctorDashboard } from '@/components/dashboard/DoctorDashboard';
 import { ReceptionistDashboard } from '@/components/dashboard/ReceptionistDashboard';
 import { NurseDashboard } from '@/components/dashboard/NurseDashboard';
 import { EmployeeDashboard } from '@/components/dashboard/EmployeeDashboard';
+import { PatientDashboard } from '@/components/dashboard/PatientDashboard';
 
 export const DashboardPage = () => {
   const { user, role } = useAuth();
@@ -20,7 +21,8 @@ export const DashboardPage = () => {
   }
 
   // Role-based dashboards for EMPLOYEE users
-  if (role === 'ADMIN' || role === 'MANAGER') {
+  // Note: ADMIN is already handled above, so this only checks MANAGER
+  if (role === 'MANAGER') {
     return (
       <div className="mx-auto max-w-7xl px-4 py-6">
         <ClinicAdminDashboard />
@@ -48,6 +50,14 @@ export const DashboardPage = () => {
     return (
       <div className="mx-auto max-w-7xl px-4 py-6">
         <NurseDashboard />
+      </div>
+    );
+  }
+
+  if (role === 'PATIENT') {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <PatientDashboard />
       </div>
     );
   }

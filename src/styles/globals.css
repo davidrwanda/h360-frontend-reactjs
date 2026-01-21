@@ -5,6 +5,7 @@
 @layer base {
   body {
     @apply bg-white-smoke text-carbon font-body text-body antialiased;
+    @apply dark:bg-carbon dark:text-white-smoke;
     font-size: 18px; /* Base font size to prevent iOS zoom */
     line-height: 1.5;
   }
@@ -65,14 +66,14 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-white-smoke;
+    @apply bg-white-smoke dark:bg-carbon/50;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-azure-dragon-light rounded-full;
+    @apply bg-azure-dragon-light dark:bg-azure-dragon rounded-full;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-azure-dragon;
+    @apply bg-azure-dragon dark:bg-azure-dragon-light;
   }
 }

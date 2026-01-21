@@ -11,6 +11,7 @@ import {
   MdHistory,
   MdSettings,
   MdInfo,
+  MdAccountCircle,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
 
@@ -79,6 +80,20 @@ export const navigationConfig: NavigationConfig = [
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE'],
   },
   {
+    id: 'my-appointments',
+    label: 'My Appointments',
+    path: '/my-appointments',
+    icon: MdEvent,
+    roles: ['PATIENT'],
+  },
+  {
+    id: 'my-profile',
+    label: 'My Profile',
+    path: '/my-profile',
+    icon: MdAccountCircle,
+    roles: ['PATIENT'],
+  },
+  {
     id: 'queue',
     label: 'Queue',
     path: '/queue',
@@ -129,13 +144,47 @@ export const navigationConfig: NavigationConfig = [
  */
 export const getFilteredNavigation = (
   userRole?: string,
-  userType?: 'SYSTEM' | 'EMPLOYEE'
+  userType?: 'SYSTEM' | 'EMPLOYEE' | string
 ): NavigationConfig => {
-  if (!userRole) return [];
+  // Debug logging
+  if (import.meta.env.DEV) {
+    console.log('getFilteredNavigation called with:', { userRole, userType });
+  }
+  
+  if (!userRole) {
+    if (import.meta.env.DEV) {
+      console.warn('getFilteredNavigation: userRole is empty/undefined');
+    }
+    return [];
+  }
 
-  // SYSTEM users and Admin role users see: Dashboard, Clinics, Users, Activity Logs, Settings
   // Normalize role for comparison (handle both "Admin" and "ADMIN")
   const normalizedRole = userRole?.toUpperCase();
+  
+  // Debug logging
+  if (import.meta.env.DEV) {
+    console.log('getFilteredNavigation normalizedRole:', normalizedRole);
+  }
+  
+  // Patient-specific menu: Dashboard, My Appointments, My Profile, Settings
+  // Check this FIRST before other role checks
+  if (normalizedRole === 'PATIENT') {
+    if (import.meta.env.DEV) {
+      console.log('getFilteredNavigation: Returning patient menu');
+    }
+    const patientMenu: NavigationConfig = [
+      { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: MdDashboard },
+      { id: 'divider-1', label: '', path: '' },
+      { id: 'my-appointments', label: 'My Appointments', path: '/my-appointments', icon: MdEvent },
+      { id: 'divider-2', label: '', path: '' },
+      { id: 'my-profile', label: 'My Profile', path: '/my-profile', icon: MdAccountCircle },
+      { id: 'divider-3', label: '', path: '' },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: MdSettings },
+    ];
+    return patientMenu;
+  }
+
+  // SYSTEM users and Admin role users see: Dashboard, Clinics, Users, Activity Logs, Settings
   if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
     const allowedItems = [
       'dashboard',
@@ -186,7 +235,7 @@ export const getFilteredNavigation = (
     // If no roles specified, accessible to all
     if (!item.roles) return true;
     // Check if user role is in allowed roles
-    return item.roles.includes(userRole as 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE');
+    return item.roles.includes(userRole as 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE' | 'PATIENT');
   });
 
   // For clinic managers, reorder menu: Dashboard, then start from Patients

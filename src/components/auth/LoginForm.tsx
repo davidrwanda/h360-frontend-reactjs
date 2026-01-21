@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { useLogin } from '@/hooks/useAuth';
 import { Button, Input, Card, CardContent } from '@/components/ui';
+import { MdVisibility, MdVisibilityOff, MdArrowBack } from 'react-icons/md';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username or email is required'),
@@ -13,7 +15,9 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export const LoginForm = () => {
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const loginMutation = useLogin();
 
   const {
@@ -38,8 +42,20 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-azure-dragon via-azure-dragon-dark to-azure-dragon p-4 md:p-6">
-      <div className="w-full max-w-[400px]">
+    <div className="relative min-h-screen flex items-center justify-center p-4 md:p-6 overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(/landing.jpg)',
+        }}
+      >
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-azure-dragon/85 via-azure-dragon/75 to-azure-dragon/85"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-[400px]">
         {/* Logo/Brand */}
         <div className="mb-6 text-center">
           <h1 className="text-xl font-heading font-semibold text-white mb-1.5 tracking-tight">
@@ -73,14 +89,34 @@ export const LoginForm = () => {
               </div>
 
               <div>
-                <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Enter your password"
-                  error={errors.password?.message}
-                  autoComplete="current-password"
-                  {...register('password')}
-                />
+                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 pr-10 py-2.5 text-sm font-ui text-carbon transition-all duration-150 placeholder:text-carbon/35 placeholder:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0 focus-visible:border-azure-dragon/60"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-carbon/40 hover:text-carbon transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <MdVisibilityOff className="h-5 w-5" />
+                    ) : (
+                      <MdVisibility className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.password.message}</p>
+                )}
               </div>
 
               <Button
@@ -102,6 +138,17 @@ export const LoginForm = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Back to Home Link */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
+          >
+            <MdArrowBack className="h-4 w-4" />
+            Back to Home
+          </button>
+        </div>
       </div>
     </div>
   );

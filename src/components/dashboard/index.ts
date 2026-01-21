@@ -6,3 +6,4 @@ export { DoctorDashboard } from './DoctorDashboard';
 export { ReceptionistDashboard } from './ReceptionistDashboard';
 export { NurseDashboard } from './NurseDashboard';
 export { EmployeeDashboard } from './EmployeeDashboard';
+export { PatientDashboard } from './PatientDashboard';

@@ -12,6 +12,9 @@ import {
   MdLocalHospital,
   MdMedicalServices,
   MdSchedule,
+  MdAccountCircle,
+  MdSearch,
+  MdHistory,
 } from 'react-icons/md';
 
 interface QuickAction {
@@ -142,6 +145,38 @@ export const QuickActions = () => {
     },
   ];
 
+  // PATIENT actions
+  const patientActions: QuickAction[] = [
+    {
+      label: 'Book Appointment',
+      path: '/my-appointments',
+      icon: <MdEvent className="h-4 w-4" />,
+      variant: 'primary',
+      description: 'Schedule a new appointment',
+    },
+    {
+      label: 'My Appointments',
+      path: '/my-appointments',
+      icon: <MdHistory className="h-4 w-4" />,
+      variant: 'outline',
+      description: 'View upcoming and past appointments',
+    },
+    {
+      label: 'My Profile',
+      path: '/my-profile',
+      icon: <MdAccountCircle className="h-4 w-4" />,
+      variant: 'outline',
+      description: 'Manage your personal information',
+    },
+    {
+      label: 'Find Clinics',
+      path: '/',
+      icon: <MdSearch className="h-4 w-4" />,
+      variant: 'outline',
+      description: 'Search and subscribe to clinics',
+    },
+  ];
+
   // EMPLOYEE user actions (default fallback)
   const employeeActions: QuickAction[] = [
     {
@@ -171,8 +206,10 @@ export const QuickActions = () => {
   const normalizedRole = role?.toUpperCase();
   const normalizedUserRole = user?.role?.toUpperCase();
 
-  // SYSTEM users and Admin role users see system actions (clinics and users only)
-  if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') {
+  // PATIENT users see patient-specific actions
+  if (user?.user_type === 'PATIENT' || normalizedRole === 'PATIENT' || normalizedUserRole === 'PATIENT') {
+    actions = patientActions;
+  } else if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') {
     actions = systemActions;
   } else if (normalizedUserRole === 'MANAGER') {
     actions = adminActions;
@@ -203,7 +240,12 @@ export const QuickActions = () => {
                 className="w-full justify-start"
               >
                 {action.icon}
-                <span className="ml-2">{action.label}</span>
+                <div className="ml-2 flex flex-col items-start">
+                  <span>{action.label}</span>
+                  {action.description && (
+                    <span className="text-xs text-carbon/60 mt-0.5">{action.description}</span>
+                  )}
+                </div>
               </Button>
             </Link>
           ))}

@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { usePatient, useRemovePatientFromClinic } from '@/hooks/usePatients';
+import { usePatient, useRemovePatientFromClinic, useCreatePatientAccount } from '@/hooks/usePatients';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardHeader, CardTitle, CardContent, Button, Loading, DeleteConfirmationModal } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Loading, DeleteConfirmationModal, Modal } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
 import {
   MdEdit,
   MdArrowBack,
   MdPerson,
-  MdEmail,
   MdPhone,
   MdLocationOn,
   MdInfo,
-  MdCalendarToday,
   MdBusiness,
   MdClose,
+  MdAccountCircle,
+  MdLock,
 } from 'react-icons/md';
 import { format } from 'date-fns';
 
@@ -23,14 +23,35 @@ export const PatientDetailPage = () => {
   const { data: patient, isLoading, error } = usePatient(id);
   const { user, role } = useAuth();
   const removeFromClinicMutation = useRemovePatientFromClinic();
+  const createAccountMutation = useCreatePatientAccount();
   const { success: showSuccess, error: showError } = useToastStore();
   const [clinicToRemove, setClinicToRemove] = useState<{ patientId: string; clinicId: string; clinicName: string } | null>(null);
+  const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   const normalizedRole = role?.toUpperCase();
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
   const isManager = normalizedRole === 'MANAGER';
   const isReceptionist = normalizedRole === 'RECEPTIONIST';
   const canRemoveFromClinic = isSystemAdmin || isManager || isReceptionist;
+  const canCreateAccount = isSystemAdmin || isManager || isReceptionist;
+  
+  // Determine clinic_id for account creation
+  // For clinic managers, use their clinic_id
+  // For system admins, use patient's primary clinic_id or first clinic
+  const getClinicIdForAccount = (): string | undefined => {
+    if (!patient) return undefined;
+    if (isManager && user?.clinic_id) {
+      return user.clinic_id;
+    }
+    if (patient.clinic_id) {
+      return patient.clinic_id;
+    }
+    if (patient.clinics && patient.clinics.length > 0 && patient.clinics[0]) {
+      return patient.clinics[0].clinic_id;
+    }
+    return undefined;
+  };
 
   const handleRemoveFromClinic = async () => {
     if (!clinicToRemove) return;
@@ -44,6 +65,38 @@ export const PatientDetailPage = () => {
       setClinicToRemove(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove patient from clinic';
+      showError(errorMessage);
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    if (!patient || !patient.patient_id) return;
+    
+    const clinicId = getClinicIdForAccount();
+    if (!clinicId) {
+      showError('Cannot create account: Patient is not associated with any clinic');
+      return;
+    }
+
+    if (!patient.email) {
+      showError('Cannot create account: Patient must have an email address');
+      return;
+    }
+
+    try {
+      const result = await createAccountMutation.mutateAsync({
+        id: patient.patient_id,
+        data: {
+          clinic_id: clinicId,
+          send_email: true,
+        },
+      });
+      
+      setGeneratedPassword(result.password);
+      setShowCreateAccountModal(true);
+      showSuccess('Account created successfully! Password has been sent via email.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       showError(errorMessage);
     }
   };
@@ -205,9 +258,23 @@ export const PatientDetailPage = () => {
               )}
               <div>
                 <label className="text-xs font-medium text-carbon/60">Has Account</label>
-                <p className="text-sm text-carbon mt-1">
-                  {patient.has_account ? 'Yes' : 'No'}
-                </p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-sm text-carbon">
+                    {patient.has_account ? 'Yes' : 'No'}
+                  </p>
+                  {!patient.has_account && canCreateAccount && patient.email && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateAccount}
+                      disabled={createAccountMutation.isPending}
+                      className="text-xs"
+                    >
+                      <MdAccountCircle className="h-3 w-3 mr-1" />
+                      Create Account
+                    </Button>
+                  )}
+                </div>
               </div>
               {patient.username && (
                 <div>
@@ -361,6 +428,70 @@ export const PatientDetailPage = () => {
             confirmText="Remove from Clinic"
             isLoading={removeFromClinicMutation.isPending}
           />
+        )}
+
+        {/* Create Account Password Modal */}
+        {showCreateAccountModal && generatedPassword && (
+          <Modal
+            isOpen={showCreateAccountModal}
+            onClose={() => {
+              setShowCreateAccountModal(false);
+              setGeneratedPassword(null);
+            }}
+            title="Account Created Successfully"
+            size="md"
+          >
+            <div className="space-y-4">
+              <div className="rounded-md bg-bright-halo/10 border border-bright-halo/20 px-4 py-3">
+                <p className="text-sm text-carbon/80">
+                  An account has been created for {patient.full_name || `${patient.first_name} ${patient.last_name}`}.
+                  {patient.email && (
+                    <span className="block mt-1">
+                      Login credentials have been sent to <strong>{patient.email}</strong>.
+                    </span>
+                  )}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-carbon/60 flex items-center gap-2">
+                  <MdLock className="h-4 w-4" />
+                  Generated Password (if email fails, share this password):
+                </label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 bg-carbon/5 border border-carbon/10 rounded text-sm font-mono text-carbon break-all">
+                    {generatedPassword}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedPassword);
+                      showSuccess('Password copied to clipboard');
+                    }}
+                    title="Copy password"
+                  >
+                    Copy
+                  </Button>
+                </div>
+                <p className="text-xs text-carbon/50">
+                  Please securely share this password with the patient if the email was not delivered.
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowCreateAccountModal(false);
+                    setGeneratedPassword(null);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Modal>
         )}
 
         {/* Metadata */}

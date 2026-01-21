@@ -4,6 +4,8 @@ import type {
   CreateUserRequest,
   UpdateUserRequest,
   UserListParams,
+  UpdatePreferencesRequest,
+  UserPreferences,
 } from '@/api/users';
 
 /**
@@ -138,6 +140,92 @@ export const useActivateUser = () => {
     },
     onError: (error) => {
       console.error('Error activating user:', error);
+      throw error;
+    },
+  });
+};
+
+/**
+ * Hook to fetch current user's preferences
+ */
+export const useMyPreferences = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['preferences', 'me'],
+    queryFn: () => usersApi.getMyPreferences(),
+    enabled: options?.enabled !== false,
+    staleTime: 0, // Always consider data stale to ensure fresh updates
+    refetchOnMount: true,
+  });
+};
+
+/**
+ * Hook to update current user's preferences
+ */
+export const useUpdateMyPreferences = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePreferencesRequest) => usersApi.updateMyPreferences(data),
+    onMutate: async (newPreferences) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['preferences', 'me'] });
+
+      // Snapshot the previous value
+      const previousPreferences = queryClient.getQueryData<UserPreferences>(['preferences', 'me']);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<UserPreferences>(['preferences', 'me'], (old) => {
+        if (!old) return old;
+        return { ...old, ...newPreferences };
+      });
+
+      return { previousPreferences };
+    },
+    onSuccess: (updatedPreferences) => {
+      // Update cache with server response (this ensures all fields are correct)
+      queryClient.setQueryData(['preferences', 'me'], updatedPreferences);
+    },
+    onError: (error, newPreferences, context) => {
+      // Rollback to previous value on error
+      if (context?.previousPreferences) {
+        queryClient.setQueryData(['preferences', 'me'], context.previousPreferences);
+      }
+      console.error('Error updating preferences:', error);
+      throw error;
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['preferences', 'me'] });
+    },
+  });
+};
+
+/**
+ * Hook to fetch any user's preferences (Admin/System only)
+ */
+export const useUserPreferences = (userId: string, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['preferences', userId],
+    queryFn: () => usersApi.getUserPreferences(userId),
+    enabled: !!userId && (options?.enabled !== false),
+  });
+};
+
+/**
+ * Hook to update any user's preferences (Admin/System only)
+ */
+export const useUpdateUserPreferences = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: UpdatePreferencesRequest }) =>
+      usersApi.updateUserPreferences(userId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['preferences', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['preferences', 'me'] });
+    },
+    onError: (error) => {
+      console.error('Error updating user preferences:', error);
       throw error;
     },
   });

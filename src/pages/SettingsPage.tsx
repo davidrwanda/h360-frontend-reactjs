@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useUser, useUpdateUser } from '@/hooks/useUsers';
+import { useUser, useUpdateUser, useMyPreferences, useUpdateMyPreferences } from '@/hooks/useUsers';
+import { useUpdatePatient } from '@/hooks/usePatients';
 import { useChangePassword } from '@/hooks/useAuth';
 import { useClinic } from '@/hooks/useClinics';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToastStore } from '@/store/toastStore';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import {
@@ -44,8 +46,19 @@ const passwordSchema = z
     path: ['confirm_password'],
   });
 
+const preferencesSchema = z.object({
+  theme: z.string().optional(),
+  language: z.string().optional(),
+  date_format: z.string().optional(),
+  time_format: z.string().optional(),
+  email_notifications: z.boolean().optional(),
+  sms_notifications: z.boolean().optional(),
+  in_app_notifications: z.boolean().optional(),
+});
+
 type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
+type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
 type SettingsTab = 'profile' | 'preferences' | 'clinic' | 'system' | 'security';
 
@@ -56,34 +69,79 @@ export const SettingsPage = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // Fetch current user data
+  // Fetch current user data (only for EMPLOYEE/SYSTEM users, not PATIENT)
   const { data: userData } = useUser(user?.user_id || '', {
-    enabled: !!user?.user_id,
+    enabled: !!user?.user_id && user?.user_type !== 'PATIENT',
   });
 
   // Fetch clinic data to get clinic_code
   const clinicId = userData?.clinic_id || (user?.clinic_id ? user.clinic_id : undefined);
   const { data: clinicData } = useClinic(clinicId);
 
+  const queryClient = useQueryClient();
   const updateUserMutation = useUpdateUser();
+  const updatePatientMutation = useUpdatePatient();
   const changePasswordMutation = useChangePassword();
   const { success: showSuccess, error: showError } = useToastStore();
 
+  // Fetch preferences
+  const { data: preferencesData } = useMyPreferences();
+  const updatePreferencesMutation = useUpdateMyPreferences();
+
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    mode: 'onChange',
+  });
+
+  const preferencesForm = useForm<PreferencesFormData>({
+    resolver: zodResolver(preferencesSchema),
   });
 
   // Update form when user data loads
   useEffect(() => {
-    if (userData) {
+    // For PATIENT users, use patient data from /api/auth/me
+    if (user?.user_type === 'PATIENT' && user?.patient) {
+      const patientData = user.patient;
+      profileForm.reset({
+        first_name: patientData.first_name || '',
+        last_name: patientData.last_name || '',
+        email: user.email || '',
+        phone: patientData.phone || '',
+      }, { keepDefaultValues: false });
+    } else if (userData && user?.user_type !== 'PATIENT') {
+      // For EMPLOYEE/SYSTEM users, use userData from /api/users/:id
       profileForm.reset({
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
         email: userData.email || '',
         phone: userData.phone || '',
+      }, { keepDefaultValues: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData, user?.user_type, user?.patient, user?.email]);
+
+  // Update preferences form when preferences data loads
+  useEffect(() => {
+    if (preferencesData) {
+      // Map time_format from API format ("12 Hour"/"24 Hour") to form format ("12h"/"24h")
+      const timeFormatValue =
+        preferencesData.time_format === '24 Hour'
+          ? '24h'
+          : preferencesData.time_format === '12 Hour'
+            ? '12h'
+            : preferencesData.time_format || '12h';
+
+      preferencesForm.reset({
+        theme: preferencesData.theme || 'Light',
+        language: preferencesData.language || 'en',
+        date_format: preferencesData.date_format || 'MM/DD/YYYY',
+        time_format: timeFormatValue,
+        email_notifications: preferencesData.email_notifications ?? true,
+        sms_notifications: preferencesData.sms_notifications ?? false,
+        in_app_notifications: preferencesData.in_app_notifications ?? true,
       });
     }
-  }, [userData, profileForm]);
+  }, [preferencesData, preferencesForm]);
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -91,6 +149,8 @@ export const SettingsPage = () => {
 
   const isSystemAdmin = user?.user_type === 'SYSTEM' || user?.role === 'ADMIN';
   const isClinicAdmin = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+  // Hide Personal Information and Change Password for SYSTEM users with ALL permissions
+  const isSystemUserWithAllPermissions = user?.user_type === 'SYSTEM' && user?.permissions === 'ALL';
 
   const handleProfileSubmit = async (data: ProfileFormData) => {
     setProfileError(null);
@@ -101,17 +161,32 @@ export const SettingsPage = () => {
     }
 
     try {
-      await updateUserMutation.mutateAsync({
-        id: user.user_id,
-        data: {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          // Email is not editable, so don't include it in the update
-          phone: data.phone,
-        },
-      });
+      // For PATIENT users, update via patient API
+      if (user?.user_type === 'PATIENT' && user?.patient?.patient_id) {
+        await updatePatientMutation.mutateAsync({
+          id: user.patient.patient_id,
+          data: {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            phone: data.phone || undefined,
+          },
+        });
+        // Invalidate auth query to refresh user data
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      } else {
+        // For EMPLOYEE/SYSTEM users, update via user API
+        await updateUserMutation.mutateAsync({
+          id: user.user_id,
+          data: {
+            first_name: data.first_name,
+            last_name: data.last_name,
+            // Email is not editable, so don't include it in the update
+            phone: data.phone,
+          },
+        });
+      }
       showSuccess('Profile updated successfully!');
-      // Success - form will update via useUser query
+      // Success - form will update via useUser query or auth query
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
       setProfileError(errorMessage);
@@ -136,6 +211,24 @@ export const SettingsPage = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to change password. Please try again.';
       setPasswordError(errorMessage);
+      showError(errorMessage);
+    }
+  };
+
+  const handlePreferencesSubmit = async (data: PreferencesFormData) => {
+    try {
+      await updatePreferencesMutation.mutateAsync({
+        theme: data.theme,
+        language: data.language,
+        date_format: data.date_format,
+        time_format: data.time_format === '12h' ? '12 Hour' : data.time_format === '24h' ? '24 Hour' : data.time_format,
+        email_notifications: data.email_notifications,
+        sms_notifications: data.sms_notifications,
+        in_app_notifications: data.in_app_notifications,
+      });
+      showSuccess('Preferences updated successfully!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update preferences. Please try again.';
       showError(errorMessage);
     }
   };
@@ -189,114 +282,120 @@ export const SettingsPage = () => {
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdPerson className="h-5 w-5" />
-                    Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
-                    {profileError && (
-                      <div className="rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
-                        <p className="text-xs text-smudged-lips">{profileError}</p>
+              {/* Hide Personal Information for SYSTEM users with ALL permissions */}
+              {!isSystemUserWithAllPermissions && (
+                <Card variant="elevated">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MdPerson className="h-5 w-5" />
+                      Personal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
+                      {profileError && (
+                        <div className="rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
+                          <p className="text-xs text-smudged-lips">{profileError}</p>
+                        </div>
+                      )}
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Input
+                          label="First Name"
+                          {...profileForm.register('first_name')}
+                          error={profileForm.formState.errors.first_name?.message}
+                        />
+                        <Input
+                          label="Last Name"
+                          {...profileForm.register('last_name')}
+                          error={profileForm.formState.errors.last_name?.message}
+                        />
+                        <Input
+                          label="Email"
+                          type="email"
+                          {...profileForm.register('email')}
+                          error={profileForm.formState.errors.email?.message}
+                          disabled
+                          helperText="Email cannot be changed"
+                        />
+                        <Input
+                          label="Phone"
+                          type="tel"
+                          {...profileForm.register('phone')}
+                          error={profileForm.formState.errors.phone?.message}
+                        />
                       </div>
-                    )}
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Input
-                        label="First Name"
-                        {...profileForm.register('first_name')}
-                        error={profileForm.formState.errors.first_name?.message}
-                      />
-                      <Input
-                        label="Last Name"
-                        {...profileForm.register('last_name')}
-                        error={profileForm.formState.errors.last_name?.message}
-                      />
-                      <Input
-                        label="Email"
-                        type="email"
-                        {...profileForm.register('email')}
-                        error={profileForm.formState.errors.email?.message}
-                        disabled
-                        helperText="Email cannot be changed"
-                      />
-                      <Input
-                        label="Phone"
-                        type="tel"
-                        {...profileForm.register('phone')}
-                        error={profileForm.formState.errors.phone?.message}
-                      />
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t border-carbon/10">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="md"
-                        disabled={profileForm.formState.isSubmitting}
-                      >
-                        {profileForm.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdLock className="h-5 w-5" />
-                    Change Password
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
-                    {passwordError && (
-                      <div className="rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
-                        <p className="text-xs text-smudged-lips">{passwordError}</p>
+                      <div className="flex gap-3 pt-4 border-t border-carbon/10">
+                        <Button
+                          type="submit"
+                          variant="primary"
+                          size="md"
+                          disabled={profileForm.formState.isSubmitting}
+                        >
+                          {profileForm.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                        </Button>
                       </div>
-                    )}
-                    {passwordSuccess && (
-                      <div className="rounded-md bg-bright-halo/10 border border-bright-halo/25 px-3.5 py-2.5">
-                        <p className="text-xs text-azure-dragon">Password changed successfully!</p>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Hide Change Password for SYSTEM users with ALL permissions */}
+              {!isSystemUserWithAllPermissions && (
+                <Card variant="elevated">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MdLock className="h-5 w-5" />
+                      Change Password
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+                      {passwordError && (
+                        <div className="rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
+                          <p className="text-xs text-smudged-lips">{passwordError}</p>
+                        </div>
+                      )}
+                      {passwordSuccess && (
+                        <div className="rounded-md bg-bright-halo/10 border border-bright-halo/25 px-3.5 py-2.5">
+                          <p className="text-xs text-azure-dragon">Password changed successfully!</p>
+                        </div>
+                      )}
+
+                      <Input
+                        label="Current Password"
+                        type="password"
+                        {...passwordForm.register('current_password')}
+                        error={passwordForm.formState.errors.current_password?.message}
+                      />
+                      <Input
+                        label="New Password"
+                        type="password"
+                        {...passwordForm.register('new_password')}
+                        error={passwordForm.formState.errors.new_password?.message}
+                      />
+                      <Input
+                        label="Confirm New Password"
+                        type="password"
+                        {...passwordForm.register('confirm_password')}
+                        error={passwordForm.formState.errors.confirm_password?.message}
+                      />
+
+                      <div className="flex gap-3 pt-4 border-t border-carbon/10">
+                        <Button
+                          type="submit"
+                          variant="primary"
+                          size="md"
+                          disabled={changePasswordMutation.isPending}
+                        >
+                          {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                        </Button>
                       </div>
-                    )}
-
-                    <Input
-                      label="Current Password"
-                      type="password"
-                      {...passwordForm.register('current_password')}
-                      error={passwordForm.formState.errors.current_password?.message}
-                    />
-                    <Input
-                      label="New Password"
-                      type="password"
-                      {...passwordForm.register('new_password')}
-                      error={passwordForm.formState.errors.new_password?.message}
-                    />
-                    <Input
-                      label="Confirm New Password"
-                      type="password"
-                      {...passwordForm.register('confirm_password')}
-                      error={passwordForm.formState.errors.confirm_password?.message}
-                    />
-
-                    <div className="flex gap-3 pt-4 border-t border-carbon/10">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="md"
-                        disabled={changePasswordMutation.isPending}
-                      >
-                        {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card variant="elevated">
                 <CardHeader>
@@ -341,113 +440,160 @@ export const SettingsPage = () => {
           {/* Preferences Tab */}
           {activeTab === 'preferences' && (
             <div className="space-y-6">
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdPalette className="h-5 w-5" />
-                    Appearance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-2">Theme</label>
-                      <Select
-                        value="light"
-                        onChange={() => {}}
-                        options={[
-                          { value: 'light', label: 'Light' },
-                          { value: 'dark', label: 'Dark' },
-                          { value: 'system', label: 'System' },
-                        ]}
-                      />
-                      <p className="text-xs text-carbon/50 mt-1.5">Choose your preferred color theme</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Hide Preferences content for SYSTEM users with ALL permissions */}
+              {!isSystemUserWithAllPermissions ? (
+                <form onSubmit={preferencesForm.handleSubmit(handlePreferencesSubmit)} className="space-y-6">
+                  <Card variant="elevated">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MdPalette className="h-5 w-5" />
+                        Appearance
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">Theme</label>
+                          <Select
+                            value={preferencesForm.watch('theme') || 'Light'}
+                            onChange={(e) => preferencesForm.setValue('theme', e.target.value)}
+                            options={[
+                              { value: 'Light', label: 'Light' },
+                              { value: 'Dark', label: 'Dark' },
+                              { value: 'System', label: 'System' },
+                            ]}
+                          />
+                          <p className="text-xs text-carbon/50 mt-1.5">Choose your preferred color theme</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdLanguage className="h-5 w-5" />
-                    Language & Locale
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-2">Language</label>
-                      <Select
-                        value="en"
-                        onChange={() => {}}
-                        options={[
-                          { value: 'en', label: 'English' },
-                          { value: 'fr', label: 'French' },
-                          { value: 'es', label: 'Spanish' },
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-2">Date Format</label>
-                      <Select
-                        value="MM/DD/YYYY"
-                        onChange={() => {}}
-                        options={[
-                          { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-                          { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-                          { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-2">Time Format</label>
-                      <Select
-                        value="12h"
-                        onChange={() => {}}
-                        options={[
-                          { value: '12h', label: '12 Hour' },
-                          { value: '24h', label: '24 Hour' },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  <Card variant="elevated">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MdLanguage className="h-5 w-5" />
+                        Language & Locale
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">Language</label>
+                          <Select
+                            value={preferencesForm.watch('language') || 'en'}
+                            onChange={(e) => preferencesForm.setValue('language', e.target.value)}
+                            options={[
+                              { value: 'en', label: 'English' },
+                              { value: 'fr', label: 'French' },
+                              { value: 'es', label: 'Spanish' },
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">Date Format</label>
+                          <Select
+                            value={preferencesForm.watch('date_format') || 'MM/DD/YYYY'}
+                            onChange={(e) => preferencesForm.setValue('date_format', e.target.value)}
+                            options={[
+                              { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
+                              { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
+                              { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">Time Format</label>
+                          <Select
+                            value={
+                              preferencesForm.watch('time_format') === '24 Hour'
+                                ? '24h'
+                                : preferencesForm.watch('time_format') === '12 Hour'
+                                  ? '12h'
+                                  : preferencesForm.watch('time_format') || '12h'
+                            }
+                            onChange={(e) =>
+                              preferencesForm.setValue('time_format', e.target.value === '24h' ? '24 Hour' : '12 Hour')
+                            }
+                            options={[
+                              { value: '12h', label: '12 Hour' },
+                              { value: '24h', label: '24 Hour' },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdNotifications className="h-5 w-5" />
-                    Notification Preferences
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-sm font-medium text-carbon">Email Notifications</label>
-                        <p className="text-xs text-carbon/60">Receive notifications via email</p>
+                  <Card variant="elevated">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MdNotifications className="h-5 w-5" />
+                        Notification Preferences
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <label className="text-sm font-medium text-carbon">Email Notifications</label>
+                            <p className="text-xs text-carbon/60">Receive notifications via email</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={preferencesForm.watch('email_notifications') ?? true}
+                            onChange={(e) => preferencesForm.setValue('email_notifications', e.target.checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <label className="text-sm font-medium text-carbon">SMS Notifications</label>
+                            <p className="text-xs text-carbon/60">Receive notifications via SMS</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={preferencesForm.watch('sms_notifications') ?? false}
+                            onChange={(e) => preferencesForm.setValue('sms_notifications', e.target.checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <label className="text-sm font-medium text-carbon">In-App Notifications</label>
+                            <p className="text-xs text-carbon/60">Show notifications in the app</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={preferencesForm.watch('in_app_notifications') ?? true}
+                            onChange={(e) => preferencesForm.setValue('in_app_notifications', e.target.checked)}
+                          />
+                        </div>
                       </div>
-                      <input type="checkbox" className="h-4 w-4" defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-sm font-medium text-carbon">SMS Notifications</label>
-                        <p className="text-xs text-carbon/60">Receive notifications via SMS</p>
-                      </div>
-                      <input type="checkbox" className="h-4 w-4" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-sm font-medium text-carbon">In-App Notifications</label>
-                        <p className="text-xs text-carbon/60">Show notifications in the app</p>
-                      </div>
-                      <input type="checkbox" className="h-4 w-4" defaultChecked />
-                    </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      disabled={updatePreferencesMutation.isPending}
+                    >
+                      {updatePreferencesMutation.isPending ? 'Saving...' : 'Save Preferences'}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </form>
+              ) : (
+                <Card variant="elevated">
+                  <CardContent className="py-8">
+                    <p className="text-sm text-carbon/60 text-center">
+                      Preferences settings are not available for system users.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
@@ -530,31 +676,34 @@ export const SettingsPage = () => {
                 </CardContent>
               </Card>
 
-              <Card variant="elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MdSecurity className="h-5 w-5" />
-                    Two-Factor Authentication
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-sm font-medium text-carbon">Enable 2FA</label>
-                        <p className="text-xs text-carbon/60">
-                          Add an extra layer of security to your account
-                        </p>
+              {/* Hide Two-Factor Authentication for SYSTEM users with ALL permissions */}
+              {!isSystemUserWithAllPermissions && (
+                <Card variant="elevated">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MdSecurity className="h-5 w-5" />
+                      Two-Factor Authentication
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="text-sm font-medium text-carbon">Enable 2FA</label>
+                          <p className="text-xs text-carbon/60">
+                            Add an extra layer of security to your account
+                          </p>
+                        </div>
+                        <input type="checkbox" className="h-4 w-4" />
                       </div>
-                      <input type="checkbox" className="h-4 w-4" />
+                      <p className="text-xs text-carbon/50">
+                        Two-factor authentication is not yet available. This feature will be implemented in a future
+                        update.
+                      </p>
                     </div>
-                    <p className="text-xs text-carbon/50">
-                      Two-factor authentication is not yet available. This feature will be implemented in a future
-                      update.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </div>

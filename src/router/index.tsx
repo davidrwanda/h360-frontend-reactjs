@@ -20,11 +20,31 @@ import { PatientsPage } from '@/pages/PatientsPage';
 import { PatientDetailPage } from '@/pages/PatientDetailPage';
 import { CreatePatientPage } from '@/pages/CreatePatientPage';
 import { EditPatientPage } from '@/pages/EditPatientPage';
+import { PatientRegisterPage } from '@/pages/PatientRegisterPage';
+import { LandingPage } from '@/pages/LandingPage';
+import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
+import { MyProfilePage } from '@/pages/MyProfilePage';
 
 export const router = createBrowserRouter([
   {
+    path: '/',
+    element: <LandingPage />,
+  },
+  {
+    path: '/home',
+    element: <LandingPage />,
+  },
+  {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <PatientRegisterPage />,
+  },
+  {
+    path: '/patients/register',
+    element: <PatientRegisterPage />,
   },
   {
     path: '/',
@@ -242,6 +262,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={['MANAGER']}>
         <MainLayout>
           <ClinicInfoPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-appointments',
+    element: (
+      <ProtectedRoute requiredRole={['PATIENT']}>
+        <MainLayout>
+          <MyAppointmentsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-profile',
+    element: (
+      <ProtectedRoute requiredRole={['PATIENT']}>
+        <MainLayout>
+          <MyProfilePage />
         </MainLayout>
       </ProtectedRoute>
     ),

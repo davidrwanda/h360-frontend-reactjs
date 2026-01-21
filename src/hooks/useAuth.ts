@@ -19,6 +19,7 @@ const normalizeRole = (role?: string): UserRole | undefined => {
   if (normalized === 'RECEPTIONIST') return 'RECEPTIONIST';
   if (normalized === 'DOCTOR') return 'DOCTOR';
   if (normalized === 'NURSE') return 'NURSE';
+  if (normalized === 'PATIENT') return 'PATIENT';
   
   return undefined;
 };
@@ -29,11 +30,29 @@ const normalizeRole = (role?: string): UserRole | undefined => {
 const mapUserToRole = (user: User | null): UserRole | undefined => {
   if (!user) return undefined;
   
-  // If user has explicit role, normalize and use it
+  // If user has explicit role, normalize and use it FIRST
+  // This handles cases where patients have role: "Patient" (capitalized)
   // Cast to string to handle API returning "Admin" instead of "ADMIN"
   if (user.role) {
     const normalized = normalizeRole(String(user.role));
     if (normalized) return normalized;
+  }
+  
+  // Check employee object for role if available (from /api/auth/me)
+  if (user.employee?.role) {
+    const normalized = normalizeRole(String(user.employee.role));
+    if (normalized) return normalized;
+  }
+  
+  // Check employee_profile for role if available (legacy support)
+  if (user.employee_profile?.role) {
+    const normalized = normalizeRole(String(user.employee_profile.role));
+    if (normalized) return normalized;
+  }
+  
+  // Check if user_type indicates PATIENT
+  if (user.user_type === 'PATIENT') {
+    return 'PATIENT';
   }
   
   // If permissions is ALL, treat as ADMIN
@@ -52,15 +71,19 @@ const mapUserToRole = (user: User | null): UserRole | undefined => {
 export const useAuth = () => {
   const { user, token, refreshToken, isAuthenticated, isLoading: storeLoading } = useAuthStore();
 
-  // Fetch current user if token exists but user is not loaded
+  // Always fetch current user from /api/auth/me if token exists
+  // This ensures we have the latest user data including full_name, first_name, last_name
   const { data: currentUser, isLoading: queryLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authApi.getMe,
-    enabled: !!token && !user,
+    enabled: !!token,
     retry: false,
+    // Use the fetched user data if available, otherwise fall back to stored user
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   });
 
-  const currentUserData = user || currentUser || null;
+  // Prefer currentUser from API over stored user to ensure we have latest data
+  const currentUserData = currentUser || user || null;
   
   // Ensure user has username (use email if username not available)
   const normalizedUser = currentUserData

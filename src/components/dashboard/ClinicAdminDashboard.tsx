@@ -15,7 +15,13 @@ export const ClinicAdminDashboard = () => {
           Dashboard
         </h1>
         <p className="text-sm text-carbon/60">
-          Welcome back, <span className="font-medium">{user?.username || user?.email}</span>!
+          Welcome back, <span className="font-medium">
+            {user?.employee?.first_name || 
+             user?.employee?.full_name?.split(' ')[0] ||
+             user?.first_name ||
+             user?.username || 
+             user?.email}
+          </span>!
         </p>
         {user?.clinic_id && (
           <p className="text-xs text-carbon/50 mt-1">Clinic Administrator</p>

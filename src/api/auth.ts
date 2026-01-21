@@ -26,15 +26,22 @@ export const authApi = {
 
   /**
    * Get current user information
+   * Returns user with nested employee_profile if user_type is EMPLOYEE
    */
   getMe: async (): Promise<User> => {
     const response = await apiClient.get<ApiResponse<User> | User>('/auth/me');
     // Handle wrapped response
+    let user: User;
     if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<User>).data;
+      user = (response.data as ApiResponse<User>).data;
+    } else {
+      user = response.data as User;
     }
-    // Fallback for direct response
-    return response.data as User;
+    // Ensure username exists (use email if username not available)
+    return {
+      ...user,
+      username: user.username || user.email,
+    };
   },
 
   /**

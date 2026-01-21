@@ -6,7 +6,7 @@ import { usePatients, useDeactivatePatient, useActivatePatient } from '@/hooks/u
 import { useToastStore } from '@/store/toastStore';
 import { PatientsTable } from '@/components/patients';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal, Select } from '@/components/ui';
-import { MdAdd, MdSearch, MdFilterList, MdClear, MdPerson, MdCalendarToday } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdClear, MdPerson } from 'react-icons/md';
 import type { Patient } from '@/api/patients';
 
 export const PatientsPage = () => {
