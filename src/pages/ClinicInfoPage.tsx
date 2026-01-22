@@ -18,8 +18,28 @@ import {
  */
 export const ClinicInfoPage = () => {
   const { user } = useAuth();
-  const clinicId = user?.clinic_id;
   const navigate = useNavigate();
+
+  // Get clinic_id from storage (fallback to user object)
+  const getClinicIdFromStorage = (): string | undefined => {
+    try {
+      // Try to get from localStorage directly (Zustand persist)
+      const authStorage = localStorage.getItem('h360-auth-storage');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed.state?.user?.clinic_id) {
+          return parsed.state.user.clinic_id;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get clinic_id from localStorage:', error);
+    }
+
+    // Fallback to user object from auth hook
+    return user?.clinic_id || user?.employee?.clinic_id;
+  };
+
+  const clinicId = getClinicIdFromStorage();
 
   // Fetch clinic data
   const { data: clinic, isLoading, error } = useClinic(clinicId || undefined);

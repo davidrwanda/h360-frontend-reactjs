@@ -1,0 +1,1 @@
+export { DepartmentInput } from './DepartmentInput';

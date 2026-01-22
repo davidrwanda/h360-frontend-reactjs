@@ -165,17 +165,37 @@ export const EditClinicPage = () => {
   const { data: clinic, isLoading } = useClinic(id);
   const updateMutation = useUpdateClinic();
 
+  // Get clinic_id from storage (fallback to user object)
+  const getClinicIdFromStorage = (): string | undefined => {
+    try {
+      // Try to get from localStorage directly (Zustand persist)
+      const authStorage = localStorage.getItem('h360-auth-storage');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed.state?.user?.clinic_id) {
+          return parsed.state.user.clinic_id;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get clinic_id from localStorage:', error);
+    }
+
+    // Fallback to user object from auth hook
+    return user?.clinic_id || user?.employee?.clinic_id;
+  };
+
   // Check if clinic manager is trying to edit their own clinic
   const normalizedRole = role?.toUpperCase();
   const isClinicManager = normalizedRole === 'MANAGER';
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
+  const userClinicId = getClinicIdFromStorage();
   
   // Clinic managers can only edit their own clinic
   useEffect(() => {
-    if (clinic && isClinicManager && !isSystemAdmin && user?.clinic_id !== clinic.clinic_id) {
+    if (clinic && isClinicManager && !isSystemAdmin && userClinicId !== clinic.clinic_id) {
       navigate('/clinic-info', { replace: true });
     }
-  }, [clinic, isClinicManager, isSystemAdmin, user?.clinic_id, navigate]);
+  }, [clinic, isClinicManager, isSystemAdmin, userClinicId, navigate]);
 
   const {
     register,

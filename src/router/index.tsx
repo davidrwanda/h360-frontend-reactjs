@@ -12,6 +12,7 @@ import { ClinicDetailPage } from '@/pages/ClinicDetailPage';
 import { ClinicInfoPage } from '@/pages/ClinicInfoPage';
 import { EditClinicPage } from '@/pages/EditClinicPage';
 import { UsersPage } from '@/pages/UsersPage';
+import { CreateUserPage } from '@/pages/CreateUserPage';
 import { CreateClinicAdminPage } from '@/pages/CreateClinicAdminPage';
 import { EditClinicAdminPage } from '@/pages/EditClinicAdminPage';
 import { ActivityLogsPage } from '@/pages/ActivityLogsPage';
@@ -24,6 +25,16 @@ import { PatientRegisterPage } from '@/pages/PatientRegisterPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
+import { ServicesPage } from '@/pages/ServicesPage';
+import { CreateServicePage } from '@/pages/CreateServicePage';
+import { EditServicePage } from '@/pages/EditServicePage';
+import { ServiceDetailPage } from '@/pages/ServiceDetailPage';
+import { DoctorsPage } from '@/pages/DoctorsPage';
+import CreateDoctorPage from '@/pages/CreateDoctorPage';
+import EditDoctorPage from '@/pages/EditDoctorPage';
+import DoctorDetailPage from '@/pages/DoctorDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +48,14 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
   },
   {
     path: '/register',
@@ -109,9 +128,39 @@ export const router = createBrowserRouter([
   {
     path: '/doctors',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
-          <PlaceholderPage title="Doctors" />
+          <DoctorsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctors/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST']}>
+        <MainLayout>
+          <CreateDoctorPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctors/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
+        <MainLayout>
+          <DoctorDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctors/:id/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR']}>
+        <MainLayout>
+          <EditDoctorPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -119,9 +168,39 @@ export const router = createBrowserRouter([
   {
     path: '/services',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
-          <PlaceholderPage title="Services" />
+          <ServicesPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <CreateServicePage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
+        <MainLayout>
+          <ServiceDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services/:id/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <EditServicePage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -207,6 +286,16 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: '/users/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <CreateUserPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/clinics/:id/admins/:adminId/edit',
     element: (
       <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
@@ -279,7 +368,7 @@ export const router = createBrowserRouter([
   {
     path: '/my-profile',
     element: (
-      <ProtectedRoute requiredRole={['PATIENT']}>
+      <ProtectedRoute requiredRole={['PATIENT', 'DOCTOR']}>
         <MainLayout>
           <MyProfilePage />
         </MainLayout>

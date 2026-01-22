@@ -47,7 +47,6 @@ export interface CreateUserRequest {
   last_name: string;
   email: string;
   username: string;
-  password: string;
   phone?: string;
   date_of_birth?: string;
   gender?: string;
@@ -65,7 +64,11 @@ export interface CreateUserRequest {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   emergency_contact_relationship?: string;
+  password: string;
   notes?: string;
+  profile_image_url?: string;
+  license_number?: string;
+  license_expiry_date?: string;
   is_active?: boolean;
 }
 
@@ -177,6 +180,10 @@ export const usersApi = {
    * Create a new user
    * POST /api/users
    * Access: Admin role required
+   *
+   * Creates a user account with all necessary information including
+   * personal details, employment information, and authentication credentials.
+   * Automatically creates employee record if role requires it.
    */
   create: async (data: CreateUserRequest): Promise<User> => {
     const apiData = {

@@ -184,6 +184,28 @@ export const getFilteredNavigation = (
     return patientMenu;
   }
 
+  // Doctor-specific menu: Dashboard, Appointments, Patients, Services, Queue, Profile, Settings
+  if (normalizedRole === 'DOCTOR') {
+    if (import.meta.env.DEV) {
+      console.log('getFilteredNavigation: Returning doctor menu');
+    }
+    const doctorMenu: NavigationConfig = [
+      { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: MdDashboard },
+      { id: 'divider-1', label: '', path: '' },
+      { id: 'appointments', label: 'Appointments', path: '/appointments', icon: MdEvent },
+      { id: 'divider-2', label: '', path: '' },
+      { id: 'patients', label: 'Patients', path: '/patients', icon: MdPeople },
+      { id: 'services', label: 'Services', path: '/services', icon: MdMedicalServices },
+      { id: 'divider-3', label: '', path: '' },
+      { id: 'queue', label: 'Queue', path: '/queue', icon: MdQueue },
+      { id: 'divider-4', label: '', path: '' },
+      { id: 'my-profile', label: 'Profile', path: '/my-profile', icon: MdAccountCircle },
+      { id: 'divider-5', label: '', path: '' },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: MdSettings },
+    ];
+    return doctorMenu;
+  }
+
   // SYSTEM users and Admin role users see: Dashboard, Clinics, Users, Activity Logs, Settings
   if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
     const allowedItems = [

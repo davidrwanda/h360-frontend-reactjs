@@ -192,3 +192,32 @@ export const useChangePassword = () => {
     mutationFn: (data: ChangePasswordRequest) => authApi.changePassword(data),
   });
 };
+
+/**
+ * Hook for forgot password (request OTP)
+ */
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: (email: string) => authApi.forgotPassword(email),
+  });
+};
+
+/**
+ * Hook for reset password with OTP
+ */
+export const useResetPassword = () => {
+  const navigate = useNavigate();
+  
+  return useMutation({
+    mutationFn: (data: {
+      email: string;
+      otp_code: string;
+      new_password: string;
+      confirm_password: string;
+    }) => authApi.resetPassword(data),
+    onSuccess: () => {
+      // Navigate to login after successful password reset
+      navigate('/login', { replace: true });
+    },
+  });
+};

@@ -16,15 +16,35 @@ export const UsersPage = () => {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   
+  // Get clinic_id from storage (fallback to user object)
+  const getClinicIdFromStorage = (): string | undefined => {
+    try {
+      // Try to get from localStorage directly (Zustand persist)
+      const authStorage = localStorage.getItem('h360-auth-storage');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed.state?.user?.clinic_id) {
+          return parsed.state.user.clinic_id;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get clinic_id from localStorage:', error);
+    }
+
+    // Fallback to user object from auth hook
+    return user?.clinic_id || user?.employee?.clinic_id;
+  };
+  
   // Determine if user is a clinic manager (not system admin)
   const normalizedRole = role?.toUpperCase();
-  const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
+  const clinicIdFromStorage = getClinicIdFromStorage();
+  const isClinicManager = normalizedRole === 'MANAGER' && clinicIdFromStorage;
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
   
-  // For clinic managers, automatically use their clinic_id
+  // For clinic managers, automatically use their clinic_id from storage
   // For system admins, allow clinic selection
   const [selectedClinicId, setSelectedClinicId] = useState<string>(
-    isClinicManager ? (user?.clinic_id || '') : ''
+    isClinicManager ? (clinicIdFromStorage || '') : ''
   );
   
   const [activeTab, setActiveTab] = useState<'clinic-admins' | 'system-admins'>('clinic-admins');
@@ -43,15 +63,16 @@ export const UsersPage = () => {
   const [showCreateSystemAdminModal, setShowCreateSystemAdminModal] = useState(false);
   const [systemAdminToEdit, setSystemAdminToEdit] = useState<User | null>(null);
 
+
   // Fetch all clinics for the clinic filter (only for system admins)
   const { data: clinicsData } = useClinics({ limit: 100, is_active: true });
 
-  // Auto-set clinic_id for clinic managers
+  // Auto-set clinic_id for clinic managers from storage
   useEffect(() => {
-    if (isClinicManager && user?.clinic_id && !selectedClinicId) {
-      setSelectedClinicId(user.clinic_id);
+    if (isClinicManager && clinicIdFromStorage && !selectedClinicId) {
+      setSelectedClinicId(clinicIdFromStorage);
     }
-  }, [isClinicManager, user?.clinic_id, selectedClinicId]);
+  }, [isClinicManager, clinicIdFromStorage, selectedClinicId]);
 
   // For clinic managers, use general users hook with clinic_id and role filter
   // For system admins, use clinic admins hook (Managers only)
@@ -91,15 +112,19 @@ export const UsersPage = () => {
   const activateMutation = useActivateUser();
   const { success: showSuccess, error: showError } = useToastStore();
 
-  // System Admins hooks
-  const { data: systemAdminsData, isLoading: systemAdminsLoading, error: systemAdminsError } = useSystemAdmins({
-    page: systemAdminPage,
-    limit,
-    search: systemAdminSearch || undefined,
-    is_active: systemAdminStatusFilter === 'active' ? true : systemAdminStatusFilter === 'inactive' ? false : undefined,
-    sortBy: 'created_at',
-    sortOrder: 'DESC',
-  });
+  // System Admins hooks (only for System Admins)
+  const { data: systemAdminsData, isLoading: systemAdminsLoading, error: systemAdminsError } = useSystemAdmins(
+    isSystemAdmin
+      ? {
+          page: systemAdminPage,
+          limit,
+          search: systemAdminSearch || undefined,
+          is_active: systemAdminStatusFilter === 'active' ? true : systemAdminStatusFilter === 'inactive' ? false : undefined,
+          sortBy: 'created_at',
+          sortOrder: 'DESC',
+        }
+      : undefined
+  );
 
   const systemAdminDeleteMutation = useDeactivateUser();
   const systemAdminActivateMutation = useActivateUser();
@@ -233,19 +258,17 @@ export const UsersPage = () => {
             Users Management
           </h1>
           <p className="text-sm text-carbon/60">
-            Manage clinic administrators and view system users
+            Manage users and view system administrators
           </p>
         </div>
-        {activeTab === 'clinic-admins' && selectedClinicId && (
+        {activeTab === 'clinic-admins' && (
           <Button
             variant="primary"
             size="md"
-            onClick={() => {
-              navigate(`/clinics/${selectedClinicId}/admins/create`);
-            }}
+            onClick={() => navigate('/users/create')}
           >
             <MdAdd className="h-4 w-4 mr-2" />
-            {isClinicManager ? 'Create User' : 'Create Clinic Admin'}
+            Create User
           </Button>
         )}
         {activeTab === 'system-admins' && (
@@ -281,7 +304,7 @@ export const UsersPage = () => {
               }
             `}
           >
-            {isClinicManager ? 'Users' : 'Clinic Admins'}
+            Users
           </button>
           {/* Only show System Admins tab for system admins */}
           {isSystemAdmin && (

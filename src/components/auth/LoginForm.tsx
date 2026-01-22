@@ -129,6 +129,16 @@ export const LoginForm = () => {
               >
                 Sign In
               </Button>
+
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm text-azure-dragon hover:text-azure-dragon/80 transition-colors font-medium"
+                >
+                  Forgot Password?
+                </button>
+              </div>
             </form>
 
             <div className="mt-5 pt-5 border-t border-carbon/8">

@@ -15,6 +15,7 @@ export const useUsers = (params?: UserListParams) => {
   return useQuery({
     queryKey: ['users', params],
     queryFn: () => usersApi.list(params),
+    enabled: params !== undefined, // Only run if params are provided
   });
 };
 
@@ -47,6 +48,7 @@ export const useSystemAdmins = (params?: Omit<UserListParams, 'role' | 'clinic_i
         data: result.data.filter((user) => !user.clinic_id),
       };
     },
+    enabled: params !== undefined, // Only run if params are provided
   });
 };
 

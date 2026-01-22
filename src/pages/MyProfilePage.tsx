@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePatient } from '@/hooks/usePatients';
+import { useDoctors } from '@/hooks/useDoctors';
 import { useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
 import { MdAccountCircle, MdEmail, MdPhone, MdCalendarToday, MdPerson, MdInfo, MdBusiness, MdBadge, MdEdit, MdClose } from 'react-icons/md';
 
@@ -27,16 +29,25 @@ const editPatientSchema = z.object({
 type EditPatientFormData = z.infer<typeof editPatientSchema>;
 
 export const MyProfilePage = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdatePatient();
   const { success: showSuccess, error: showError } = useToastStore();
   
-  // Get patient data from user object (from /api/auth/me)
-  const patient = user?.patient;
-
+  const normalizedRole = role?.toUpperCase();
+  const isDoctor = normalizedRole === 'DOCTOR';
+  
+  // For doctors, fetch their doctor record
+  const { data: doctorsData, isLoading: isLoadingDoctor } = useDoctors({
+    user_id: user?.user_id,
+    limit: 1,
+  });
+  
+  const doctor = doctorsData?.data?.[0];
+  
   const {
     register,
     handleSubmit,
@@ -45,7 +56,10 @@ export const MyProfilePage = () => {
   } = useForm<EditPatientFormData>({
     resolver: zodResolver(editPatientSchema),
   });
-
+  
+  // Get patient data from user object (from /api/auth/me)
+  const patient = user?.patient;
+  
   // Update form when patient data loads
   useEffect(() => {
     if (patient) {
@@ -65,6 +79,22 @@ export const MyProfilePage = () => {
       });
     }
   }, [patient, reset]);
+  
+  // Redirect doctors to their doctor detail page
+  useEffect(() => {
+    if (isDoctor && doctor?.doctor_id && !isLoadingDoctor) {
+      navigate(`/doctors/${doctor.doctor_id}`, { replace: true });
+    }
+  }, [isDoctor, doctor?.doctor_id, navigate, isLoadingDoctor]);
+  
+  // Show loading while redirecting doctors
+  if (isDoctor) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loading />
+      </div>
+    );
+  }
 
   const onSubmit = async (data: EditPatientFormData) => {
     if (!patient?.patient_id) return;

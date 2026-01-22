@@ -81,4 +81,29 @@ export const authApi = {
     );
     return response.data;
   },
+
+  /**
+   * Request password reset OTP
+   * POST /api/auth/forgot-password (Public)
+   */
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>('/auth/forgot-password', {
+      email,
+    });
+    return response.data;
+  },
+
+  /**
+   * Reset password with OTP
+   * POST /api/auth/reset-password (Public)
+   */
+  resetPassword: async (data: {
+    email: string;
+    otp_code: string;
+    new_password: string;
+    confirm_password: string;
+  }): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
+    return response.data;
+  },
 };
