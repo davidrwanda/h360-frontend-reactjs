@@ -1,9 +1,16 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { format, parseISO, addDays, startOfDay } from 'date-fns';
 import { useClinics } from '@/hooks/useClinics';
-import { Button, Input, Loading } from '@/components/ui';
+import { useClinicTypes } from '@/hooks/useClinicTypes';
+import { useSlots } from '@/hooks/useSlots';
+import { Button, Loading } from '@/components/ui';
+import { PublicHeader, PublicFooter } from '@/components/layout';
 import { LocationInput } from '@/components/clinics/LocationInput';
 import { ClinicAutocomplete } from '@/components/clinics/ClinicAutocomplete';
+import { ClinicSlotsDisplay } from '@/components/clinics/ClinicSlotsDisplay';
+import { ClinicMap } from '@/components/clinics/ClinicMap';
 import type { Clinic } from '@/api/clinics';
 import {
   MdSearch,
@@ -14,11 +21,8 @@ import {
   MdNotifications,
   MdSecurity,
   MdAccessibility,
-  MdPhone,
-  MdEmail,
   MdArrowForward,
   MdClose,
-  MdMenu,
   MdPerson,
   MdMedicalServices,
 } from 'react-icons/md';
@@ -28,9 +32,8 @@ export const LandingPage = () => {
   const [clinicName, setClinicName] = useState('');
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [location, setLocation] = useState('');
-  const [service, setService] = useState('');
+  const [selectedClinicTypeId, setSelectedClinicTypeId] = useState<string>('');
   const [showResults, setShowResults] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     address?: string;
     city?: string;
@@ -40,6 +43,14 @@ export const LandingPage = () => {
     latitude?: number;
     longitude?: number;
   } | null>(null);
+  const [radiusKm, setRadiusKm] = useState(50);
+  const [maxClinics, setMaxClinics] = useState(10);
+  const queryClient = useQueryClient();
+  const searchTriggeredRef = useRef(false);
+
+  // Fetch clinic types for the dropdown
+  const { data: clinicTypes } = useClinicTypes({ include_inactive: false });
+
 
   // Fetch clinics based on search
   // If clinic is selected, search only by clinic name
@@ -55,37 +66,213 @@ export const LandingPage = () => {
         }),
   });
 
-  const clinics = clinicsData?.data || [];
+  const clinics = useMemo(() => clinicsData?.data || [], [clinicsData?.data]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Calculate date range: today to two weeks from today
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const twoWeeksFromToday = useMemo(() => addDays(today, 14), [today]);
+
+  // Build slots query params based on current state - memoized to prevent unnecessary refetches
+  const slotsParams = useMemo(() => {
+    const baseParams = {
+      dateFrom: format(today, 'yyyy-MM-dd'),
+      dateTo: format(twoWeeksFromToday, 'yyyy-MM-dd'),
+      available_only: true,
+      limit: 100,
+    };
+
+    if (selectedClinic) {
+      return {
+        ...baseParams,
+        clinic_id: selectedClinic.clinic_id,
+        clinic_type_id: selectedClinicTypeId || undefined,
+      };
+    }
+    if (selectedLocation?.latitude && selectedLocation?.longitude) {
+      return {
+        ...baseParams,
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        radius_km: radiusKm,
+        max_clinics: maxClinics,
+        clinic_type_id: selectedClinicTypeId || undefined,
+      };
+    }
+    if (selectedClinicTypeId) {
+      return {
+        ...baseParams,
+        clinic_type_id: selectedClinicTypeId,
+      };
+    }
+    return undefined;
+  }, [selectedClinic, selectedLocation, selectedClinicTypeId, radiusKm, maxClinics, today, twoWeeksFromToday]);
+
+  // Fetch slots - only when showResults is true (after search button click)
+  const { data: slotsData, isLoading: isLoadingSlots, refetch: refetchSlots } = useSlots(
+    showResults ? slotsParams : undefined
+  );
+
+  // Extract unique clinic IDs from slots
+  const clinicIdsFromSlots = useMemo(() => {
+    if (!slotsData?.data) return [];
+    const clinicIdSet = new Set<string>();
+    slotsData.data.forEach((slot) => {
+      if (slot.clinic_id) {
+        clinicIdSet.add(slot.clinic_id);
+      }
+    });
+    return Array.from(clinicIdSet);
+  }, [slotsData]);
+
+  // Fetch clinic details for clinics from slots (if we have clinic IDs and they're not in our clinics list)
+  const clinicsToFetch = useMemo(() => {
+    if (clinicIdsFromSlots.length === 0) return [];
+    return clinicIdsFromSlots.filter(
+      (id) => !clinics.some((c) => c.clinic_id === id && c.latitude && c.longitude)
+    );
+  }, [clinicIdsFromSlots, clinics]);
+
+  // Fetch clinics by IDs if we have clinics from slots that don't have location data
+  const { data: fetchedClinicsData } = useClinics({
+    ...(clinicsToFetch.length > 0
+      ? {
+          // Fetch all active clinics and filter client-side (API might not support multiple IDs)
+          is_active: true,
+          limit: 100,
+        }
+      : undefined),
+  });
+
+  // Merge all clinic data
+  const allClinics = useMemo(() => {
+    const clinicMap = new Map<string, Clinic>();
+    
+    // Add clinics from initial search
+    clinics.forEach((clinic) => {
+      clinicMap.set(clinic.clinic_id, clinic);
+    });
+    
+    // Add fetched clinics (if any)
+    if (fetchedClinicsData?.data) {
+      fetchedClinicsData.data.forEach((clinic) => {
+        if (clinicsToFetch.includes(clinic.clinic_id)) {
+          clinicMap.set(clinic.clinic_id, clinic);
+        }
+      });
+    }
+    
+    return Array.from(clinicMap.values());
+  }, [clinics, fetchedClinicsData, clinicsToFetch]);
+
+  // If we have slots, extract unique clinics from slots and merge with clinic data
+  const clinicsFromSlots = useMemo(() => {
+    // If slotsData exists (even if empty), process it - this ensures we clear old data
+    if (slotsData === undefined) return undefined; // No search performed yet
+    if (!slotsData.data || slotsData.data.length === 0) return []; // Empty results - clear previous data
+    
+    const clinicMap = new Map<string, Clinic>();
+    slotsData.data.forEach((slot) => {
+      if (!clinicMap.has(slot.clinic_id)) {
+        // Find clinic from our merged clinics list (which has full data including lat/lng)
+        const clinic = allClinics.find((c) => c.clinic_id === slot.clinic_id);
+        if (clinic) {
+          clinicMap.set(slot.clinic_id, clinic);
+        } else {
+          // Create minimal clinic from slot data (fallback - but should have location from fetched data)
+          clinicMap.set(slot.clinic_id, {
+            clinic_id: slot.clinic_id,
+            name: slot.clinic_name,
+            is_active: true,
+          } as Clinic);
+        }
+      }
+    });
+    return Array.from(clinicMap.values());
+  }, [slotsData, allClinics]);
+
+  // Determine which clinics to display
+  const displayClinics = useMemo(() => {
+    if (selectedClinic) {
+      return [selectedClinic];
+    }
+    // If we have slots data (even if empty array), use clinics from slots
+    // This ensures we show empty state when search returns no results
+    if (slotsData !== undefined) {
+      return clinicsFromSlots || [];
+    }
+    // Only use clinics array if we haven't searched yet (for initial state)
+    return clinics;
+  }, [selectedClinic, slotsData, clinicsFromSlots, clinics]);
+
+  // Normalize clinic latitude/longitude (handle string to number conversion)
+  const normalizedDisplayClinics = useMemo(() => {
+    return displayClinics.map((clinic) => ({
+      ...clinic,
+      latitude: clinic.latitude
+        ? typeof clinic.latitude === 'string'
+          ? parseFloat(clinic.latitude)
+          : clinic.latitude
+        : undefined,
+      longitude: clinic.longitude
+        ? typeof clinic.longitude === 'string'
+          ? parseFloat(clinic.longitude)
+          : clinic.longitude
+        : undefined,
+    }));
+  }, [displayClinics]);
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     // Search logic:
     // 1. If clinic is selected, search by clinic only
-    // 2. If no clinic, require address (location) to search
-    // 3. Service type is optional but works with address
-    if (selectedClinic || (location && selectedLocation)) {
+    // 2. If location is provided, search by location
+    // 3. If clinic type is selected, search by clinic type only
+    // 4. Clinic type can be combined with location or clinic
+    if (selectedClinic || (location && selectedLocation) || selectedClinicTypeId) {
+      searchTriggeredRef.current = true;
       setShowResults(true);
-      // Scroll to results section
+      
+      // Invalidate all slots queries to clear cache and force fresh fetch
+      await queryClient.invalidateQueries({ queryKey: ['slots', 'list'] });
+      // Remove old queries to ensure fresh data
+      await queryClient.removeQueries({ queryKey: ['slots', 'list'] });
+      
+      // Small delay to ensure state is updated before refetch
+      setTimeout(async () => {
+        // Refetch with current params
+        if (refetchSlots) {
+          await refetchSlots();
+        }
+      }, 100);
+      
+      // Scroll to results section immediately
       setTimeout(() => {
         const resultsSection = document.getElementById('search-results');
         if (resultsSection) {
-          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Scroll with offset to account for sticky header
+          const headerOffset = 80;
+          const elementPosition = resultsSection.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth',
+          });
         }
-      }, 100);
+      }, 50);
     }
-  };
-
-  const handleClinicClick = (clinicId: string) => {
-    navigate(`/register?clinic_id=${clinicId}`);
   };
 
   const clearSearch = () => {
     setClinicName('');
     setSelectedClinic(null);
     setLocation('');
-    setService('');
+    setSelectedClinicTypeId('');
     setSelectedLocation(null);
     setShowResults(false);
+    setRadiusKm(50); // Reset to default
+    setMaxClinics(10); // Reset to default
+    searchTriggeredRef.current = false;
   };
 
   const handleClinicSelect = (clinic: Clinic) => {
@@ -96,6 +283,25 @@ export const LandingPage = () => {
     setSelectedLocation(null);
   };
 
+  // Auto-refetch when clinic type changes and results are already showing
+  useEffect(() => {
+    // Only auto-refetch if results are already showing (user has clicked search)
+    // This prevents auto-fetching when user just selects a type before clicking search
+    if (showResults && searchTriggeredRef.current && slotsParams) {
+      // Small delay to ensure state is fully updated
+      const timeoutId = setTimeout(async () => {
+        // Clear cache and force fresh fetch
+        await queryClient.invalidateQueries({ queryKey: ['slots', 'list'] });
+        await queryClient.removeQueries({ queryKey: ['slots', 'list'] });
+        refetchSlots();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClinicTypeId, showResults]);
+
   const handleClinicNameChange = (name: string) => {
     setClinicName(name);
     // Clear selected clinic if user changes the name manually
@@ -105,77 +311,12 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
       {/* Navigation Bar */}
-      <nav className="bg-white/95 backdrop-blur-sm border-b border-carbon/10 sticky top-0 z-50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MdLocalHospital className="h-8 w-8 text-azure-dragon" />
-              <div>
-                <span className="text-xl font-heading font-bold text-azure-dragon">H360</span>
-                <p className="text-xs text-carbon/60 -mt-1">Your healthcare appointment in one click</p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/login')}
-                className="text-carbon hover:text-azure-dragon"
-              >
-                Login
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate('/register')}
-              >
-                Register
-              </Button>
-            </div>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden text-carbon hover:text-azure-dragon"
-            >
-              <MdMenu className="h-6 w-6" />
-            </button>
-          </div>
-          
-          {/* Mobile Menu */}
-          {showMobileMenu && (
-            <div className="md:hidden py-4 border-t border-carbon/10">
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    navigate('/login');
-                    setShowMobileMenu(false);
-                  }}
-                  className="w-full justify-start"
-                >
-                  Login
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    navigate('/register');
-                    setShowMobileMenu(false);
-                  }}
-                  className="w-full"
-                >
-                  Register
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      <PublicHeader />
 
       {/* Hero Section with Background */}
-      <section className="relative min-h-[70vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative min-h-[60vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden pb-8">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -227,8 +368,23 @@ export const LandingPage = () => {
                                      '';
                   setLocation(displayValue);
                   
-                  // Don't auto-trigger search - let user click Search button
-                  // This allows users to finish selecting address before searching
+                  // Auto-trigger search when address is selected (if we have lat/lng)
+                  if (locationData.latitude && locationData.longitude) {
+                    setShowResults(true);
+                    // Scroll to results after a brief delay
+                    setTimeout(() => {
+                      const resultsSection = document.getElementById('search-results');
+                      if (resultsSection) {
+                        const headerOffset = 80;
+                        const elementPosition = resultsSection.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: 'smooth',
+                        });
+                      }
+                    }, 100);
+                  }
                 }}
                 placeholder="City or Postal Code"
                 className="pl-12 pr-4"
@@ -236,17 +392,22 @@ export const LandingPage = () => {
               />
             </div>
 
-            {/* Service Field */}
+            {/* Clinic Type Field */}
             <div className="flex-1 relative flex items-center">
-              <MdMedicalServices className="absolute left-4 h-5 w-5 text-azure-dragon/60 z-10" />
-              <Input
-                type="text"
-                placeholder="Service Type (Optional)"
-                value={service}
-                onChange={(e) => setService(e.target.value)}
-                className="pl-12 pr-4 py-4 text-base border-0 focus:ring-2 focus:ring-azure-dragon/20 rounded-xl h-full"
+              <MdMedicalServices className="absolute left-4 h-5 w-5 text-azure-dragon/60 z-10 pointer-events-none" />
+              <select
+                value={selectedClinicTypeId}
+                onChange={(e) => setSelectedClinicTypeId(e.target.value)}
+                className="pl-12 pr-4 py-4 text-base border-0 focus:ring-2 focus:ring-azure-dragon/20 rounded-xl h-full w-full bg-[#f5f5f5] text-carbon appearance-none cursor-pointer"
                 style={{ backgroundColor: '#f5f5f5' }}
-              />
+              >
+                <option value="">Clinic Type (Optional)</option>
+                {clinicTypes?.map((type) => (
+                  <option key={type.clinic_type_id} value={type.clinic_type_id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Search Button */}
@@ -271,59 +432,155 @@ export const LandingPage = () => {
             </Button>
           </form>
 
-          {/* Search Results */}
-          {showResults && (
-            <div id="search-results" className="mt-8 max-w-5xl mx-auto">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-h-[500px] overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loading size="lg" />
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-12">
-                    <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
-                    <p className="text-carbon/60 text-lg">
-                      Unable to search clinics. Please try again later.
-                    </p>
-                  </div>
-                ) : clinics.length > 0 ? (
-                  <>
-                    <div className="flex items-center justify-between mb-6">
-                      <p className="text-lg font-semibold text-carbon">
-                        Found {clinics.length} {clinics.length === 1 ? 'clinic' : 'clinics'}
-                      </p>
-                      <button
-                        onClick={clearSearch}
-                        className="text-sm text-carbon/60 hover:text-carbon flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-carbon/5 transition-colors"
-                      >
-                        <MdClose className="h-4 w-4" />
-                        Clear
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      {clinics.map((clinic) => (
-                        <ClinicCard
-                          key={clinic.clinic_id}
-                          clinic={clinic}
-                          onClick={() => handleClinicClick(clinic.clinic_id)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
-                    <p className="text-carbon/60 text-lg">No clinics found. Try a different search.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* Quick Features Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
+      {/* Map and Search Results Section */}
+      {(selectedLocation || showResults) && (
+        <section id="search-results" className={`${showResults ? 'pt-2 pb-12' : 'py-12'} px-4 sm:px-6 lg:px-8 bg-white-smoke`}>
+          <div className="mx-auto max-w-7xl">
+            {showResults && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-lg font-semibold text-carbon">
+                    {displayClinics.length > 0
+                      ? `Found ${displayClinics.length} ${displayClinics.length === 1 ? 'clinic' : 'clinics'}`
+                      : 'Search Results'}
+                  </p>
+                  <button
+                    onClick={clearSearch}
+                    className="text-sm text-carbon/60 hover:text-carbon flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-carbon/5 transition-colors"
+                  >
+                    <MdClose className="h-4 w-4" />
+                    Clear
+                  </button>
+                </div>
+                
+                {/* Search Filters - Only show when searching by location */}
+                {selectedLocation?.latitude && selectedLocation?.longitude && !selectedClinic && (
+                  <div className="bg-white rounded-lg border border-carbon/10 p-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-carbon mb-2">
+                          Search Radius: {radiusKm} km
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="100"
+                          value={radiusKm}
+                          onChange={(e) => setRadiusKm(Number(e.target.value))}
+                          className="w-full h-2 bg-carbon/10 rounded-lg appearance-none cursor-pointer accent-azure-dragon"
+                        />
+                        <div className="flex justify-between text-xs text-carbon/60 mt-1">
+                          <span>1 km</span>
+                          <span>100 km</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-carbon mb-2">
+                          Max Clinics: {maxClinics}
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="50"
+                          value={maxClinics}
+                          onChange={(e) => setMaxClinics(Number(e.target.value))}
+                          className="w-full h-2 bg-carbon/10 rounded-lg appearance-none cursor-pointer accent-azure-dragon"
+                        />
+                        <div className="flex justify-between text-xs text-carbon/60 mt-1">
+                          <span>1</span>
+                          <span>50</span>
+                        </div>
+                      </div>
+                    </div>
+                    {isLoadingSlots && (
+                      <div className="mt-3 text-sm text-carbon/60 flex items-center gap-2">
+                        <Loading size="sm" />
+                        <span>Updating results...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column: Clinic Slots (only show when there are results) */}
+              {showResults && (
+                <div className="lg:col-span-2 space-y-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loading size="lg" />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-12">
+                      <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
+                      <p className="text-carbon/60 text-lg">
+                        Unable to search clinics. Please try again later.
+                      </p>
+                    </div>
+                  ) : displayClinics.length > 0 ? (
+                    displayClinics.map((clinic) => (
+                      <ClinicSlotsDisplay
+                        key={clinic.clinic_id}
+                        clinic={clinic}
+                        onSlotSelect={(slot) => {
+                          // Navigate to auth page first (will redirect to booking if already logged in)
+                          const slotDate = format(parseISO(slot.slot_date), 'yyyy-MM-dd');
+                          navigate(`/book-appointment-auth?clinic_id=${clinic.clinic_id}&slot_id=${slot.slot_id}&slot_date=${slotDate}`);
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
+                      <p className="text-carbon/60 text-lg">No clinics found. Try a different search.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Right Column: Map (show when location is selected OR when clinics with location data are found) */}
+              {(selectedLocation?.latitude && selectedLocation?.longitude) ||
+              (showResults && normalizedDisplayClinics.length > 0 && normalizedDisplayClinics.some(c => c.latitude && c.longitude)) ? (
+                <div className={showResults ? 'lg:col-span-1' : 'lg:col-span-3'}>
+                  <div className="sticky top-4">
+                    <ClinicMap
+                      clinics={normalizedDisplayClinics.filter(c => c.latitude && c.longitude)}
+                      center={
+                        selectedLocation?.latitude && selectedLocation?.longitude
+                          ? {
+                              lat: selectedLocation.latitude,
+                              lng: selectedLocation.longitude,
+                            }
+                          : normalizedDisplayClinics.find(c => c.latitude && c.longitude)
+                            ? {
+                                lat: normalizedDisplayClinics.find(c => c.latitude && c.longitude)!.latitude!,
+                                lng: normalizedDisplayClinics.find(c => c.latitude && c.longitude)!.longitude!,
+                              }
+                            : undefined
+                      }
+                      userLocation={
+                        selectedLocation?.latitude && selectedLocation?.longitude
+                          ? {
+                              lat: selectedLocation.latitude,
+                              lng: selectedLocation.longitude,
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Quick Features Section - Only show when no search results */}
+      {!showResults && (
+        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="text-center">
@@ -364,9 +621,11 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white-smoke">
+      {/* Features Section - Only show when no search results */}
+      {!showResults && (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white-smoke">
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-heading font-bold text-carbon mb-4">
@@ -381,7 +640,7 @@ export const LandingPage = () => {
             <FeatureCard
               icon={<MdLocalHospital className="h-8 w-8" />}
               title="Find Clinics"
-              description="Search and discover healthcare clinics near you. Filter by location, services, and availability."
+              description="Search and discover healthcare clinics near you. Filter by location, clinic type, and availability."
             />
             <FeatureCard
               icon={<MdCalendarToday className="h-8 w-8" />}
@@ -411,9 +670,11 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
+      )}
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-azure-dragon to-azure-dragon/80">
+      {/* CTA Section - Only show when no search results */}
+      {!showResults && (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-azure-dragon to-azure-dragon/80">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-6">
             Ready to Get Started?
@@ -442,54 +703,10 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer */}
-      <footer className="bg-carbon text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <MdLocalHospital className="h-6 w-6" />
-                <span className="text-lg font-heading font-bold">H360</span>
-              </div>
-              <p className="text-white/70 text-sm">
-                Your trusted healthcare management platform. Connecting patients with quality healthcare providers.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>
-                  <Link to="/register" className="hover:text-white transition-colors">
-                    Register
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
-                    Login
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li className="flex items-center gap-2">
-                  <MdEmail className="h-4 w-4" />
-                  <span>support@h360.com</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <MdPhone className="h-4 w-4" />
-                  <span>+1 (555) 123-4567</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-white/10 text-center text-sm text-white/60">
-            <p>&copy; {new Date().getFullYear()} H360. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };
@@ -510,65 +727,3 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
   );
 };
 
-interface ClinicCardProps {
-  clinic: Clinic;
-  onClick: () => void;
-}
-
-const ClinicCard = ({ clinic, onClick }: ClinicCardProps) => {
-  const getFullAddress = () => {
-    const parts = [
-      clinic.address,
-      clinic.city,
-      clinic.state,
-      clinic.postal_code,
-      clinic.country,
-    ].filter(Boolean);
-    return parts.join(', ') || 'Address not available';
-  };
-
-  return (
-    <div
-      className="bg-white border border-carbon/10 rounded-xl p-5 cursor-pointer hover:shadow-lg hover:border-azure-dragon/30 transition-all"
-      onClick={onClick}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-azure-dragon/10 p-2 rounded-lg">
-              <MdLocalHospital className="h-5 w-5 text-azure-dragon" />
-            </div>
-            <h3 className="text-lg font-heading font-semibold text-carbon">{clinic.name}</h3>
-          </div>
-          {clinic.description && (
-            <p className="text-sm text-carbon/70 mb-3 line-clamp-2">{clinic.description}</p>
-          )}
-          <div className="space-y-2 text-sm text-carbon/60">
-            <div className="flex items-center gap-2">
-              <MdLocationOn className="h-4 w-4 shrink-0" />
-              <span className="line-clamp-1">{getFullAddress()}</span>
-            </div>
-            {clinic.phone && (
-              <div className="flex items-center gap-2">
-                <MdPhone className="h-4 w-4 shrink-0" />
-                <span>{clinic.phone}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          className="shrink-0"
-        >
-          Select
-          <MdArrowForward className="ml-1 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};

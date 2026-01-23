@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useClinic, useUpdateClinic } from '@/hooks/useClinics';
+import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useAuth } from '@/hooks/useAuth';
 import { useToastStore } from '@/store/toastStore';
 import { Input, Select, Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
@@ -154,6 +155,9 @@ const clinicSchema = z.object({
   // Financial Information
   tax_id: z.string().max(100).optional().or(z.literal('')),
   registration_number: z.string().max(100).optional().or(z.literal('')),
+
+  // Clinic Types
+  type_ids: z.array(z.string()).min(1, 'At least one clinic type is required').optional(),
 });
 
 type ClinicFormData = z.infer<typeof clinicSchema>;
@@ -164,6 +168,7 @@ export const EditClinicPage = () => {
   const { user, role } = useAuth();
   const { data: clinic, isLoading } = useClinic(id);
   const updateMutation = useUpdateClinic();
+  const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
 
   // Get clinic_id from storage (fallback to user object)
   const getClinicIdFromStorage = (): string | undefined => {
@@ -248,6 +253,7 @@ export const EditClinicPage = () => {
         image_url: clinic.image_url || '',
         tax_id: clinic.tax_id || '',
         registration_number: clinic.registration_number || '',
+        type_ids: clinic.type_ids || (clinic.types?.map(t => t.clinic_type_id) || clinic.clinic_types?.map(t => t.clinic_type_id) || []),
       });
     }
   }, [clinic, reset]);
@@ -417,16 +423,22 @@ export const EditClinicPage = () => {
                 label="Latitude"
                 type="number"
                 step="any"
-                placeholder="e.g., -1.9441"
+                placeholder="Auto-filled from address"
                 error={errors.latitude?.message}
+                helperText="Automatically generated from selected address"
+                readOnly
+                className="bg-carbon/5 cursor-not-allowed"
                 {...register('latitude', { valueAsNumber: true })}
               />
               <Input
                 label="Longitude"
                 type="number"
                 step="any"
-                placeholder="e.g., 30.0619"
+                placeholder="Auto-filled from address"
                 error={errors.longitude?.message}
+                helperText="Automatically generated from selected address"
+                readOnly
+                className="bg-carbon/5 cursor-not-allowed"
                 {...register('longitude', { valueAsNumber: true })}
               />
             </div>
@@ -505,6 +517,57 @@ export const EditClinicPage = () => {
                   options={languages}
                   {...register('language')}
                 />
+              </div>
+
+              {/* Clinic Types Multi-Select */}
+              <div>
+                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
+                  Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
+                </label>
+                {isLoadingTypes ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loading size="sm" />
+                    <span className="text-xs text-carbon/60">Loading clinic types...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
+                    <Controller
+                      name="type_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <>
+                          {clinicTypes?.map((type) => (
+                            <label
+                              key={type.clinic_type_id}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                value={type.clinic_type_id}
+                                checked={field.value?.includes(type.clinic_type_id) || false}
+                                onChange={(e) => {
+                                  const currentValue = field.value || [];
+                                  if (e.target.checked) {
+                                    field.onChange([...currentValue, type.clinic_type_id]);
+                                  } else {
+                                    field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
+                                  }
+                                }}
+                                className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
+                              />
+                              <span className="text-xs text-carbon">{type.name}</span>
+                            </label>
+                          ))}
+                        </>
+                      )}
+                    />
+                  </div>
+                )}
+                {errors.type_ids && (
+                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">
+                    {errors.type_ids.message}
+                  </p>
+                )}
               </div>
 
               <div>

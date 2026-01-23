@@ -107,7 +107,7 @@ export const useAuth = () => {
 /**
  * Hook for login functionality
  */
-export const useLogin = () => {
+export const useLogin = (options?: { skipNavigation?: boolean }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { login, setIsLoading } = useAuthStore();
@@ -131,11 +131,15 @@ export const useLogin = () => {
       // Update auth store
       login(normalizedUser, data.access_token, data.refresh_token);
       
-      // Invalidate and refetch user data
-      queryClient.setQueryData(['auth', 'me'], normalizedUser);
+      // Invalidate and refetch user data from /api/auth/me to get complete patient/employee data
+      // This ensures we get the full user object with nested patient/employee profiles
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
       
-      // Navigate to dashboard
-      navigate('/dashboard', { replace: true });
+      // Navigate to dashboard only if navigation is not skipped
+      if (!options?.skipNavigation) {
+        navigate('/dashboard', { replace: true });
+      }
     },
     onError: (error: Error) => {
       console.error('Login error:', error);

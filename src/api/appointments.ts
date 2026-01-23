@@ -39,6 +39,32 @@ export interface AppointmentListParams {
   sortOrder?: 'ASC' | 'DESC';
 }
 
+export interface TimeSlot {
+  hours: number;
+  minutes: number;
+  time: number;
+}
+
+export interface CreateAppointmentRequest {
+  // For registered patients
+  patient_id?: string;
+  
+  // For guest bookings
+  guest_name?: string;
+  guest_phone?: string;
+  guest_email?: string;
+  
+  // Required fields
+  doctor_id: string;
+  clinic_id: string;
+  service_id?: string;
+  appointment_date: string; // YYYY-MM-DD
+  start_time: TimeSlot;
+  end_time: TimeSlot;
+  reason?: string;
+  notes?: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -48,6 +74,19 @@ export interface PaginatedResponse<T> {
 }
 
 export const appointmentsApi = {
+  /**
+   * Create a new appointment
+   * POST /api/appointments
+   * Access: Public (for booking) or Authenticated users
+   */
+  create: async (data: CreateAppointmentRequest): Promise<Appointment> => {
+    const response = await apiClient.post<ApiResponse<Appointment> | Appointment>('/appointments', data);
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
   /**
    * Get list of appointments with pagination and filters
    * GET /api/appointments

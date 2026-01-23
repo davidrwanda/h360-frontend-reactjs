@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateClinicWithAdmin } from '@/hooks/useClinicFlow';
+import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useToastStore } from '@/store/toastStore';
-import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { AddressInput } from './AddressInput';
 import { MdBusiness, MdPerson } from 'react-icons/md';
@@ -45,6 +46,7 @@ const clinicWithAdminSchema = z.object({
   clinic_timezone: z.string().optional().or(z.literal('')),
   clinic_currency: z.string().optional().or(z.literal('')),
   clinic_language: z.string().optional().or(z.literal('')),
+  clinic_type_ids: z.array(z.string()).min(1, 'At least one clinic type is required').optional(),
 
   // Admin employee fields
   admin_first_name: z.string().min(1, 'First name is required'),
@@ -82,10 +84,12 @@ export const CreateClinicWithAdminForm = ({
   const [success, setSuccess] = useState(false);
   const createMutation = useCreateClinicWithAdmin();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
     setValue,
@@ -96,6 +100,7 @@ export const CreateClinicWithAdminForm = ({
       clinic_timezone: DEFAULT_TIMEZONE,
       clinic_currency: DEFAULT_CURRENCY,
       clinic_language: DEFAULT_LANGUAGE,
+      clinic_type_ids: [],
     },
   });
 
@@ -121,6 +126,7 @@ export const CreateClinicWithAdminForm = ({
           timezone: data.clinic_timezone || DEFAULT_TIMEZONE,
           currency: data.clinic_currency || DEFAULT_CURRENCY,
           language: data.clinic_language || DEFAULT_LANGUAGE,
+          type_ids: data.clinic_type_ids && data.clinic_type_ids.length > 0 ? data.clinic_type_ids : undefined,
         },
         admin: {
           first_name: data.admin_first_name,
@@ -293,6 +299,57 @@ export const CreateClinicWithAdminForm = ({
                 options={languages}
                 {...register('clinic_language')}
               />
+
+              {/* Clinic Types Multi-Select */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
+                  Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
+                </label>
+                {isLoadingTypes ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loading size="sm" />
+                    <span className="text-xs text-carbon/60">Loading clinic types...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
+                    <Controller
+                      name="clinic_type_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <>
+                          {clinicTypes?.map((type) => (
+                            <label
+                              key={type.clinic_type_id}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                value={type.clinic_type_id}
+                                checked={field.value?.includes(type.clinic_type_id) || false}
+                                onChange={(e) => {
+                                  const currentValue = field.value || [];
+                                  if (e.target.checked) {
+                                    field.onChange([...currentValue, type.clinic_type_id]);
+                                  } else {
+                                    field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
+                                  }
+                                }}
+                                className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
+                              />
+                              <span className="text-xs text-carbon">{type.name}</span>
+                            </label>
+                          ))}
+                        </>
+                      )}
+                    />
+                  </div>
+                )}
+                {errors.clinic_type_ids && (
+                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">
+                    {errors.clinic_type_ids.message}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

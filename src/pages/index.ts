@@ -17,6 +17,8 @@ export { PatientDetailPage } from './PatientDetailPage';
 export { CreatePatientPage } from './CreatePatientPage';
 export { EditPatientPage } from './EditPatientPage';
 export { PatientRegisterPage } from './PatientRegisterPage';
+export { BookAppointmentPage } from './BookAppointmentPage';
+export { BookAppointmentAuthPage } from './BookAppointmentAuthPage';
 export { LandingPage } from './LandingPage';
 export { MyAppointmentsPage } from './MyAppointmentsPage';
 export { MyProfilePage } from './MyProfilePage';

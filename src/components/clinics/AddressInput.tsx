@@ -22,7 +22,7 @@ interface AddressInputProps {
 
 declare global {
   interface Window {
-    google: {
+    google?: {
       maps: {
         places: {
           Autocomplete: new (
@@ -51,6 +51,25 @@ declare global {
             };
           };
         };
+        Map?: new (element: HTMLElement, options?: {
+          center?: { lat: number; lng: number };
+          zoom?: number;
+          styles?: Array<{ featureType: string; stylers: Array<{ saturation?: number; lightness?: number }> }>;
+          mapTypeControl?: boolean;
+          streetViewControl?: boolean;
+          fullscreenControl?: boolean;
+        }) => {
+          fitBounds: (bounds: { extend: (point: { lat: number; lng: number }) => void; isEmpty: () => boolean }) => void;
+        };
+        Marker?: new (options?: {
+          position?: { lat: number; lng: number };
+          map?: unknown;
+          title?: string;
+        }) => void;
+        LatLngBounds?: new () => {
+          extend: (point: { lat: number; lng: number }) => void;
+          isEmpty: () => boolean;
+        };
       };
     };
   }
@@ -67,7 +86,7 @@ export const AddressInput = ({
   className,
 }: AddressInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<InstanceType<typeof window.google.maps.places.Autocomplete> | null>(null);
+  const autocompleteRef = useRef<InstanceType<NonNullable<typeof window.google>['maps']['places']['Autocomplete']> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
 
@@ -132,10 +151,11 @@ export const AddressInput = ({
   // Initialize autocomplete when Google Maps is loaded (only if API key is available)
   useEffect(() => {
     if (!hasApiKey || !isLoaded || !inputRef.current || autocompleteRef.current) return;
+    if (!window.google?.maps?.places?.Autocomplete) return;
 
     const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-      types: ['address'],
-      componentRestrictions: { country: 'rw' }, // Restrict to Rwanda
+      types: ['geocode'], // Use 'geocode' to include addresses and locations in Rwanda
+      componentRestrictions: { country: 'rw' }, // Restrict to Rwanda only
       fields: [
         'formatted_address',
         'address_components',

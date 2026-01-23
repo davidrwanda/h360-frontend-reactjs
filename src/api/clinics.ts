@@ -46,6 +46,27 @@ export interface Clinic {
   image_url?: string;
   tax_id?: string;
   registration_number?: string;
+  type_ids?: string[];
+  types?: Array<{
+    clinic_type_id: string;
+    name: string;
+    code: string;
+    icon?: string;
+    color?: string;
+  }>;
+  clinic_types?: Array<{
+    clinic_type_id: string;
+    name: string;
+    code: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    display_order: number;
+    is_active: boolean;
+    is_system: boolean;
+    created_at: string;
+    updated_at: string;
+  }>;
   created_at: string;
   updated_at: string;
 }
@@ -84,6 +105,7 @@ export interface CreateClinicRequest {
   image_url?: string;
   tax_id?: string;
   registration_number?: string;
+  type_ids?: string[];
 }
 
 export interface UpdateClinicRequest extends Partial<CreateClinicRequest> {

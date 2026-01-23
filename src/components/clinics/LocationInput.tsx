@@ -20,7 +20,7 @@ interface LocationInputProps {
 
 declare global {
   interface Window {
-    google: {
+    google?: {
       maps: {
         places: {
           Autocomplete: new (
@@ -49,6 +49,25 @@ declare global {
             };
           };
         };
+        Map?: new (element: HTMLElement, options?: {
+          center?: { lat: number; lng: number };
+          zoom?: number;
+          styles?: Array<{ featureType: string; stylers: Array<{ saturation?: number; lightness?: number }> }>;
+          mapTypeControl?: boolean;
+          streetViewControl?: boolean;
+          fullscreenControl?: boolean;
+        }) => {
+          fitBounds: (bounds: { extend: (point: { lat: number; lng: number }) => void; isEmpty: () => boolean }) => void;
+        };
+        Marker?: new (options?: {
+          position?: { lat: number; lng: number };
+          map?: unknown;
+          title?: string;
+        }) => void;
+        LatLngBounds?: new () => {
+          extend: (point: { lat: number; lng: number }) => void;
+          isEmpty: () => boolean;
+        };
       };
     };
   }
@@ -63,7 +82,7 @@ export const LocationInput = ({
   disabled = false,
 }: LocationInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<InstanceType<typeof window.google.maps.places.Autocomplete> | null>(null);
+  const autocompleteRef = useRef<InstanceType<NonNullable<typeof window.google>['maps']['places']['Autocomplete']> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -90,20 +109,20 @@ export const LocationInput = ({
   // Load Google Places API script
   useEffect(() => {
     if (!hasApiKey) {
-      return;
+      return undefined;
     }
 
-    if (window.google?.maps?.places) {
+    if (window.google?.maps?.places?.Autocomplete) {
       console.log('[LocationInput] Google Maps already loaded');
       setIsLoaded(true);
-      return;
+      return undefined;
     }
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
       console.log('[LocationInput] Google Maps script already exists, waiting for load...');
       const checkGoogle = setInterval(() => {
-        if (window.google?.maps?.places) {
+        if (window.google?.maps?.places?.Autocomplete) {
           console.log('[LocationInput] Google Maps loaded successfully');
           setIsLoaded(true);
           clearInterval(checkGoogle);
@@ -112,7 +131,7 @@ export const LocationInput = ({
       
       // Timeout after 10 seconds
       setTimeout(() => {
-        if (!window.google?.maps?.places) {
+        if (!window.google?.maps?.places?.Autocomplete) {
           console.error('[LocationInput] Timeout waiting for Google Maps to load');
           setLoadError('Timeout loading Google Maps API');
           setIsLoaded(true); // Allow manual input
@@ -124,10 +143,12 @@ export const LocationInput = ({
 
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey || apiKey === 'your_google_maps_api_key_here' || apiKey.trim() === '') {
-      return;
+      return undefined;
     }
 
     console.log('[LocationInput] Loading Google Maps API script...');
+    
+    let checkPlacesInterval: NodeJS.Timeout | null = null;
     
     const script = document.createElement('script');
     // Using Maps JavaScript API with Places library (works with Places API New)
@@ -136,14 +157,31 @@ export const LocationInput = ({
     script.defer = true;
     script.onload = () => {
       console.log('[LocationInput] Google Maps script loaded successfully');
-      if (window.google?.maps?.places) {
-        setIsLoaded(true);
-        setLoadError(null);
-      } else {
-        console.error('[LocationInput] Script loaded but Google Maps API not available');
-        setLoadError('Google Maps API not available after script load');
-        setIsLoaded(true);
-      }
+      // Wait for places library to be fully loaded
+      checkPlacesInterval = setInterval(() => {
+        if (window.google?.maps?.places?.Autocomplete) {
+          console.log('[LocationInput] Google Maps Places API ready');
+          setIsLoaded(true);
+          setLoadError(null);
+          if (checkPlacesInterval) {
+            clearInterval(checkPlacesInterval);
+            checkPlacesInterval = null;
+          }
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        if (checkPlacesInterval) {
+          clearInterval(checkPlacesInterval);
+          checkPlacesInterval = null;
+        }
+        if (!window.google?.maps?.places?.Autocomplete) {
+          console.error('[LocationInput] Script loaded but Google Maps Places API not available');
+          setLoadError('Google Maps Places API not available after script load');
+          setIsLoaded(true); // Allow manual input
+        }
+      }, 5000);
     };
     script.onerror = (error) => {
       console.error('[LocationInput] Failed to load Google Maps API script', error);
@@ -151,16 +189,29 @@ export const LocationInput = ({
       setIsLoaded(true);
     };
     document.head.appendChild(script);
+    
+    return () => {
+      if (checkPlacesInterval) {
+        clearInterval(checkPlacesInterval);
+      }
+    };
   }, [hasApiKey]);
 
   // Initialize autocomplete
   useEffect(() => {
     if (!hasApiKey || !isLoaded || !inputRef.current || autocompleteRef.current || disabled) return;
+    
+    // Double-check that places API is available before initializing
+    if (!window.google?.maps?.places?.Autocomplete) {
+      console.warn('[LocationInput] Places API not ready, skipping autocomplete initialization');
+      return;
+    }
 
     try {
       console.log('[LocationInput] Initializing Google Places Autocomplete...');
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'], // Search for addresses (includes cities, postal codes, full addresses)
+        types: ['geocode'], // Search for addresses and locations (includes cities, postal codes, full addresses)
+        componentRestrictions: { country: 'rw' }, // Restrict to Rwanda only
         fields: ['formatted_address', 'address_components', 'name', 'geometry.location'],
       });
 

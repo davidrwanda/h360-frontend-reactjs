@@ -14,11 +14,16 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export const LoginForm = () => {
+interface LoginFormProps {
+  onSuccess?: () => void;
+  showBackButton?: boolean;
+}
+
+export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }: LoginFormProps) => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const loginMutation = useLogin();
+  const loginMutation = useLogin({ skipNavigation: !!onSuccess });
 
   const {
     register,
@@ -32,6 +37,13 @@ export const LoginForm = () => {
     setError(null);
     try {
       await loginMutation.mutateAsync(data);
+      // Call onSuccess callback if provided (for modal usage)
+      // Use a small delay to ensure state is updated
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+        }, 200);
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || 'Login failed. Please check your credentials.');

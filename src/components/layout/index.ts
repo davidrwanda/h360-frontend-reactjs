@@ -3,3 +3,5 @@ export { Sidebar } from './Sidebar';
 export { MobileMenu } from './MobileMenu';
 export { BottomNav } from './BottomNav';
 export { MainLayout } from './MainLayout';
+export { PublicHeader } from './PublicHeader';
+export { PublicFooter } from './PublicFooter';

@@ -22,6 +22,8 @@ import { PatientDetailPage } from '@/pages/PatientDetailPage';
 import { CreatePatientPage } from '@/pages/CreatePatientPage';
 import { EditPatientPage } from '@/pages/EditPatientPage';
 import { PatientRegisterPage } from '@/pages/PatientRegisterPage';
+import { BookAppointmentPage } from '@/pages/BookAppointmentPage';
+import { BookAppointmentAuthPage } from '@/pages/BookAppointmentAuthPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
@@ -64,6 +66,14 @@ export const router = createBrowserRouter([
   {
     path: '/patients/register',
     element: <PatientRegisterPage />,
+  },
+  {
+    path: '/book-appointment-auth',
+    element: <BookAppointmentAuthPage />,
+  },
+  {
+    path: '/book-appointment',
+    element: <BookAppointmentPage />,
   },
   {
     path: '/',
