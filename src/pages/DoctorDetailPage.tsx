@@ -4,7 +4,7 @@ import { useDoctor } from '@/hooks/useDoctors';
 import { useDoctorServices, useRemoveDoctorFromService } from '@/hooks/useServices';
 import { Button, Card, CardHeader, CardTitle, CardContent, Loading, DeleteConfirmationModal } from '@/components/ui';
 import { AssignServiceForm } from '@/components/doctors/AssignServiceForm';
-import { MdArrowBack, MdEdit, MdLocalHospital, MdEmail, MdPhone, MdBusiness, MdBadge, MdPerson, MdSchool, MdWork, MdVerified, MdMedicalServices, MdDelete, MdAccessTime, MdAttachMoney } from 'react-icons/md';
+import { MdArrowBack, MdEdit, MdLocalHospital, MdEmail, MdPhone, MdBusiness, MdBadge, MdPerson, MdSchool, MdWork, MdVerified, MdMedicalServices, MdDelete, MdAccessTime, MdAttachMoney, MdSchedule } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -27,6 +27,8 @@ const DoctorDetailPage = () => {
   
   // Check if user can manage service assignments (Admin, Manager)
   const canManageServices = normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER';
+  // Check if user can manage doctor calendar (Admin, Manager)
+  const canManageCalendar = normalizedRole === 'ADMIN' || normalizedRole === 'MANAGER';
 
   const handleRemoveService = async () => {
     if (!serviceToRemove) return;
@@ -94,16 +96,28 @@ const DoctorDetailPage = () => {
               View doctor information and profile
             </p>
           </div>
-          {canEdit && (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => navigate(`/doctors/${doctor.doctor_id}/edit`)}
-            >
-              <MdEdit className="h-4 w-4 mr-2" />
-              Edit My Profile
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {canManageCalendar && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => navigate(`/doctors/${doctor.doctor_id}/timetable`)}
+              >
+                <MdSchedule className="h-4 w-4 mr-2" />
+                Timetable
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => navigate(`/doctors/${doctor.doctor_id}/edit`)}
+              >
+                <MdEdit className="h-4 w-4 mr-2" />
+                Edit My Profile
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

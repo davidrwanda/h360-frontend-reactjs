@@ -92,6 +92,40 @@ export interface AvailableDoctorsParams {
   service_id?: string;
 }
 
+export interface GenerateSlotsRequest {
+  clinic_id: string;
+  doctor_id?: string;
+  service_id?: string;
+  is_clinic_level?: boolean;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  slot_duration_minutes?: number;
+  max_concurrent_appointments?: number;
+  // Custom time range (if no timetable exists)
+  days_of_week?: number[]; // 1-7 (Monday-Sunday)
+  day_start_time?: string; // "HH:mm"
+  day_end_time?: string; // "HH:mm"
+}
+
+export interface GenerateSlotsResponse {
+  created: number;
+  skipped: number;
+  slots: AppointmentSlot[];
+}
+
+export interface RegenerateFutureSlotsRequest {
+  clinic_id: string;
+  doctor_id?: string;
+  end_date?: string; // YYYY-MM-DD
+}
+
+export interface RegenerateFutureSlotsResponse {
+  deleted: number;
+  regenerated: number;
+  skipped: number;
+  slots: AppointmentSlot[];
+}
+
 export const slotsApi = {
   /**
    * Get list of available appointment slots
@@ -125,5 +159,37 @@ export const slotsApi = {
       return (response.data as ApiResponse<AvailableDoctor[]>).data;
     }
     return response.data as AvailableDoctor[];
+  },
+
+  /**
+   * Generate slots manually
+   * POST /api/slots/generate
+   * Access: Public (no auth required in current implementation)
+   */
+  generate: async (data: GenerateSlotsRequest): Promise<GenerateSlotsResponse> => {
+    const response = await apiClient.post<
+      ApiResponse<GenerateSlotsResponse> | GenerateSlotsResponse
+    >('/slots/generate', data);
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<GenerateSlotsResponse>).data;
+    }
+    return response.data as GenerateSlotsResponse;
+  },
+
+  /**
+   * Regenerate future slots
+   * POST /api/slots/regenerate-future
+   * Access: Public (no auth required in current implementation)
+   */
+  regenerateFuture: async (
+    data: RegenerateFutureSlotsRequest
+  ): Promise<RegenerateFutureSlotsResponse> => {
+    const response = await apiClient.post<
+      ApiResponse<RegenerateFutureSlotsResponse> | RegenerateFutureSlotsResponse
+    >('/slots/regenerate-future', data);
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<RegenerateFutureSlotsResponse>).data;
+    }
+    return response.data as RegenerateFutureSlotsResponse;
   },
 };

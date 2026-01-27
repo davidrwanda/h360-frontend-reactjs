@@ -1,16 +1,18 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useSlots, useAvailableDoctors } from '@/hooks/useSlots';
 import { useServices } from '@/hooks/useServices';
+import type { AppointmentSlot } from '@/api/slots';
 import { useAuth } from '@/hooks/useAuth';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
 import { PublicHeader, PublicFooter } from '@/components/layout';
+import { cn } from '@/utils/cn';
 import {
   MdArrowBack,
   MdCalendarToday,
@@ -164,6 +166,85 @@ export const BookAppointmentPage = () => {
   }, [selectedSlot, setValue]);
 
   const selectedDoctorId = watch('doctor_id');
+  const [selectedAlternativeSlot, setSelectedAlternativeSlot] = useState<string | null>(null);
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+
+  // Reset expanded days and selected alternative slot when doctor changes
+  useEffect(() => {
+    setExpandedDays(new Set());
+    setSelectedAlternativeSlot(null);
+  }, [selectedDoctorId]);
+
+  // Check if selected doctor is available for the original slot
+  const selectedDoctorAvailable = useMemo(() => {
+    if (!selectedDoctorId) return true;
+    if (!availableDoctors.length) return false; // If no doctors in list, assume not available
+    const doctor = availableDoctors.find((d) => d.doctor_id === selectedDoctorId);
+    return doctor?.isAvailable ?? false; // If doctor not found, assume not available
+  }, [selectedDoctorId, availableDoctors]);
+
+  // Fetch alternative slots for selected doctor if not available for original slot
+  const weekStart = useMemo(() => {
+    if (!slotDateParam) return null;
+    const date = parseISO(slotDateParam);
+    return startOfWeek(date, { weekStartsOn: 1 });
+  }, [slotDateParam]);
+
+  const weekEnd = useMemo(() => {
+    if (!weekStart) return null;
+    return endOfWeek(weekStart, { weekStartsOn: 1 });
+  }, [weekStart]);
+
+  const { data: alternativeSlotsData } = useSlots(
+    selectedDoctorId && !selectedDoctorAvailable && clinicId && weekStart && weekEnd
+      ? {
+          clinic_id: clinicId,
+          doctor_id: selectedDoctorId,
+          dateFrom: format(weekStart, 'yyyy-MM-dd'),
+          dateTo: format(weekEnd, 'yyyy-MM-dd'),
+          available_only: true,
+          limit: 1000,
+        }
+      : undefined
+  );
+
+  const alternativeSlots = useMemo(() => {
+    const slots = alternativeSlotsData?.data;
+    if (!slots) return {} as Record<string, AppointmentSlot[]>;
+    // Group slots by date
+    const grouped: Record<string, AppointmentSlot[]> = {};
+    slots.forEach((slot) => {
+      const dateKey = slot.slot_date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey]!.push(slot);
+    });
+    return grouped;
+  }, [alternativeSlotsData]);
+
+  // Check if there are days with more than 5 slots
+  const hasDaysWithMoreSlots = useMemo(() => {
+    return Object.values(alternativeSlots).some(slots => slots.length > 5);
+  }, [alternativeSlots]);
+
+  // Check if all days are expanded
+  const isAllExpanded = useMemo(() => {
+    if (!hasDaysWithMoreSlots) return false;
+    const daysWithMore = Object.keys(alternativeSlots).filter(
+      dateStr => (alternativeSlots[dateStr]?.length ?? 0) > 5
+    );
+    return daysWithMore.length > 0 && daysWithMore.every(dateStr => expandedDays.has(dateStr));
+  }, [alternativeSlots, expandedDays, hasDaysWithMoreSlots]);
+
+  // Determine which slot to display (alternative if selected, otherwise original)
+  const displaySlot = useMemo(() => {
+    if (selectedAlternativeSlot && alternativeSlotsData?.data) {
+      const altSlot = alternativeSlotsData.data.find((s) => s.slot_id === selectedAlternativeSlot);
+      if (altSlot) return altSlot;
+    }
+    return selectedSlot;
+  }, [selectedAlternativeSlot, alternativeSlotsData, selectedSlot]);
 
   // Filter services based on selected doctor (if doctor has assigned services)
   const availableServices = useMemo(() => {
@@ -185,18 +266,32 @@ export const BookAppointmentPage = () => {
       return;
     }
 
-    // Validate that selected doctor is available
-    if (data.doctor_id) {
+    // Use alternative slot if selected, otherwise use original slot
+    if (!selectedSlot) {
+      showError('Slot information is missing. Please go back and select a slot again.');
+      return;
+    }
+    
+    let slotToUse = selectedSlot;
+    if (selectedAlternativeSlot && alternativeSlotsData?.data) {
+      const altSlot = alternativeSlotsData.data.find((s) => s.slot_id === selectedAlternativeSlot);
+      if (altSlot) {
+        slotToUse = altSlot;
+      }
+    }
+
+    // Validate that selected doctor is available (only if using original slot)
+    if (!selectedAlternativeSlot && data.doctor_id) {
       const selectedDoctor = availableDoctors.find((d) => d.doctor_id === data.doctor_id);
       if (selectedDoctor && !selectedDoctor.isAvailable) {
-        showError('The selected doctor is not available for this time slot.');
+        showError('The selected doctor is not available for this time slot. Please select an alternative slot below.');
         return;
       }
     }
 
     try {
       // Parse appointment date from slot
-      const appointmentDate = format(parseISO(selectedSlot.slot_date), 'yyyy-MM-dd');
+      const appointmentDate = format(parseISO(slotToUse.slot_date), 'yyyy-MM-dd');
 
       // Build appointment payload
       // For registered patients, use patient_id; for guests, use guest information
@@ -222,8 +317,8 @@ export const BookAppointmentPage = () => {
         clinic_id: clinicId,
         service_id: data.service_id || undefined,
         appointment_date: appointmentDate,
-        start_time: selectedSlot.start_time,
-        end_time: selectedSlot.end_time,
+        start_time: slotToUse.start_time,
+        end_time: slotToUse.end_time,
         reason: data.reason || undefined,
         notes: data.notes || undefined,
         // Include patient_id for registered patients
@@ -302,9 +397,10 @@ export const BookAppointmentPage = () => {
   }
 
   // Format date and time for display
-  const appointmentDate = parseISO(selectedSlot.slot_date);
+  // displaySlot is guaranteed to be non-null here due to early return check above
+  const appointmentDate = parseISO(displaySlot!.slot_date);
   const formattedDate = format(appointmentDate, 'EEEE, MMMM d, yyyy');
-  const formattedTime = selectedSlot.formatted_time_slot;
+  const formattedTime = displaySlot!.formatted_time_slot;
 
   return (
     <div className="flex min-h-screen flex-col bg-white-smoke">
@@ -351,16 +447,23 @@ export const BookAppointmentPage = () => {
                 <MdLocalHospital className="h-5 w-5 text-azure-dragon/60" />
                 <div>
                   <p className="text-xs text-carbon/60 mb-1">Clinic</p>
-                  <p className="text-sm font-medium text-carbon">{selectedSlot.clinic_name}</p>
+                  <p className="text-sm font-medium text-carbon">{displaySlot!.clinic_name}</p>
                 </div>
               </div>
-              {selectedSlot.doctor_name && (
+              {displaySlot!.doctor_name && (
                 <div className="flex items-center gap-3">
                   <MdPerson className="h-5 w-5 text-azure-dragon/60" />
                   <div>
                     <p className="text-xs text-carbon/60 mb-1">Doctor</p>
-                    <p className="text-sm font-medium text-carbon">{selectedSlot.doctor_name}</p>
+                    <p className="text-sm font-medium text-carbon">{displaySlot!.doctor_name}</p>
                   </div>
+                </div>
+              )}
+              {selectedAlternativeSlot && (
+                <div className="col-span-2">
+                  <p className="text-xs text-azure-dragon/80 font-medium">
+                    ✓ Using alternative time slot
+                  </p>
                 </div>
               )}
             </div>
@@ -387,18 +490,20 @@ export const BookAppointmentPage = () => {
                 render={({ field }) => (
                   <select
                     {...field}
-                    className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
                   >
                     <option value="">Select a doctor</option>
                     {availableDoctors.map((doctor) => (
                       <option
                         key={doctor.doctor_id}
                         value={doctor.doctor_id}
-                        disabled={!doctor.isAvailable}
+                        style={!doctor.isAvailable ? { color: '#666', fontStyle: 'italic' } : {}}
                       >
                         {doctor.doctor_name} {doctor.specialty ? `- ${doctor.specialty}` : ''}
-                        {!doctor.isAvailable && doctor.unavailability_reason
-                          ? ` (${doctor.unavailability_reason})`
+                        {!doctor.isAvailable
+                          ? doctor.unavailability_reason
+                            ? ` (${doctor.unavailability_reason})`
+                            : ' (No available slots)'
                           : ''}
                       </option>
                     ))}
@@ -413,7 +518,153 @@ export const BookAppointmentPage = () => {
                   {availableDoctors.filter((d) => d.isAvailable).length} doctor(s) available for this time slot
                 </p>
               )}
+              {selectedDoctorId && !selectedDoctorAvailable && (
+                <p className="mt-1.5 text-xs text-smudged-lips font-ui">
+                  This doctor is not available for the selected time slot. Please choose an alternative slot below.
+                </p>
+              )}
             </div>
+
+            {/* Alternative Slots - Show when selected doctor is not available and no alternative slot selected yet */}
+            {selectedDoctorId && !selectedDoctorAvailable && Object.keys(alternativeSlots).length > 0 && !selectedAlternativeSlot && (
+              <div className="mt-4">
+                <label className="block text-xs font-ui font-medium text-carbon/80 mb-2 tracking-wide">
+                  Available Time Slots for Selected Doctor
+                </label>
+                <div className="space-y-3">
+                  {weekStart && weekEnd && (
+                    <div className="grid grid-cols-7 gap-2">
+                      {Array.from({ length: 7 }, (_, i) => {
+                        const day = addDays(weekStart, i);
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const daySlots = alternativeSlots[dateStr] || [];
+                        const isOriginalDay = slotDateParam === dateStr;
+                        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+                        return (
+                          <div
+                            key={dateStr}
+                            className={cn(
+                              'border rounded-lg p-2 min-h-[120px]',
+                              isOriginalDay
+                                ? 'border-smudged-lips/50 bg-smudged-lips/5'
+                                : 'border-carbon/10 bg-white'
+                            )}
+                          >
+                            <div className="mb-2">
+                              <div className="text-[10px] text-carbon/60 mb-0.5">{dayNames[i]}</div>
+                              <div
+                                className={cn(
+                                  'text-xs font-medium',
+                                  isOriginalDay ? 'text-smudged-lips' : 'text-carbon'
+                                )}
+                              >
+                                {format(day, 'd')}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              {daySlots.length === 0 ? (
+                                <div className="text-[10px] text-carbon/40 text-center py-2">No slots</div>
+                              ) : (
+                                <>
+                                  {daySlots
+                                    .sort((a, b) => a.start_time.time - b.start_time.time)
+                                    .slice(0, expandedDays.has(dateStr) ? daySlots.length : 5)
+                                    .map((slot) => (
+                                      <button
+                                        key={slot.slot_id}
+                                        type="button"
+                                        onClick={() => setSelectedAlternativeSlot(slot.slot_id)}
+                                        className={cn(
+                                          'w-full text-[10px] p-1.5 rounded border text-left transition-colors',
+                                          selectedAlternativeSlot === slot.slot_id
+                                            ? 'bg-azure-dragon text-white border-azure-dragon'
+                                            : 'bg-bright-halo/10 border-bright-halo/30 text-azure-dragon hover:bg-bright-halo/20'
+                                        )}
+                                      >
+                                        {slot.formatted_time_slot || `${String(slot.start_time.hours).padStart(2, '0')}:${String(slot.start_time.minutes).padStart(2, '0')} - ${String(slot.end_time.hours).padStart(2, '0')}:${String(slot.end_time.minutes).padStart(2, '0')}`}
+                                      </button>
+                                    ))}
+                                  {daySlots.length > 5 && !expandedDays.has(dateStr) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedDays(prev => new Set(prev).add(dateStr))}
+                                      className="w-full text-[10px] text-azure-dragon hover:text-azure-dragon/80 hover:bg-azure-dragon/5 py-1.5 rounded border border-azure-dragon/20 transition-colors"
+                                    >
+                                      +{daySlots.length - 5} more
+                                    </button>
+                                  )}
+                                  {expandedDays.has(dateStr) && daySlots.length > 5 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newSet = new Set(expandedDays);
+                                        newSet.delete(dateStr);
+                                        setExpandedDays(newSet);
+                                      }}
+                                      className="w-full text-[10px] text-carbon/60 hover:text-carbon hover:bg-carbon/5 py-1.5 rounded border border-carbon/20 transition-colors"
+                                    >
+                                      Show less
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Global Expand/Collapse Button */}
+                  {hasDaysWithMoreSlots && (
+                    <div className="flex justify-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isAllExpanded) {
+                            // Collapse all
+                            setExpandedDays(new Set());
+                          } else {
+                            // Expand all days with more than 5 slots
+                            const daysToExpand = Object.keys(alternativeSlots).filter(
+                              dateStr => (alternativeSlots[dateStr]?.length ?? 0) > 5
+                            );
+                            setExpandedDays(new Set(daysToExpand));
+                          }
+                        }}
+                        className={cn(
+                          'px-4 py-2 text-sm rounded-md border transition-colors',
+                          isAllExpanded
+                            ? 'text-carbon/60 hover:text-carbon hover:bg-carbon/5 border-carbon/20'
+                            : 'text-azure-dragon hover:text-azure-dragon/80 hover:bg-azure-dragon/5 border-azure-dragon/20'
+                        )}
+                      >
+                        {isAllExpanded ? 'Show less' : 'Show more'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Confirmation message when alternative slot is selected */}
+            {selectedAlternativeSlot && displaySlot && (
+              <div className="mt-4 p-3 bg-azure-dragon/5 border border-azure-dragon/20 rounded-md">
+                <p className="text-xs font-medium text-azure-dragon mb-1">
+                  ✓ Alternative time slot selected
+                </p>
+                <p className="text-xs text-carbon/70">
+                  Your appointment will be booked for {format(parseISO(displaySlot.slot_date), 'EEEE, MMMM d, yyyy')} at {displaySlot.formatted_time_slot}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAlternativeSlot(null)}
+                  className="mt-2 text-xs text-azure-dragon hover:text-azure-dragon/80 underline"
+                >
+                  Change selection
+                </button>
+              </div>
+            )}
 
             {/* Service Selection */}
             <div>

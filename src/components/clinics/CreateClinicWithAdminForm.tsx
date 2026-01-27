@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateClinicWithAdmin } from '@/hooks/useClinicFlow';
+import { useCreateClinic } from '@/hooks/useClinicFlow';
 import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { AddressInput } from './AddressInput';
-import { MdBusiness, MdPerson } from 'react-icons/md';
+import { MdBusiness } from 'react-icons/md';
 
 // Custom URL validation that accepts domains without protocol
 const urlOrDomainSchema = z
@@ -31,8 +31,7 @@ const urlOrDomainSchema = z
     { message: 'Invalid URL or domain' }
   );
 
-const clinicWithAdminSchema = z.object({
-  // Clinic fields
+const createClinicSchema = z.object({
   clinic_name: z.string().min(1, 'Clinic name is required'),
   clinic_code: z.string().min(1, 'Clinic code is required').max(20),
   clinic_address: z.string().min(1, 'Address is required').optional().or(z.literal('')),
@@ -47,29 +46,9 @@ const clinicWithAdminSchema = z.object({
   clinic_currency: z.string().optional().or(z.literal('')),
   clinic_language: z.string().optional().or(z.literal('')),
   clinic_type_ids: z.array(z.string()).min(1, 'At least one clinic type is required').optional(),
-
-  // Admin employee fields
-  admin_first_name: z.string().min(1, 'First name is required'),
-  admin_last_name: z.string().min(1, 'Last name is required'),
-  admin_email: z.string().email('Invalid email').min(1, 'Email is required'),
-  admin_username: z.string().min(3, 'Username must be at least 3 characters'),
-  admin_password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain uppercase, lowercase, and number'
-    ),
-  admin_confirm_password: z.string(),
-  admin_phone: z.string().optional(),
-  admin_department: z.string().optional(),
-  admin_position: z.string().optional(),
-}).refine((data) => data.admin_password === data.admin_confirm_password, {
-  message: "Passwords don't match",
-  path: ['admin_confirm_password'],
 });
 
-type ClinicWithAdminFormData = z.infer<typeof clinicWithAdminSchema>;
+type CreateClinicFormData = z.infer<typeof createClinicSchema>;
 
 interface CreateClinicWithAdminFormProps {
   onSuccess?: () => void;
@@ -82,7 +61,7 @@ export const CreateClinicWithAdminForm = ({
 }: CreateClinicWithAdminFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const createMutation = useCreateClinicWithAdmin();
+  const createMutation = useCreateClinic();
   const { success: showSuccess, error: showError } = useToastStore();
   const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
 
@@ -94,8 +73,8 @@ export const CreateClinicWithAdminForm = ({
     reset,
     setValue,
     watch,
-  } = useForm<ClinicWithAdminFormData>({
-    resolver: zodResolver(clinicWithAdminSchema),
+  } = useForm<CreateClinicFormData>({
+    resolver: zodResolver(createClinicSchema),
     defaultValues: {
       clinic_timezone: DEFAULT_TIMEZONE,
       clinic_currency: DEFAULT_CURRENCY,
@@ -106,42 +85,30 @@ export const CreateClinicWithAdminForm = ({
 
   const clinicAddress = watch('clinic_address');
 
-  const onSubmit = async (data: ClinicWithAdminFormData) => {
+  const onSubmit = async (data: CreateClinicFormData) => {
     setError(null);
     setSuccess(false);
 
     try {
       await createMutation.mutateAsync({
-        clinic: {
-          name: data.clinic_name,
-          clinic_code: data.clinic_code,
-          address: data.clinic_address,
-          city: data.clinic_city,
-          state: data.clinic_state,
-          postal_code: data.clinic_postal_code,
-          country: data.clinic_country,
-          phone: data.clinic_phone,
-          email: data.clinic_email || undefined,
-          website: data.clinic_website || undefined,
-          timezone: data.clinic_timezone || DEFAULT_TIMEZONE,
-          currency: data.clinic_currency || DEFAULT_CURRENCY,
-          language: data.clinic_language || DEFAULT_LANGUAGE,
-          type_ids: data.clinic_type_ids && data.clinic_type_ids.length > 0 ? data.clinic_type_ids : undefined,
-        },
-        admin: {
-          first_name: data.admin_first_name,
-          last_name: data.admin_last_name,
-          email: data.admin_email,
-          username: data.admin_username,
-          password: data.admin_password,
-          phone: data.admin_phone,
-          department: data.admin_department,
-          position: data.admin_position,
-        },
+        name: data.clinic_name,
+        clinic_code: data.clinic_code,
+        address: data.clinic_address,
+        city: data.clinic_city,
+        state: data.clinic_state,
+        postal_code: data.clinic_postal_code,
+        country: data.clinic_country,
+        phone: data.clinic_phone,
+        email: data.clinic_email || undefined,
+        website: data.clinic_website || undefined,
+        timezone: data.clinic_timezone || DEFAULT_TIMEZONE,
+        currency: data.clinic_currency || DEFAULT_CURRENCY,
+        language: data.clinic_language || DEFAULT_LANGUAGE,
+        type_ids: data.clinic_type_ids && data.clinic_type_ids.length > 0 ? data.clinic_type_ids : undefined,
       });
 
       setSuccess(true);
-      showSuccess('Clinic and admin created successfully!');
+      showSuccess('Clinic created successfully!');
       reset();
 
       if (onSuccess) {
@@ -151,7 +118,7 @@ export const CreateClinicWithAdminForm = ({
       }
     } catch (err) {
       const errorMessage = err instanceof Error 
-        ? (err.message || 'Failed to create clinic and admin. Please try again.')
+        ? (err.message || 'Failed to create clinic. Please try again.')
         : 'An unexpected error occurred. Please try again.';
       setError(errorMessage);
       showError(errorMessage);
@@ -163,10 +130,10 @@ export const CreateClinicWithAdminForm = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MdBusiness className="h-5 w-5 text-azure-dragon" />
-          Create Clinic with Admin
+          Create Clinic
         </CardTitle>
         <p className="text-xs text-carbon/60 mt-1">
-          Create a new clinic and assign an ADMIN employee to manage it
+          Create a new clinic. Clinic managers are created separately via Users.
         </p>
       </CardHeader>
       <CardContent>
@@ -180,7 +147,7 @@ export const CreateClinicWithAdminForm = ({
           {success && (
             <div className="rounded-md bg-bright-halo/20 border border-bright-halo/30 px-3.5 py-2.5">
               <p className="text-xs text-azure-dragon font-ui">
-                ✅ Clinic and Admin employee created successfully!
+                ✅ Clinic created successfully!
               </p>
             </div>
           )}
@@ -353,93 +320,6 @@ export const CreateClinicWithAdminForm = ({
             </div>
           </div>
 
-          {/* Admin Employee Section */}
-          <div className="space-y-4 pt-4 border-t border-carbon/10">
-            <div className="flex items-center gap-2 pb-2">
-              <MdPerson className="h-4 w-4 text-azure-dragon" />
-              <h3 className="text-sm font-medium text-carbon">Clinic Administrator</h3>
-            </div>
-            <p className="text-xs text-carbon/60 -mt-2">
-              Create an ADMIN employee who will manage this clinic
-            </p>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                label="First Name"
-                placeholder="Enter first name"
-                error={errors.admin_first_name?.message}
-                required
-                {...register('admin_first_name')}
-              />
-
-              <Input
-                label="Last Name"
-                placeholder="Enter last name"
-                error={errors.admin_last_name?.message}
-                required
-                {...register('admin_last_name')}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                placeholder="admin@clinic.com"
-                error={errors.admin_email?.message}
-                required
-                {...register('admin_email')}
-              />
-
-              <Input
-                label="Username"
-                placeholder="Choose username"
-                error={errors.admin_username?.message}
-                required
-                {...register('admin_username')}
-              />
-
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Enter password"
-                error={errors.admin_password?.message}
-                helperText="Must be 8+ chars with uppercase, lowercase, and number"
-                required
-                {...register('admin_password')}
-              />
-
-              <Input
-                label="Confirm Password"
-                type="password"
-                placeholder="Confirm password"
-                error={errors.admin_confirm_password?.message}
-                required
-                {...register('admin_confirm_password')}
-              />
-
-              <Input
-                label="Phone"
-                type="tel"
-                placeholder="+1234567890"
-                error={errors.admin_phone?.message}
-                {...register('admin_phone')}
-              />
-
-              <Input
-                label="Department"
-                placeholder="e.g., Administration"
-                error={errors.admin_department?.message}
-                {...register('admin_department')}
-              />
-
-              <Input
-                label="Position"
-                placeholder="e.g., Clinic Administrator"
-                error={errors.admin_position?.message}
-                {...register('admin_position')}
-              />
-            </div>
-          </div>
-
           {/* Actions */}
           <div className="flex gap-3 pt-4 border-t border-carbon/10">
             {onCancel && (
@@ -461,7 +341,7 @@ export const CreateClinicWithAdminForm = ({
               isLoading={createMutation.isPending}
               disabled={createMutation.isPending}
             >
-              Create Clinic & Admin
+              Create Clinic
             </Button>
           </div>
         </form>

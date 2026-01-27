@@ -60,9 +60,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <div className="flex h-full flex-col">
           {/* Logo/Brand */}
           <div className="flex h-14 items-center justify-between border-b border-carbon/10 px-4">
-            <h2 className="text-sm font-heading font-semibold text-azure-dragon tracking-tight">
+            <NavLink
+              to="/"
+              className="text-sm font-heading font-semibold text-azure-dragon tracking-tight hover:text-azure-dragon/80 transition-colors cursor-pointer"
+            >
               H360 CRM
-            </h2>
+            </NavLink>
             <button
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-md text-carbon/60 transition-colors hover:bg-white-smoke md:hidden"

@@ -10,6 +10,9 @@ import {
   MdSchedule,
   MdSettings,
   MdEdit,
+  MdCalendarToday,
+  MdPerson,
+  MdPlayArrow,
 } from 'react-icons/md';
 
 /**
@@ -300,6 +303,61 @@ export const ClinicInfoPage = () => {
                   </span>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Timetable Section */}
+      <div className="mt-6">
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MdCalendarToday className="h-5 w-5 text-azure-dragon" />
+              Timetable
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-carbon/60 mb-4">
+              Manage clinic and doctor schedules, and generate appointment slots.
+            </p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => navigate('/clinic-calendar')}
+                className="justify-start h-auto py-3"
+              >
+                <MdCalendarToday className="h-5 w-5 mr-2 text-azure-dragon" />
+                <div className="text-left">
+                  <div className="font-medium text-carbon">Clinic Timetable</div>
+                  <div className="text-xs text-carbon/60">Configure clinic schedule</div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => navigate('/doctor-calendar')}
+                className="justify-start h-auto py-3"
+              >
+                <MdPerson className="h-5 w-5 mr-2 text-azure-dragon" />
+                <div className="text-left">
+                  <div className="font-medium text-carbon">Doctor Timetable</div>
+                  <div className="text-xs text-carbon/60">Manage doctor schedules</div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => navigate('/slot-generation')}
+                className="justify-start h-auto py-3"
+              >
+                <MdPlayArrow className="h-5 w-5 mr-2 text-azure-dragon" />
+                <div className="text-left">
+                  <div className="font-medium text-carbon">Slot Generation</div>
+                  <div className="text-xs text-carbon/60">Generate appointment slots</div>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -15,9 +15,10 @@ const editDoctorSchema = z.object({
   date_of_birth: z.string().optional(),
   gender: z.enum(['M', 'F', 'Other']).optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().min(1, 'Phone number is required'),
-  alternate_phone: z.string().optional(),
-  specialty: z.string().optional(),
+  phone: z.string().optional(),
+  alternate_phone: z.string().optional().or(z.literal('')),
+  specialty: z.string().optional().or(z.literal('')),
+  specialty_ids: z.array(z.string()).optional(),
   sub_specialty: z.string().optional(),
   license_number: z.string().optional(),
   license_expiry_date: z.string().optional(),
@@ -69,9 +70,10 @@ export const EditDoctorForm = ({
         date_of_birth: doctor.date_of_birth || '',
         gender: doctor.gender,
         email: doctor.email || '',
-        phone: doctor.phone,
+        phone: doctor.phone || '',
         alternate_phone: doctor.alternate_phone || '',
         specialty: doctor.specialty || '',
+        specialty_ids: doctor.specialty_ids ?? [],
         sub_specialty: doctor.sub_specialty || '',
         license_number: doctor.license_number || '',
         license_expiry_date: doctor.license_expiry_date || '',
@@ -98,9 +100,10 @@ export const EditDoctorForm = ({
           date_of_birth: data.date_of_birth || undefined,
           gender: data.gender,
           email: data.email || undefined,
-          phone: data.phone,
+          phone: data.phone || undefined,
           alternate_phone: data.alternate_phone || undefined,
-          specialty: data.specialty || undefined,
+          specialty: data.specialty?.trim() || undefined,
+          specialty_ids: data.specialty_ids?.length ? data.specialty_ids : undefined,
           sub_specialty: data.sub_specialty || undefined,
           license_number: data.license_number || undefined,
           license_expiry_date: data.license_expiry_date || undefined,
@@ -170,25 +173,30 @@ export const EditDoctorForm = ({
               label="Phone"
               placeholder="e.g., +250788475841"
               error={errors.phone?.message}
-              required
               {...register('phone')}
             />
 
             <Controller
-              name="specialty"
+              name="specialty_ids"
               control={control}
               render={({ field }) => (
                 <DoctorSpecialtyInput
-                  label="Specialty"
-                  placeholder="Select or type a specialty"
-                  value={field.value || ''}
+                  label="Specialties"
+                  placeholder="Select or type to filter specialties"
+                  value={field.value || []}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  error={errors.specialty?.message}
+                  error={errors.specialty_ids?.message}
                 />
               )}
             />
 
+            <Input
+              label="Custom specialty name (optional)"
+              placeholder="e.g., Cardiology — adds or links by name"
+              error={errors.specialty?.message}
+              {...register('specialty')}
+            />
 
             <Input
               label="License Number"

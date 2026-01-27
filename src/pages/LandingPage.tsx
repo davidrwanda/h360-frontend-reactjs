@@ -45,6 +45,8 @@ export const LandingPage = () => {
   } | null>(null);
   const [radiusKm, setRadiusKm] = useState(50);
   const [maxClinics, setMaxClinics] = useState(10);
+  const [userGeolocation, setUserGeolocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const queryClient = useQueryClient();
   const searchTriggeredRef = useRef(false);
 
@@ -88,11 +90,16 @@ export const LandingPage = () => {
         clinic_type_id: selectedClinicTypeId || undefined,
       };
     }
-    if (selectedLocation?.latitude && selectedLocation?.longitude) {
+    // Use selectedLocation if available, otherwise fall back to userGeolocation
+    const locationToUse = selectedLocation?.latitude && selectedLocation?.longitude
+      ? { latitude: selectedLocation.latitude, longitude: selectedLocation.longitude }
+      : userGeolocation;
+    
+    if (locationToUse?.latitude && locationToUse?.longitude) {
       return {
         ...baseParams,
-        latitude: selectedLocation.latitude,
-        longitude: selectedLocation.longitude,
+        latitude: locationToUse.latitude,
+        longitude: locationToUse.longitude,
         radius_km: radiusKm,
         max_clinics: maxClinics,
         clinic_type_id: selectedClinicTypeId || undefined,
@@ -105,7 +112,7 @@ export const LandingPage = () => {
       };
     }
     return undefined;
-  }, [selectedClinic, selectedLocation, selectedClinicTypeId, radiusKm, maxClinics, today, twoWeeksFromToday]);
+  }, [selectedClinic, selectedLocation, selectedClinicTypeId, radiusKm, maxClinics, today, twoWeeksFromToday, userGeolocation]);
 
   // Fetch slots - only when showResults is true (after search button click)
   const { data: slotsData, isLoading: isLoadingSlots, refetch: refetchSlots } = useSlots(
@@ -221,14 +228,67 @@ export const LandingPage = () => {
     }));
   }, [displayClinics]);
 
+  // Get user's geolocation
+  const getUserGeolocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser'));
+        return;
+      }
+
+      setIsGettingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserGeolocation({ latitude, longitude });
+          setIsGettingLocation(false);
+          resolve({ latitude, longitude });
+        },
+        (error) => {
+          setIsGettingLocation(false);
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let locationToUse = selectedLocation;
+    
+    // If no inputs are provided, get user's geolocation and search nearby
+    if (!selectedClinic && !location && !selectedClinicTypeId) {
+      try {
+        const geo = await getUserGeolocation();
+        // Set selectedLocation with geolocation so slotsParams can use it
+        locationToUse = {
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+        };
+        setSelectedLocation(locationToUse);
+        // Wait a bit for state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error('Error getting geolocation:', error);
+        // If geolocation fails and no other inputs, we can't search
+        // You might want to show an error toast here
+        return;
+      }
+    }
+
     // Search logic:
     // 1. If clinic is selected, search by clinic only
     // 2. If location is provided, search by location
     // 3. If clinic type is selected, search by clinic type only
-    // 4. Clinic type can be combined with location or clinic
-    if (selectedClinic || (location && selectedLocation) || selectedClinicTypeId) {
+    // 4. If nothing is selected, use geolocation (if available)
+    // 5. Clinic type can be combined with location or clinic
+    if (selectedClinic || (location && selectedLocation) || selectedClinicTypeId || locationToUse || userGeolocation) {
       searchTriggeredRef.current = true;
       setShowResults(true);
       
@@ -243,7 +303,7 @@ export const LandingPage = () => {
         if (refetchSlots) {
           await refetchSlots();
         }
-      }, 100);
+      }, 200);
       
       // Scroll to results section immediately
       setTimeout(() => {
@@ -415,10 +475,15 @@ export const LandingPage = () => {
               type="submit"
               variant="primary"
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || isGettingLocation}
               className="px-8 py-4 rounded-xl font-semibold whitespace-nowrap self-stretch flex items-center justify-center"
             >
-              {isLoading ? (
+              {isGettingLocation ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  Getting location...
+                </>
+              ) : isLoading ? (
                 <>
                   <Loading size="sm" className="mr-2" />
                   Searching...

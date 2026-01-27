@@ -258,14 +258,20 @@ export const EditClinicPage = () => {
     }
   }, [clinic, reset]);
 
+  const basicClinicKeys = [
+    'name', 'clinic_code', 'address', 'city', 'state', 'postal_code', 'country',
+    'phone', 'email', 'website', 'timezone', 'currency', 'language', 'type_ids',
+  ] as const;
+
   const onSubmit = async (data: ClinicFormData) => {
     if (!id) return;
 
     try {
-      // Clean up empty strings and null values
       const payload: Record<string, unknown> = {};
-      
-      Object.entries(data).forEach(([key, value]) => {
+      const keysToInclude = isSystemAdmin ? basicClinicKeys : (Object.keys(data) as (keyof ClinicFormData)[]);
+
+      keysToInclude.forEach((key) => {
+        const value = data[key];
         if (value !== '' && value !== null && value !== undefined) {
           if (key === 'latitude' || key === 'longitude') {
             if (value !== null) payload[key] = Number(value);
@@ -327,13 +333,18 @@ export const EditClinicPage = () => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Basic Information */}
+        {/* Clinic Information (basic info; system admin sees only this) */}
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdBusiness className="h-5 w-5 text-azure-dragon" />
-              Basic Information
+              {isSystemAdmin ? 'Clinic Information' : 'Basic Information'}
             </CardTitle>
+            {isSystemAdmin && (
+              <p className="text-xs text-carbon/60 mt-1">
+                System admins can edit only basic clinic information here. Other settings are managed at the clinic.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
@@ -351,22 +362,106 @@ export const EditClinicPage = () => {
                 required
                 {...register('clinic_code')}
               />
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-carbon/60 mb-1.5">
-                  Description
-                </label>
-                <textarea
-                  {...register('description')}
-                  rows={3}
-                  className="w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-azure-dragon/30"
-                  placeholder="Clinic description"
-                />
-              </div>
+              {!isSystemAdmin && (
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-carbon/60 mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    {...register('description')}
+                    rows={3}
+                    className="w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-azure-dragon/30"
+                    placeholder="Clinic description"
+                  />
+                </div>
+              )}
+              {isSystemAdmin && (
+                <>
+                  <div className="md:col-span-2">
+                    <AddressInput
+                      label="Address"
+                      value={address || ''}
+                      onChange={(value) => setValue('address', value)}
+                      onAddressSelect={(addressData) => {
+                        setValue('address', addressData.address);
+                        if (addressData.city) setValue('city', addressData.city);
+                        if (addressData.state) setValue('state', addressData.state);
+                        if (addressData.postal_code) setValue('postal_code', addressData.postal_code);
+                        if (addressData.country) setValue('country', addressData.country);
+                        if (addressData.latitude !== undefined) setValue('latitude', addressData.latitude);
+                        if (addressData.longitude !== undefined) setValue('longitude', addressData.longitude);
+                      }}
+                      error={errors.address?.message}
+                      required
+                    />
+                  </div>
+                  <Input label="City" placeholder="City" error={errors.city?.message} required {...register('city')} />
+                  <Input label="State/Province" placeholder="State or Province" error={errors.state?.message} {...register('state')} />
+                  <Input label="Postal Code" placeholder="Postal code" error={errors.postal_code?.message} {...register('postal_code')} />
+                  <Input label="Country" placeholder="Country" error={errors.country?.message} {...register('country')} />
+                  <Input label="Phone" type="tel" placeholder="+1234567890" error={errors.phone?.message} required {...register('phone')} />
+                  <Input label="Email" type="email" placeholder="clinic@example.com" error={errors.email?.message} required {...register('email')} />
+                  <Input label="Website" placeholder="www.example.com" error={errors.website?.message} {...register('website')} />
+                  <div className="md:col-span-2 grid gap-4 md:grid-cols-3">
+                    <Select label="Timezone" error={errors.timezone?.message} options={timezones} {...register('timezone')} />
+                    <Select label="Currency" error={errors.currency?.message} options={currencies} {...register('currency')} />
+                    <Select label="Language" error={errors.language?.message} options={languages} {...register('language')} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
+                      Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
+                    </label>
+                    {isLoadingTypes ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <Loading size="sm" />
+                        <span className="text-xs text-carbon/60">Loading clinic types...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
+                        <Controller
+                          name="type_ids"
+                          control={control}
+                          render={({ field }) => (
+                            <>
+                              {clinicTypes?.map((type) => (
+                                <label
+                                  key={type.clinic_type_id}
+                                  className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    value={type.clinic_type_id}
+                                    checked={field.value?.includes(type.clinic_type_id) || false}
+                                    onChange={(e) => {
+                                      const currentValue = field.value || [];
+                                      if (e.target.checked) {
+                                        field.onChange([...currentValue, type.clinic_type_id]);
+                                      } else {
+                                        field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
+                                      }
+                                    }}
+                                    className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
+                                  />
+                                  <span className="text-xs text-carbon">{type.name}</span>
+                                </label>
+                              ))}
+                            </>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {errors.type_ids && (
+                      <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.type_ids.message}</p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Location Information */}
+        {/* Location Information - hidden for system admin */}
+        {!isSystemAdmin && (
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -444,8 +539,10 @@ export const EditClinicPage = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Contact Information */}
+        {/* Contact Information - hidden for system admin (phone/email/website in basic flow) */}
+        {!isSystemAdmin && (
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -487,8 +584,11 @@ export const EditClinicPage = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Operational Information */}
+        {/* Operational Information, Settings, Status, Financial, Additional - hidden for system admin */}
+        {!isSystemAdmin && (
+        <>
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -759,6 +859,8 @@ export const EditClinicPage = () => {
             </div>
           </CardContent>
         </Card>
+        </>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3">

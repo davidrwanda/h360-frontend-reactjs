@@ -16,9 +16,12 @@ const createDoctorSchema = z.object({
   date_of_birth: z.string().optional(),
   gender: z.enum(['M', 'F', 'Other']).optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().min(1, 'Phone number is required'),
-  alternate_phone: z.string().optional(),
-  specialty: z.string().optional(),
+  phone: z.string().optional(),
+  alternate_phone: z.string().optional().or(z.literal('')),
+  /** Optional name; backend uses existing id or creates new specialty. */
+  specialty: z.string().optional().or(z.literal('')),
+  /** Optional UUIDs from GET /api/doctor-specialties; merged with specialty. */
+  specialty_ids: z.array(z.string()).optional(),
   sub_specialty: z.string().optional(),
   license_number: z.string().optional(),
   license_expiry_date: z.string().optional(),
@@ -85,12 +88,15 @@ export const CreateDoctorForm = ({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
     reset,
   } = useForm<CreateDoctorFormData>({
     resolver: zodResolver(createDoctorSchema),
     defaultValues: {
       clinic_id: clinicId || '',
+      specialty: '',
+      specialty_ids: [],
       appointment_duration_minutes: 30,
     },
   });
@@ -174,9 +180,10 @@ export const CreateDoctorForm = ({
         date_of_birth: data.date_of_birth || undefined,
         gender: data.gender,
         email: data.email || undefined,
-        phone: data.phone,
+        phone: data.phone || undefined,
         alternate_phone: data.alternate_phone || undefined,
-        specialty: data.specialty || undefined,
+        specialty: data.specialty?.trim() || undefined,
+        specialty_ids: data.specialty_ids?.length ? data.specialty_ids : undefined,
         sub_specialty: data.sub_specialty || undefined,
         license_number: data.license_number || undefined,
         license_expiry_date: data.license_expiry_date || undefined,
@@ -186,15 +193,14 @@ export const CreateDoctorForm = ({
         bio: data.bio || undefined,
         doctor_number: data.doctor_number || undefined,
         profile_image_url: data.profile_image_url || undefined,
-        // Clinic-specific fields nested in clinicData object
         clinicData: {
           clinic_id: data.clinic_id,
           clinic_ids: data.clinic_id ? [data.clinic_id] : undefined,
           employment_status: 'active',
           hire_date: data.hire_date || undefined,
-          appointment_duration_minutes: data.appointment_duration_minutes || undefined,
-          max_daily_patients: data.max_daily_patients || undefined,
-          accepts_new_patients: data.accepts_new_patients,
+          appointment_duration_minutes: data.appointment_duration_minutes ?? undefined,
+          max_daily_patients: data.max_daily_patients ?? undefined,
+          accepts_new_patients: data.accepts_new_patients ?? true,
           consultation_fee: data.consultation_fee || undefined,
           notes: data.notes || undefined,
         },
@@ -276,8 +282,10 @@ export const CreateDoctorForm = ({
                     <p className="text-xs text-carbon/60 mt-1">{foundDoctor.email}</p>
                   )}
                   <p className="text-xs text-carbon/60">{foundDoctor.phone}</p>
-                  {foundDoctor.specialty && (
-                    <p className="text-xs text-carbon/60 mt-1">Specialty: {foundDoctor.specialty}</p>
+                  {(foundDoctor.specialty || (foundDoctor.specialty_ids && foundDoctor.specialty_ids.length > 0)) && (
+                    <p className="text-xs text-carbon/60 mt-1">
+                      Specialty: {foundDoctor.specialty ?? (foundDoctor.specialty_ids?.length ? `${foundDoctor.specialty_ids.length} selected` : '')}
+                    </p>
                   )}
                   {foundDoctor.doctor_number && (
                     <p className="text-xs text-carbon/60">Code: {foundDoctor.doctor_number}</p>
@@ -500,7 +508,6 @@ export const CreateDoctorForm = ({
                   label="Phone"
                   placeholder="e.g., +250788475841"
                   error={errors.phone?.message}
-                  required
                   {...register('phone')}
                 />
 
@@ -537,18 +544,26 @@ export const CreateDoctorForm = ({
                 />
 
                 <Controller
-                  name="specialty"
+                  name="specialty_ids"
                   control={control}
                   render={({ field }) => (
                     <DoctorSpecialtyInput
-                      label="Specialty"
-                      placeholder="Select or type a specialty"
-                      value={field.value || ''}
+                      label="Specialties"
+                      placeholder="Select or type to filter specialties"
+                      value={field.value || []}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      error={errors.specialty?.message}
+                      error={errors.specialty_ids?.message}
+                      clinicId={clinicId || watch('clinic_id') || undefined}
                     />
                   )}
+                />
+
+                <Input
+                  label="Custom specialty name (optional)"
+                  placeholder="e.g., Cardiology — adds or links by name"
+                  error={errors.specialty?.message}
+                  {...register('specialty')}
                 />
 
                 <Input

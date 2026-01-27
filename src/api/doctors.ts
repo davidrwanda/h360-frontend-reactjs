@@ -68,12 +68,16 @@ export interface Doctor {
   email?: string;
   phone: string;
   alternate_phone?: string | null;
+  /** Primary display specialty name (from response). */
   specialty?: string;
+  /** All specialty UUIDs for this doctor (from doctor–specialty links). */
+  specialty_ids?: string[];
   sub_specialty?: string;
   clinic_id?: string | null; // Primary clinic (nullable for multi-clinic doctors)
   clinic_name?: string;
   clinic_relationships?: DoctorClinicRelationship[]; // Legacy: kept for backward compatibility
-  clinicData?: DoctorClinicRelationship[]; // New: clinic relationships array
+  /** Response: array of clinic relationships. */
+  clinicData?: DoctorClinicRelationship[];
   license_number?: string;
   license_expiry_date?: string;
   is_license_expired?: boolean;
@@ -113,9 +117,12 @@ export interface CreateDoctorRequest {
   date_of_birth?: string;
   gender?: 'M' | 'F' | 'Other';
   email?: string;
-  phone: string;
-  alternate_phone?: string;
-  specialty?: string; // Auto-creates specialty if doesn't exist
+  phone?: string;
+  alternate_phone?: string | null;
+  /** Optional. Name (e.g. "Cardiology"); if in doctor-specialties its id is used, else new specialty is created and id added. */
+  specialty?: string;
+  /** Optional. Array of UUIDs from GET /api/doctor-specialties. Merged with specialty. */
+  specialty_ids?: string[];
   sub_specialty?: string;
   license_number?: string;
   license_expiry_date?: string;
@@ -137,6 +144,7 @@ export interface UpdateDoctorRequest {
   email?: string;
   phone?: string;
   alternate_phone?: string;
+  specialty_ids?: string[];
   specialty?: string;
   sub_specialty?: string;
   license_number?: string;

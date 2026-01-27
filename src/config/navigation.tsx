@@ -12,6 +12,7 @@ import {
   MdSettings,
   MdInfo,
   MdAccountCircle,
+  MdSchedule,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
 
@@ -40,6 +41,13 @@ export const navigationConfig: NavigationConfig = [
     path: '/clinic-info',
     icon: MdInfo,
     roles: ['MANAGER'], // Only for clinic managers/admins
+  },
+  {
+    id: 'timetable',
+    label: 'Timetable',
+    path: '/clinic-calendar',
+    icon: MdSchedule,
+    roles: ['MANAGER'], // Clinic and doctor schedules
   },
   {
     id: 'divider-2',
@@ -299,6 +307,10 @@ export const getFilteredNavigation = (
     // Then: Clinic Info (instead of Clinics)
     const clinicInfoItem = filtered.find(item => item.id === 'clinic-info');
     if (clinicInfoItem) reordered.push(clinicInfoItem);
+
+    // Then: Timetable (clinic/doctor schedules, slot generation)
+    const timetableItem = filtered.find(item => item.id === 'timetable');
+    if (timetableItem) reordered.push(timetableItem);
 
     // Add divider
     reordered.push({ id: 'divider-4', label: '', path: '' });

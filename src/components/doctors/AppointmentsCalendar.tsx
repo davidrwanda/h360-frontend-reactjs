@@ -24,8 +24,16 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
 
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter((apt) => {
-      const aptDate = parseISO(apt.appointment_date);
-      return isSameDay(aptDate, date) && apt.status !== 'completed' && apt.status !== 'cancelled';
+      if (!apt.appointment_date) return false;
+      try {
+        const aptDate = parseISO(apt.appointment_date);
+        // Check if the date is valid
+        if (isNaN(aptDate.getTime())) return false;
+        return isSameDay(aptDate, date) && apt.status !== 'completed' && apt.status !== 'cancelled';
+      } catch (error) {
+        console.warn('Invalid appointment date:', apt.appointment_date);
+        return false;
+      }
     });
   };
 
@@ -127,7 +135,22 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
                   </div>
                   <div className="space-y-0.5">
                     {dayAppointments.slice(0, 2).map((apt) => {
-                      const aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
+                      // Safely parse the appointment date/time
+                      let aptDateTime: Date | null = null;
+                      let timeString = 'N/A';
+                      
+                      if (apt.appointment_date && apt.appointment_time) {
+                        try {
+                          aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
+                          // Check if the date is valid
+                          if (aptDateTime && !isNaN(aptDateTime.getTime())) {
+                            timeString = format(aptDateTime, 'hh:mm a');
+                          }
+                        } catch (error) {
+                          console.warn('Invalid appointment date/time:', apt.appointment_date, apt.appointment_time);
+                        }
+                      }
+                      
                       return (
                         <div
                           key={apt.appointment_id}
@@ -141,10 +164,10 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
                               ? 'bg-yellow-500/20 text-yellow-600'
                               : 'bg-carbon/10 text-carbon/70'
                           )}
-                          title={`${format(aptDateTime, 'hh:mm a')} - ${apt.patient_name || apt.guest_name || 'Unknown'}`}
+                          title={`${timeString} - ${apt.patient_name || apt.guest_name || 'Unknown'}`}
                         >
                           <MdEvent className="inline h-2.5 w-2.5 mr-0.5" />
-                          {format(aptDateTime, 'hh:mm a')}
+                          {timeString}
                         </div>
                       );
                     })}

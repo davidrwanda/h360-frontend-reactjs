@@ -1,4 +1,5 @@
 import { OperatingHours } from '@/api/clinics';
+import { cn } from '@/utils/cn';
 
 interface OperatingHoursDisplayProps {
   operatingHours?: OperatingHours;
@@ -23,18 +24,33 @@ export const OperatingHoursDisplay = ({ operatingHours }: OperatingHoursDisplayP
     <div className="space-y-2">
       {days.map((day) => {
         const dayHours = operatingHours[day.key];
-        if (!dayHours) return null;
+        const isConfigured = dayHours && !dayHours.closed && dayHours.open && dayHours.close;
 
         return (
-          <div key={day.key} className="flex items-center justify-between text-sm">
-            <span className="text-carbon/70 font-medium">{day.label}</span>
-            <span className="text-carbon">
-              {dayHours.closed
-                ? 'Closed'
-                : dayHours.open && dayHours.close
-                  ? `${dayHours.open} - ${dayHours.close}`
-                  : 'Not set'}
-            </span>
+          <div key={day.key} className="flex items-center gap-4 text-sm">
+            <div className="w-24 shrink-0">
+              <span className="font-medium text-carbon">{day.label}</span>
+            </div>
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-carbon/60 w-10 shrink-0">Open</span>
+                <span className={cn(
+                  "font-mono tabular-nums",
+                  isConfigured ? "text-carbon" : "text-carbon/40"
+                )}>
+                  {dayHours?.open || '--:--'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-carbon/60 w-12 shrink-0">Close</span>
+                <span className={cn(
+                  "font-mono tabular-nums",
+                  isConfigured ? "text-carbon" : "text-carbon/40"
+                )}>
+                  {dayHours?.close || '--:--'}
+                </span>
+              </div>
+            </div>
           </div>
         );
       })}

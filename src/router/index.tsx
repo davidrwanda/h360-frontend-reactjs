@@ -37,6 +37,11 @@ import { DoctorsPage } from '@/pages/DoctorsPage';
 import CreateDoctorPage from '@/pages/CreateDoctorPage';
 import EditDoctorPage from '@/pages/EditDoctorPage';
 import DoctorDetailPage from '@/pages/DoctorDetailPage';
+import { ClinicCalendarConfigPage } from '@/pages/ClinicCalendarConfigPage';
+import { DoctorCalendarConfigPage } from '@/pages/DoctorCalendarConfigPage';
+import { DoctorBulkSetupPage } from '@/pages/DoctorBulkSetupPage';
+import { SlotGenerationPage } from '@/pages/SlotGenerationPage';
+import { TimetablePage } from '@/pages/TimetablePage';
 
 export const router = createBrowserRouter([
   {
@@ -171,6 +176,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR']}>
         <MainLayout>
           <EditDoctorPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctors/:id/timetable',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <DoctorCalendarConfigPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctors/:id/bulk-setup',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <DoctorBulkSetupPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -361,6 +386,46 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={['MANAGER']}>
         <MainLayout>
           <ClinicInfoPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/timetable',
+    element: (
+      <ProtectedRoute requiredRole={['MANAGER']}>
+        <MainLayout>
+          <TimetablePage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/clinic-calendar',
+    element: (
+      <ProtectedRoute requiredRole={['MANAGER']}>
+        <MainLayout>
+          <ClinicCalendarConfigPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/doctor-calendar',
+    element: (
+      <ProtectedRoute requiredRole={['MANAGER']}>
+        <MainLayout>
+          <DoctorCalendarConfigPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/slot-generation',
+    element: (
+      <ProtectedRoute requiredRole={['MANAGER']}>
+        <MainLayout>
+          <SlotGenerationPage />
         </MainLayout>
       </ProtectedRoute>
     ),
