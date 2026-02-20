@@ -23,12 +23,14 @@ export const UserCalendarViewModal = ({
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [isAllExpanded, setIsAllExpanded] = useState(false);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   
   // Reset to today when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedDate(new Date());
       setIsAllExpanded(false);
+      setShowAvailableOnly(false);
     }
   }, [isOpen]);
 
@@ -41,6 +43,7 @@ export const UserCalendarViewModal = ({
     dateFrom: format(weekStart, 'yyyy-MM-dd'),
     dateTo: format(weekEnd, 'yyyy-MM-dd'),
     limit: 1000,
+    available_only: showAvailableOnly,
   });
 
   const slots = slotsData?.data || [];
@@ -87,22 +90,35 @@ export const UserCalendarViewModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="xl">
       <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {/* Week Navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setSelectedDate(addDays(selectedDate, -7))}
-            className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
-          >
-            ← Previous Week
-          </button>
-          <div className="text-sm font-medium text-carbon">
-            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+        {/* Controls */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedDate(addDays(selectedDate, -7))}
+              className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
+            >
+              ← Previous Week
+            </button>
+            <div className="text-sm font-medium text-carbon whitespace-nowrap">
+              {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+            </div>
+            <button
+              onClick={() => setSelectedDate(addDays(selectedDate, 7))}
+              className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
+            >
+              Next Week →
+            </button>
           </div>
           <button
-            onClick={() => setSelectedDate(addDays(selectedDate, 7))}
-            className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
+            onClick={() => setShowAvailableOnly(!showAvailableOnly)}
+            className={cn(
+              'px-3 py-1.5 text-xs rounded-md border transition-colors whitespace-nowrap',
+              showAvailableOnly
+                ? 'bg-azure-dragon/10 border-azure-dragon/30 text-azure-dragon hover:bg-azure-dragon/15'
+                : 'text-carbon/70 hover:text-carbon hover:bg-carbon/5 border-carbon/20'
+            )}
           >
-            Next Week →
+            {showAvailableOnly ? '✓ Show Available Only' : 'Show All Slots'}
           </button>
         </div>
 

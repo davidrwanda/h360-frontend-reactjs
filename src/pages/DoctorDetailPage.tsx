@@ -189,13 +189,6 @@ const DoctorDetailPage = () => {
               </div>
             )}
 
-            {doctor.sub_specialty && (
-              <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Sub-Specialty</label>
-                <p className="text-sm text-carbon">{doctor.sub_specialty}</p>
-              </div>
-            )}
-
             {doctor.alternate_phone && (
               <div>
                 <label className="text-xs font-medium text-carbon/60 mb-1 block">Alternate Phone</label>

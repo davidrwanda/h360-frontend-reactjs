@@ -21,6 +21,18 @@ export interface DoctorSpecialtyListParams {
   include_inactive?: boolean;
 }
 
+/** Create specialty – Auth: Admin or Manager */
+export interface CreateSpecialtyDto {
+  name: string;
+  code: string;
+  clinic_id?: string | null;
+  description?: string;
+  icon?: string;
+  color?: string;
+  display_order?: number;
+  is_active?: boolean;
+}
+
 export const doctorSpecialtiesApi = {
   /**
    * List all doctor specialties (public, no auth required)
@@ -44,6 +56,21 @@ export const doctorSpecialtiesApi = {
   getById: async (id: string): Promise<DoctorSpecialty> => {
     const response = await apiClient.get<ApiResponse<DoctorSpecialty> | DoctorSpecialty>(
       `/doctor-specialties/${id}`
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<DoctorSpecialty>).data;
+    }
+    return response.data as DoctorSpecialty;
+  },
+
+  /**
+   * Create a specialty (Auth: Admin or Manager)
+   * POST /api/doctor-specialties
+   */
+  create: async (data: CreateSpecialtyDto): Promise<DoctorSpecialty> => {
+    const response = await apiClient.post<ApiResponse<DoctorSpecialty> | DoctorSpecialty>(
+      '/doctor-specialties',
+      data
     );
     if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
       return (response.data as ApiResponse<DoctorSpecialty>).data;

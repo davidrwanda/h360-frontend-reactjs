@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { doctorSpecialtiesApi } from '@/api/doctorSpecialties';
-import type { DoctorSpecialtyListParams } from '@/api/doctorSpecialties';
+import type { CreateSpecialtyDto, DoctorSpecialtyListParams } from '@/api/doctorSpecialties';
 
 /**
  * Hook to fetch list of doctor specialties (public, no auth required).
@@ -23,5 +23,18 @@ export const useDoctorSpecialty = (id: string | undefined) => {
     queryFn: () => doctorSpecialtiesApi.getById(id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+/**
+ * Create specialty (Auth: Admin or Manager). Invalidates list on success.
+ */
+export const useCreateSpecialty = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSpecialtyDto) => doctorSpecialtiesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-specialties'] });
+    },
   });
 };

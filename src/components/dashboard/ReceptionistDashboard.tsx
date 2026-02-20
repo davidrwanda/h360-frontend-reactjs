@@ -3,53 +3,55 @@ import { QuickActions } from './QuickActions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { MdEvent, MdPeople, MdQueue, MdCheckCircle } from 'react-icons/md';
+import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
 export const ReceptionistDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Dashboard
+          {t(COMMON.DASHBOARD)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Welcome back, <span className="font-medium">
-            {user?.employee?.first_name || 
-             user?.employee?.full_name?.split(' ')[0] ||
-             user?.first_name ||
-             user?.username || 
-             user?.email}
-          </span>!
+          {t(COMMON.WELCOME_BACK, {
+            name: user?.employee?.first_name ||
+              user?.employee?.full_name?.split(' ')[0] ||
+              user?.first_name ||
+              user?.username ||
+              user?.email || '',
+          })}
         </p>
         {user?.clinic_id && (
-          <p className="text-xs text-carbon/50 mt-1">Front Desk Operations</p>
+          <p className="text-xs text-carbon/50 mt-1">{t(DASHBOARD.FRONT_DESK_OPERATIONS)}</p>
         )}
       </div>
 
-      {/* Statistics Cards - Receptionist-specific stats */}
+      {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Queue Length"
+          title={t(DASHBOARD.QUEUE_LENGTH)}
           value="—"
           icon={<MdQueue className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Today's Appointments"
+          title={t(DASHBOARD.TODAYS_APPOINTMENTS)}
           value="—"
           icon={<MdEvent className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Checked In"
+          title={t(DASHBOARD.CHECKED_IN)}
           value="—"
           icon={<MdCheckCircle className="h-6 w-6" />}
           variant="success"
         />
         <StatCard
-          title="New Patients"
+          title={t(DASHBOARD.NEW_PATIENTS)}
           value="—"
           icon={<MdPeople className="h-6 w-6" />}
           variant="primary"
@@ -63,22 +65,22 @@ export const ReceptionistDashboard = () => {
         {/* Receptionist Info Card */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Queue Management</CardTitle>
+            <CardTitle>{t(DASHBOARD.QUEUE_MANAGEMENT)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-carbon/60">
-                Manage patient check-ins and queue positions.
+                {t(DASHBOARD.QUEUE_MGMT_DESC)}
               </p>
               <div className="space-y-2">
                 <div className="text-xs text-carbon/50">
-                  • Check-in patients
+                  • {t(DASHBOARD.CHECK_IN_PATIENTS_BULLET)}
                 </div>
                 <div className="text-xs text-carbon/50">
-                  • Monitor queue
+                  • {t(DASHBOARD.MONITOR_QUEUE_BULLET)}
                 </div>
                 <div className="text-xs text-carbon/50">
-                  • Appointment booking
+                  • {t(DASHBOARD.APPOINTMENT_BOOKING_BULLET)}
                 </div>
               </div>
             </div>
@@ -88,12 +90,12 @@ export const ReceptionistDashboard = () => {
         {/* Current Queue */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Current Queue</CardTitle>
+            <CardTitle>{t(DASHBOARD.CURRENT_QUEUE)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-carbon/60">
-                Active queue will be displayed here once the Queue module is implemented.
+                {t(DASHBOARD.QUEUE_PLACEHOLDER)}
               </p>
             </div>
           </CardContent>

@@ -9,20 +9,28 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { MdEvent, MdPeople, MdSchedule, MdLocalHospital, MdAccessTime, MdPerson } from 'react-icons/md';
 import { format, isToday, isThisWeek, parseISO, isSameDay } from 'date-fns';
 import { cn } from '@/utils/cn';
+import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
+
+const STATUS_KEYS: Record<string, string> = {
+  booked: DASHBOARD.STATUS_BOOKED,
+  checked_in: DASHBOARD.STATUS_CHECKED_IN,
+  in_progress: DASHBOARD.STATUS_IN_PROGRESS,
+  completed: DASHBOARD.STATUS_COMPLETED,
+  cancelled: DASHBOARD.STATUS_CANCELLED,
+};
 
 export const DoctorDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  
-  // Fetch doctors filtered by user_id to get the doctor record
+
   const { data: doctorsData } = useDoctors({
     user_id: user?.user_id,
     limit: 1,
   });
-  
+
   const doctor = doctorsData?.data?.[0];
-  
-  // Fetch appointments for this doctor
+
   const { data: appointmentsData, isLoading: isLoadingAppointments } = useAppointments({
     doctor_id: doctor?.doctor_id,
     limit: 50,
@@ -31,27 +39,25 @@ export const DoctorDashboard = () => {
   });
 
   const appointments = appointmentsData?.data || [];
-  
-  // Filter appointments
+
   const today = new Date();
   const todayAppointments = appointments.filter((apt) => {
     const aptDate = parseISO(apt.appointment_date);
     return isToday(aptDate) && apt.status !== 'completed' && apt.status !== 'cancelled';
   });
-  
+
   const upcomingThisWeek = appointments.filter((apt) => {
     const aptDate = parseISO(apt.appointment_date);
     return isThisWeek(aptDate) && !isToday(aptDate) && apt.status !== 'completed' && apt.status !== 'cancelled';
   });
-  
+
   const upcomingAppointments = appointments
     .filter((apt) => {
       const aptDate = parseISO(apt.appointment_date);
       return aptDate >= today && apt.status !== 'completed' && apt.status !== 'cancelled';
     })
-    .slice(0, 5); // Show next 5 upcoming appointments
+    .slice(0, 5);
 
-  // Get appointments for selected date
   const selectedDateAppointments = selectedDate
     ? appointments.filter((apt) => {
         const aptDate = parseISO(apt.appointment_date);
@@ -63,49 +69,56 @@ export const DoctorDashboard = () => {
     setSelectedDate(date);
   };
 
+  const translateStatus = (status: string) => {
+    const key = STATUS_KEYS[status];
+    return key ? t(key) : status.replace('_', ' ');
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Dashboard
+          {t(COMMON.DASHBOARD)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Welcome back, Dr. <span className="font-medium">
-            {user?.employee?.first_name || 
-             user?.employee?.full_name?.split(' ')[0] ||
-             user?.first_name ||
-             user?.username || 
-             user?.email}
-          </span>!
+          {t(COMMON.WELCOME_BACK, {
+            name: `${t(COMMON.DR_PREFIX)} ${
+              user?.employee?.first_name ||
+              user?.employee?.full_name?.split(' ')[0] ||
+              user?.first_name ||
+              user?.username ||
+              user?.email || ''
+            }`,
+          })}
         </p>
         {user?.clinic_id && (
-          <p className="text-xs text-carbon/50 mt-1">Medical Professional</p>
+          <p className="text-xs text-carbon/50 mt-1">{t(DASHBOARD.MEDICAL_PROFESSIONAL)}</p>
         )}
       </div>
 
-      {/* Statistics Cards - Doctor-specific stats */}
+      {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Today's Appointments"
+          title={t(DASHBOARD.TODAYS_APPOINTMENTS)}
           value={todayAppointments.length.toString()}
           icon={<MdEvent className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Patients Today"
+          title={t(DASHBOARD.PATIENTS_TODAY)}
           value={todayAppointments.length.toString()}
           icon={<MdPeople className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Upcoming This Week"
+          title={t(DASHBOARD.UPCOMING_THIS_WEEK)}
           value={upcomingThisWeek.length.toString()}
           icon={<MdSchedule className="h-6 w-6" />}
           variant="success"
         />
         <StatCard
-          title="Available Slots"
+          title={t(DASHBOARD.AVAILABLE_SLOTS)}
           value="—"
           icon={<MdLocalHospital className="h-6 w-6" />}
           variant="primary"
@@ -114,15 +127,13 @@ export const DoctorDashboard = () => {
 
       {/* Calendar and Upcoming Appointments */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Calendar View */}
         <AppointmentsCalendar appointments={appointments} onDateClick={handleDateClick} />
 
-        {/* Upcoming Appointments List */}
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdEvent className="h-5 w-5 text-azure-dragon" />
-              Upcoming Appointments
+              {t(DASHBOARD.UPCOMING_APPOINTMENTS)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -135,7 +146,7 @@ export const DoctorDashboard = () => {
                 {upcomingAppointments.map((appointment) => {
                   const appointmentDateTime = parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`);
                   const isTodayAppt = isToday(appointmentDateTime);
-                  
+
                   return (
                     <div
                       key={appointment.appointment_id}
@@ -146,38 +157,38 @@ export const DoctorDashboard = () => {
                           <div className="flex items-center gap-2 mb-2">
                             <MdPerson className="h-4 w-4 text-azure-dragon" />
                             <span className="text-sm font-medium text-carbon">
-                              {appointment.patient_name || appointment.guest_name || 'Unknown Patient'}
+                              {appointment.patient_name || appointment.guest_name || t(DASHBOARD.UNKNOWN_PATIENT)}
                             </span>
                             {appointment.is_guest_booking && (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-carbon/10 text-carbon/60">
-                                Guest
+                                {t(COMMON.GUEST)}
                               </span>
                             )}
                           </div>
                           <div className="grid gap-2 md:grid-cols-2 text-xs text-carbon/70 ml-6">
                             <div className="flex items-center gap-1">
                               <MdAccessTime className="h-3 w-3" />
-                              <span className="font-medium">Date: </span>
+                              <span className="font-medium">{t(COMMON.DATE)} </span>
                               {format(appointmentDateTime, 'MMM dd, yyyy')}
                               {isTodayAppt && (
                                 <span className="text-xs px-1.5 py-0.5 rounded bg-azure-dragon/10 text-azure-dragon ml-1">
-                                  Today
+                                  {t(COMMON.TODAY)}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-1">
                               <MdSchedule className="h-3 w-3" />
-                              <span className="font-medium">Time: </span>
+                              <span className="font-medium">{t(COMMON.TIME)} </span>
                               {format(appointmentDateTime, 'hh:mm a')}
                             </div>
                             {appointment.service_name && (
                               <div>
-                                <span className="font-medium">Service: </span>
+                                <span className="font-medium">{t(COMMON.SERVICE)} </span>
                                 {appointment.service_name}
                               </div>
                             )}
                             <div>
-                              <span className="font-medium">Status: </span>
+                              <span className="font-medium">{t(COMMON.STATUS)} </span>
                               <span
                                 className={cn(
                                   'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
@@ -187,16 +198,16 @@ export const DoctorDashboard = () => {
                                     ? 'bg-blue-500/20 text-blue-600'
                                     : appointment.status === 'in_progress'
                                     ? 'bg-yellow-500/20 text-yellow-600'
-                                    : 'bg-carbon/10 text-carbon/60'
+                                    : 'bg-carbon/10 text-carbon/60',
                                 )}
                               >
-                                {appointment.status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                                {translateStatus(appointment.status)}
                               </span>
                             </div>
                           </div>
                           {appointment.notes && (
                             <div className="mt-2 ml-6 text-xs text-carbon/60">
-                              <span className="font-medium">Notes: </span>
+                              <span className="font-medium">{t(COMMON.NOTES)} </span>
                               {appointment.notes}
                             </div>
                           )}
@@ -209,7 +220,7 @@ export const DoctorDashboard = () => {
             ) : (
               <div className="text-center py-8 text-sm text-carbon/60">
                 <MdEvent className="h-8 w-8 mx-auto mb-2 text-carbon/30" />
-                <p>No upcoming appointments scheduled.</p>
+                <p>{t(DASHBOARD.NO_APPOINTMENTS_SCHEDULED)}</p>
               </div>
             )}
           </CardContent>
@@ -220,13 +231,13 @@ export const DoctorDashboard = () => {
       <Modal
         isOpen={!!selectedDate}
         onClose={() => setSelectedDate(null)}
-        title={`Appointments for ${selectedDate ? format(selectedDate, 'MMMM dd, yyyy') : ''}`}
+        title={t(DASHBOARD.APPOINTMENTS_FOR_DATE, { date: selectedDate ? format(selectedDate, 'MMMM dd, yyyy') : '' })}
       >
         <div className="space-y-3">
           {selectedDateAppointments.length > 0 ? (
             selectedDateAppointments.map((appointment) => {
               const appointmentDateTime = parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`);
-              
+
               return (
                 <div
                   key={appointment.appointment_id}
@@ -236,11 +247,11 @@ export const DoctorDashboard = () => {
                     <div className="flex items-center gap-2">
                       <MdPerson className="h-4 w-4 text-azure-dragon" />
                       <span className="text-sm font-medium text-carbon">
-                        {appointment.patient_name || appointment.guest_name || 'Unknown Patient'}
+                        {appointment.patient_name || appointment.guest_name || t(DASHBOARD.UNKNOWN_PATIENT)}
                       </span>
                       {appointment.is_guest_booking && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-carbon/10 text-carbon/60">
-                          Guest
+                          {t(COMMON.GUEST)}
                         </span>
                       )}
                     </div>
@@ -253,21 +264,21 @@ export const DoctorDashboard = () => {
                           ? 'bg-blue-500/20 text-blue-600'
                           : appointment.status === 'in_progress'
                           ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-carbon/10 text-carbon/60'
+                          : 'bg-carbon/10 text-carbon/60',
                       )}
                     >
-                      {appointment.status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {translateStatus(appointment.status)}
                     </span>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2 text-xs text-carbon/70 ml-6">
                     <div className="flex items-center gap-1">
                       <MdAccessTime className="h-3 w-3" />
-                      <span className="font-medium">Time: </span>
+                      <span className="font-medium">{t(COMMON.TIME)} </span>
                       {format(appointmentDateTime, 'hh:mm a')}
                     </div>
                     {appointment.service_name && (
                       <div>
-                        <span className="font-medium">Service: </span>
+                        <span className="font-medium">{t(COMMON.SERVICE)} </span>
                         {appointment.service_name}
                       </div>
                     )}
@@ -275,13 +286,13 @@ export const DoctorDashboard = () => {
                       <>
                         {appointment.guest_phone && (
                           <div>
-                            <span className="font-medium">Phone: </span>
+                            <span className="font-medium">{t(COMMON.PHONE)} </span>
                             {appointment.guest_phone}
                           </div>
                         )}
                         {appointment.guest_email && (
                           <div>
-                            <span className="font-medium">Email: </span>
+                            <span className="font-medium">{t(COMMON.EMAIL)} </span>
                             {appointment.guest_email}
                           </div>
                         )}
@@ -289,7 +300,7 @@ export const DoctorDashboard = () => {
                     ) : (
                       appointment.patient_id && (
                         <div>
-                          <span className="font-medium">Patient ID: </span>
+                          <span className="font-medium">{t(COMMON.PATIENT_ID)} </span>
                           {appointment.patient_id}
                         </div>
                       )
@@ -297,7 +308,7 @@ export const DoctorDashboard = () => {
                   </div>
                   {appointment.notes && (
                     <div className="mt-2 ml-6 text-xs text-carbon/60">
-                      <span className="font-medium">Notes: </span>
+                      <span className="font-medium">{t(COMMON.NOTES)} </span>
                       {appointment.notes}
                     </div>
                   )}
@@ -307,7 +318,7 @@ export const DoctorDashboard = () => {
           ) : (
             <div className="text-center py-8 text-sm text-carbon/60">
               <MdEvent className="h-8 w-8 mx-auto mb-2 text-carbon/30" />
-              <p>No appointments scheduled for this date.</p>
+              <p>{t(DASHBOARD.NO_APPOINTMENTS_FOR_THIS_DATE)}</p>
             </div>
           )}
         </div>
@@ -317,26 +328,19 @@ export const DoctorDashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <QuickActions />
 
-        {/* Doctor Info Card */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Your Schedule</CardTitle>
+            <CardTitle>{t(DASHBOARD.YOUR_SCHEDULE)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-carbon/60">
-                View and manage your appointments and schedule.
+                {t(DASHBOARD.SCHEDULE_DESC)}
               </p>
               <div className="space-y-2">
-                <div className="text-xs text-carbon/50">
-                  • Today's appointments
-                </div>
-                <div className="text-xs text-carbon/50">
-                  • Upcoming patients
-                </div>
-                <div className="text-xs text-carbon/50">
-                  • Schedule management
-                </div>
+                <div className="text-xs text-carbon/50">• {t(DASHBOARD.TODAYS_APPOINTMENTS_BULLET)}</div>
+                <div className="text-xs text-carbon/50">• {t(DASHBOARD.UPCOMING_PATIENTS_BULLET)}</div>
+                <div className="text-xs text-carbon/50">• {t(DASHBOARD.SCHEDULE_MGMT_BULLET)}</div>
               </div>
             </div>
           </CardContent>

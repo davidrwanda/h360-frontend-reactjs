@@ -121,6 +121,8 @@ export interface User {
   employee_profile?: EmployeeProfile;
   // Patient profile (nested object from /auth/me, if user_type is PATIENT)
   patient?: PatientProfile;
+  // Preferred language from login response
+  preferred_lang?: string;
 }
 
 export interface LoginRequest {

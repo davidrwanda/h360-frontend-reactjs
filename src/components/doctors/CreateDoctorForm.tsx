@@ -22,7 +22,6 @@ const createDoctorSchema = z.object({
   specialty: z.string().optional().or(z.literal('')),
   /** Optional UUIDs from GET /api/doctor-specialties; merged with specialty. */
   specialty_ids: z.array(z.string()).optional(),
-  sub_specialty: z.string().optional(),
   license_number: z.string().optional(),
   license_expiry_date: z.string().optional(),
   medical_school: z.string().optional(),
@@ -184,7 +183,6 @@ export const CreateDoctorForm = ({
         alternate_phone: data.alternate_phone || undefined,
         specialty: data.specialty?.trim() || undefined,
         specialty_ids: data.specialty_ids?.length ? data.specialty_ids : undefined,
-        sub_specialty: data.sub_specialty || undefined,
         license_number: data.license_number || undefined,
         license_expiry_date: data.license_expiry_date || undefined,
         medical_school: data.medical_school || undefined,
@@ -564,13 +562,6 @@ export const CreateDoctorForm = ({
                   placeholder="e.g., Cardiology — adds or links by name"
                   error={errors.specialty?.message}
                   {...register('specialty')}
-                />
-
-                <Input
-                  label="Sub-Specialty"
-                  placeholder="e.g., Interventional Cardiology"
-                  error={errors.sub_specialty?.message}
-                  {...register('sub_specialty')}
                 />
 
                 <Input

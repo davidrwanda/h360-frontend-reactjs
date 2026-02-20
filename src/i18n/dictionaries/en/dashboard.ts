@@ -1,0 +1,128 @@
+export const dashboardEn: Record<string, string> = {
+  // Shared
+  'dashboard.manageSubtitle': 'Manage clinics and users across the system',
+  'dashboard.appointmentsForDate': 'Appointments for {{date}}',
+  'dashboard.noAppointmentsForDate': 'No appointments for this date',
+  'dashboard.noUpcomingAppointments': 'No upcoming appointments',
+  'dashboard.upcomingAppointments': 'Upcoming Appointments',
+  'dashboard.clinicCalendar': 'Clinic Calendar',
+  'dashboard.unknownPatient': 'Unknown Patient',
+
+  // Stat card titles
+  'dashboard.totalClinics': 'Total Clinics',
+  'dashboard.activeClinics': 'Active Clinics',
+  'dashboard.totalEmployees': 'Total Employees',
+  'dashboard.activeEmployees': 'Active Employees',
+  'dashboard.totalPatients': 'Total Patients',
+  'dashboard.todaysAppointments': "Today's Appointments",
+  'dashboard.activeDoctors': 'Active Doctors',
+  'dashboard.services': 'Services',
+  'dashboard.patientsToday': 'Patients Today',
+  'dashboard.upcomingThisWeek': 'Upcoming This Week',
+  'dashboard.availableSlots': 'Available Slots',
+  'dashboard.queueLength': 'Queue Length',
+  'dashboard.checkedIn': 'Checked In',
+  'dashboard.newPatients': 'New Patients',
+  'dashboard.queuePosition': 'Queue Position',
+  'dashboard.availableDoctors': 'Available Doctors',
+  'dashboard.appointments': 'Appointments',
+  'dashboard.queueStatus': 'Queue Status',
+  'dashboard.assignedPatients': 'Assigned Patients',
+
+  // Role subtitles
+  'dashboard.clinicAdministrator': 'Clinic Administrator',
+  'dashboard.medicalProfessional': 'Medical Professional',
+  'dashboard.frontDeskOperations': 'Front Desk Operations',
+  'dashboard.nursingStaff': 'Nursing Staff',
+
+  // Card titles
+  'dashboard.systemInformation': 'System Information',
+  'dashboard.recentActivity': 'Recent Activity',
+  'dashboard.clinicInformation': 'Clinic Information',
+  'dashboard.clinicManagement': 'Clinic Management',
+  'dashboard.yourSchedule': 'Your Schedule',
+  'dashboard.yourInformation': 'Your Information',
+  'dashboard.queueManagement': 'Queue Management',
+  'dashboard.currentQueue': 'Current Queue',
+  'dashboard.patientCare': 'Patient Care',
+  'dashboard.todaysSchedule': "Today's Schedule",
+  'dashboard.nextAppointment': 'Next Appointment',
+  'dashboard.noUpcomingTitle': 'No Upcoming Appointments',
+  'dashboard.noUpcomingDesc': "You don't have any upcoming appointments scheduled. Book an appointment to get started.",
+  'dashboard.bookAppointment': 'Book Appointment',
+
+  // System dashboard
+  'dashboard.userType': 'User Type:',
+  'dashboard.permissions': 'Permissions:',
+  'dashboard.systemUserAccess': 'System User - Full system access',
+  'dashboard.adminUserAccess': 'Admin User - Full system access',
+  'dashboard.fullSystemAccess': 'Full system access',
+  'dashboard.viewActivityLogs': 'View Activity Logs',
+  'dashboard.activityPlaceholder': 'Recent activity will be displayed here once Activity Logs module is implemented.',
+
+  // Clinic admin dashboard
+  'dashboard.clinicId': 'Clinic ID:',
+  'dashboard.clinicAdminAccess': 'Clinic Administrator - Full clinic management access',
+  'dashboard.clinicMgmtDesc': "Manage your clinic's patients, doctors, services, and appointments.",
+  'dashboard.patientMgmtBullet': 'Patient management',
+  'dashboard.doctorSchedulesBullet': 'Doctor schedules',
+  'dashboard.serviceConfigBullet': 'Service configuration',
+  'dashboard.appointmentOversightBullet': 'Appointment oversight',
+
+  // Doctor dashboard
+  'dashboard.noAppointmentsScheduled': 'No upcoming appointments scheduled.',
+  'dashboard.noAppointmentsForThisDate': 'No appointments scheduled for this date.',
+  'dashboard.scheduleDesc': 'View and manage your appointments and schedule.',
+  'dashboard.todaysAppointmentsBullet': "Today's appointments",
+  'dashboard.upcomingPatientsBullet': 'Upcoming patients',
+  'dashboard.scheduleMgmtBullet': 'Schedule management',
+
+  // Receptionist dashboard
+  'dashboard.queueMgmtDesc': 'Manage patient check-ins and queue positions.',
+  'dashboard.checkInPatientsBullet': 'Check-in patients',
+  'dashboard.monitorQueueBullet': 'Monitor queue',
+  'dashboard.appointmentBookingBullet': 'Appointment booking',
+  'dashboard.queuePlaceholder': 'Active queue will be displayed here once the Queue module is implemented.',
+
+  // Nurse dashboard
+  'dashboard.patientCareDesc': 'Manage patient care and assist with appointments.',
+  'dashboard.patientRecordsBullet': 'Patient records',
+  'dashboard.appointmentAssistanceBullet': 'Appointment assistance',
+  'dashboard.queueMonitoringBullet': 'Queue monitoring',
+  'dashboard.schedulePlaceholder': 'Your schedule will be displayed here once the Appointments module is implemented.',
+
+  // Patient dashboard
+  'dashboard.manageProfileDesc': 'Manage your appointments and profile information',
+  'dashboard.upcomingAppointmentsStat': 'Upcoming Appointments',
+  'dashboard.noUpcomingStatDesc': 'No upcoming appointments',
+  'dashboard.clinicsSubscribed': "Clinics you're subscribed to",
+
+  // QuickActions
+  'dashboard.createNewClinic': 'Create New Clinic',
+  'dashboard.createClinicDesc': 'Create a clinic and assign an admin',
+  'dashboard.manageClinics': 'Manage Clinics',
+  'dashboard.manageUsers': 'Manage Users',
+  'dashboard.managePatients': 'Manage Patients',
+  'dashboard.manageDoctors': 'Manage Doctors',
+  'dashboard.manageServices': 'Manage Services',
+  'dashboard.viewAppointments': 'View Appointments',
+  'dashboard.myAppointments': 'My Appointments',
+  'dashboard.myPatients': 'My Patients',
+  'dashboard.mySchedule': 'My Schedule',
+  'dashboard.registerPatient': 'Register Patient',
+  'dashboard.viewPatients': 'View Patients',
+  'dashboard.scheduleAppointment': 'Schedule a new appointment',
+  'dashboard.viewAppointmentsDesc': 'View upcoming and past appointments',
+  'dashboard.myProfile': 'My Profile',
+  'dashboard.myProfileDesc': 'Manage your personal information',
+  'dashboard.findClinics': 'Find Clinics',
+  'dashboard.findClinicsDesc': 'Search and subscribe to clinics',
+  'dashboard.adminFooterDesc': 'Create and manage clinics and users. Admins manage system-level resources only.',
+
+  // Appointment status labels
+  'dashboard.statusBooked': 'Booked',
+  'dashboard.statusCheckedIn': 'Checked In',
+  'dashboard.statusInProgress': 'In Progress',
+  'dashboard.statusCompleted': 'Completed',
+  'dashboard.statusCancelled': 'Cancelled',
+};

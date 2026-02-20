@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui';
+import { Button, LanguageSwitcher } from '@/components/ui';
 import { useAuth, useLogout } from '@/hooks/useAuth';
 import { MdLocalHospital, MdMenu } from 'react-icons/md';
+import { useTranslation, COMMON } from '@/i18n';
 
 export const PublicHeader = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ export const PublicHeader = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const logoutMutation = useLogout();
+  const { t } = useTranslation();
 
   // Get user's full name and profile image
   const getUserName = () => {
@@ -88,11 +90,12 @@ export const PublicHeader = () => {
                 H360
               </span>
               <p className={`text-xs -mt-1 ${isLandingPage ? 'text-carbon/60' : 'text-white/80'}`}>
-                Your healthcare appointment in one click
+                {t(COMMON.TAGLINE)}
               </p>
             </div>
           </Link>
           <div className="hidden md:flex items-center gap-4">
+            <LanguageSwitcher variant={isLandingPage ? 'default' : 'light'} />
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -143,7 +146,7 @@ export const PublicHeader = () => {
                           }}
                           className="w-full rounded-md px-3 py-2 text-left text-sm text-carbon/80 transition-colors hover:bg-white-smoke"
                         >
-                          Dashboard
+                          {t(COMMON.DASHBOARD)}
                         </button>
                         <button
                           onClick={() => {
@@ -152,13 +155,13 @@ export const PublicHeader = () => {
                           }}
                           className="w-full rounded-md px-3 py-2 text-left text-sm text-carbon/80 transition-colors hover:bg-white-smoke"
                         >
-                          Settings
+                          {t(COMMON.SETTINGS)}
                         </button>
                         <button
                           onClick={handleLogout}
                           className="w-full rounded-md px-3 py-2 text-left text-sm text-smudged-lips transition-colors hover:bg-white-smoke"
                         >
-                          Logout
+                          {t(COMMON.LOGOUT)}
                         </button>
                       </div>
                     </div>
@@ -173,7 +176,7 @@ export const PublicHeader = () => {
                     size="sm"
                     className={isLandingPage ? 'text-carbon hover:text-azure-dragon' : 'text-white hover:bg-white/10'}
                   >
-                    Login
+                    {t(COMMON.LOGIN)}
                   </Button>
                 </Link>
                 <Link to="/register">
@@ -182,7 +185,7 @@ export const PublicHeader = () => {
                     size="sm"
                     className={!isLandingPage ? 'border-white text-white hover:bg-white hover:text-azure-dragon' : ''}
                   >
-                    Register
+                    {t(COMMON.REGISTER)}
                   </Button>
                 </Link>
               </>
@@ -200,6 +203,9 @@ export const PublicHeader = () => {
         {showMobileMenu && (
           <div className="md:hidden py-4 border-t border-carbon/10">
             <div className="flex flex-col gap-2">
+              <div className="px-3 py-2">
+                <LanguageSwitcher variant={isLandingPage ? 'default' : 'light'} />
+              </div>
               {isAuthenticated ? (
                 <>
                   <div className="px-3 py-2 border-b border-carbon/10">
@@ -213,7 +219,7 @@ export const PublicHeader = () => {
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm text-carbon/80 transition-colors hover:bg-white-smoke"
                   >
-                    Dashboard
+                    {t(COMMON.DASHBOARD)}
                   </button>
                   <button
                     onClick={() => {
@@ -222,7 +228,7 @@ export const PublicHeader = () => {
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm text-carbon/80 transition-colors hover:bg-white-smoke"
                   >
-                    Settings
+                    {t(COMMON.SETTINGS)}
                   </button>
                   <button
                     onClick={() => {
@@ -231,19 +237,19 @@ export const PublicHeader = () => {
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm text-smudged-lips transition-colors hover:bg-white-smoke"
                   >
-                    Logout
+                    {t(COMMON.LOGOUT)}
                   </button>
                 </>
               ) : (
                 <>
                   <Link to="/login" onClick={() => setShowMobileMenu(false)}>
                     <Button variant="ghost" size="sm" className="w-full justify-start">
-                      Login
+                      {t(COMMON.LOGIN)}
                     </Button>
                   </Link>
                   <Link to="/register" onClick={() => setShowMobileMenu(false)}>
                     <Button variant={isLandingPage ? 'primary' : 'outline'} size="sm" className="w-full">
-                      Register
+                      {t(COMMON.REGISTER)}
                     </Button>
                   </Link>
                 </>

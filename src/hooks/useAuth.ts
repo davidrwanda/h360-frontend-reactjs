@@ -3,6 +3,9 @@ import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import type { LoginRequest, ChangePasswordRequest, User, UserRole } from '@/types/auth';
 import { useNavigate } from 'react-router-dom';
+import { useI18nStore } from '@/i18n/i18nStore';
+import { SUPPORTED_LANGS } from '@/i18n/types';
+import type { SupportedLang } from '@/i18n/types';
 
 /**
  * Normalize role to uppercase format (Admin -> ADMIN, Manager -> MANAGER, etc.)
@@ -111,6 +114,7 @@ export const useLogin = (options?: { skipNavigation?: boolean }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { login, setIsLoading } = useAuthStore();
+  const setLang = useI18nStore((s) => s.setLang);
 
   return useMutation({
     mutationFn: (credentials: LoginRequest) => authApi.login(credentials),
@@ -121,21 +125,26 @@ export const useLogin = (options?: { skipNavigation?: boolean }) => {
       // Store tokens in localStorage
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
-      
+
+      // Set language from user's preferred_lang if valid
+      if (data.user.preferred_lang && SUPPORTED_LANGS.includes(data.user.preferred_lang as SupportedLang)) {
+        setLang(data.user.preferred_lang as SupportedLang);
+      }
+
       // Normalize user data (ensure username exists)
       const normalizedUser = {
         ...data.user,
         username: data.user.username || data.user.email,
       };
-      
+
       // Update auth store
       login(normalizedUser, data.access_token, data.refresh_token);
-      
+
       // Invalidate and refetch user data from /api/auth/me to get complete patient/employee data
       // This ensures we get the full user object with nested patient/employee profiles
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
-      
+
       // Navigate to dashboard only if navigation is not skipped
       if (!options?.skipNavigation) {
         navigate('/dashboard', { replace: true });

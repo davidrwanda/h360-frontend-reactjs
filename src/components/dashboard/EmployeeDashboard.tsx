@@ -8,12 +8,21 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { MdEvent, MdPeople, MdQueue, MdLocalHospital, MdAccessTime, MdPerson } from 'react-icons/md';
 import { format, isToday, parseISO, isSameDay } from 'date-fns';
 import { cn } from '@/utils/cn';
+import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
+
+const STATUS_KEYS: Record<string, string> = {
+  booked: DASHBOARD.STATUS_BOOKED,
+  checked_in: DASHBOARD.STATUS_CHECKED_IN,
+  in_progress: DASHBOARD.STATUS_IN_PROGRESS,
+  completed: DASHBOARD.STATUS_COMPLETED,
+  cancelled: DASHBOARD.STATUS_CANCELLED,
+};
 
 export const EmployeeDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Get clinic_id from storage (fallback to user object)
   const getClinicIdFromStorage = (): string | undefined => {
     try {
       const authStorage = localStorage.getItem('h360-auth-storage');
@@ -31,7 +40,6 @@ export const EmployeeDashboard = () => {
 
   const clinicId = getClinicIdFromStorage();
 
-  // Fetch appointments for the clinic
   const { data: appointmentsData, isLoading: isLoadingAppointments } = useAppointments({
     clinic_id: clinicId,
     limit: 100,
@@ -41,21 +49,19 @@ export const EmployeeDashboard = () => {
 
   const appointments = appointmentsData?.data || [];
 
-  // Filter upcoming appointments
   const today = new Date();
   const upcomingAppointments = appointments
     .filter((apt) => {
       const aptDate = parseISO(apt.appointment_date);
       return aptDate >= today && apt.status !== 'completed' && apt.status !== 'cancelled';
     })
-    .slice(0, 10); // Show next 10 upcoming appointments
+    .slice(0, 10);
 
   const todayAppointments = appointments.filter((apt) => {
     const aptDate = parseISO(apt.appointment_date);
     return isToday(aptDate) && apt.status !== 'completed' && apt.status !== 'cancelled';
   });
 
-  // Get appointments for selected date
   const selectedDateAppointments = selectedDate
     ? appointments.filter((apt) => {
         const aptDate = parseISO(apt.appointment_date);
@@ -67,46 +73,51 @@ export const EmployeeDashboard = () => {
     setSelectedDate(date);
   };
 
+  const translateStatus = (status: string) => {
+    const key = STATUS_KEYS[status];
+    return key ? t(key) : status.replace('_', ' ');
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Dashboard
+          {t(COMMON.DASHBOARD)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Welcome back, <span className="font-medium">
-            {user?.employee?.first_name || 
-             user?.employee?.full_name?.split(' ')[0] ||
-             user?.first_name ||
-             user?.username || 
-             user?.email}
-          </span>!
+          {t(COMMON.WELCOME_BACK, {
+            name: user?.employee?.first_name ||
+              user?.employee?.full_name?.split(' ')[0] ||
+              user?.first_name ||
+              user?.username ||
+              user?.email || '',
+          })}
         </p>
       </div>
 
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Today's Appointments"
+          title={t(DASHBOARD.TODAYS_APPOINTMENTS)}
           value={todayAppointments.length.toString()}
           icon={<MdEvent className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Patients Today"
+          title={t(DASHBOARD.PATIENTS_TODAY)}
           value={todayAppointments.length.toString()}
           icon={<MdPeople className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Queue Position"
+          title={t(DASHBOARD.QUEUE_POSITION)}
           value="—"
           icon={<MdQueue className="h-6 w-6" />}
           variant="success"
         />
         <StatCard
-          title="Available Doctors"
+          title={t(DASHBOARD.AVAILABLE_DOCTORS)}
           value="—"
           icon={<MdLocalHospital className="h-6 w-6" />}
           variant="primary"
@@ -115,21 +126,19 @@ export const EmployeeDashboard = () => {
 
       {/* Clinic Calendar and Upcoming Appointments */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Calendar - Takes 2 columns */}
         <div className="lg:col-span-2">
           <AppointmentsCalendar
             appointments={appointments}
             onDateClick={handleDateClick}
-            title="Clinic Calendar"
+            title={t(DASHBOARD.CLINIC_CALENDAR)}
           />
         </div>
 
-        {/* Upcoming Appointments - Takes 1 column */}
         <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdAccessTime className="h-5 w-5 text-azure-dragon" />
-              Upcoming Appointments
+              {t(DASHBOARD.UPCOMING_APPOINTMENTS)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -139,7 +148,7 @@ export const EmployeeDashboard = () => {
               </div>
             ) : upcomingAppointments.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-carbon/60">No upcoming appointments</p>
+                <p className="text-sm text-carbon/60">{t(DASHBOARD.NO_UPCOMING_APPOINTMENTS)}</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -156,7 +165,7 @@ export const EmployeeDashboard = () => {
                           <div className="flex items-center gap-2 mb-1">
                             <MdPerson className="h-4 w-4 text-carbon/60 flex-shrink-0" />
                             <p className="text-sm font-medium text-carbon truncate">
-                              {apt.patient_name || apt.guest_name || 'Unknown'}
+                              {apt.patient_name || apt.guest_name || t(COMMON.UNKNOWN)}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-carbon/60 mb-1">
@@ -168,7 +177,7 @@ export const EmployeeDashboard = () => {
                             <span>{format(aptDateTime, 'hh:mm a')}</span>
                           </div>
                           {apt.doctor_name && (
-                            <p className="text-xs text-carbon/50">Dr. {apt.doctor_name}</p>
+                            <p className="text-xs text-carbon/50">{t(COMMON.DR_PREFIX)} {apt.doctor_name}</p>
                           )}
                           {apt.service_name && (
                             <p className="text-xs text-carbon/50">{apt.service_name}</p>
@@ -183,10 +192,10 @@ export const EmployeeDashboard = () => {
                               ? 'bg-blue-500/20 text-blue-600'
                               : apt.status === 'in_progress'
                               ? 'bg-yellow-500/20 text-yellow-600'
-                              : 'bg-carbon/10 text-carbon/70'
+                              : 'bg-carbon/10 text-carbon/70',
                           )}
                         >
-                          {apt.status.replace('_', ' ')}
+                          {translateStatus(apt.status)}
                         </span>
                       </div>
                       {apt.notes && (
@@ -205,28 +214,27 @@ export const EmployeeDashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <QuickActions />
 
-        {/* User Info Card */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Your Information</CardTitle>
+            <CardTitle>{t(DASHBOARD.YOUR_INFORMATION)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-carbon/60">Role:</span>
+                <span className="text-carbon/60">{t(COMMON.ROLE)}</span>
                 <span className="font-medium text-carbon capitalize">
                   {user?.role || user?.user_type || 'N/A'}
                 </span>
               </div>
               {user?.email && (
                 <div className="flex justify-between">
-                  <span className="text-carbon/60">Email:</span>
+                  <span className="text-carbon/60">{t(COMMON.EMAIL)}</span>
                   <span className="font-medium text-carbon text-xs">{user.email}</span>
                 </div>
               )}
               {clinicId && (
                 <div className="flex justify-between">
-                  <span className="text-carbon/60">Clinic ID:</span>
+                  <span className="text-carbon/60">{t(DASHBOARD.CLINIC_ID)}</span>
                   <span className="font-medium text-carbon text-xs">{clinicId}</span>
                 </div>
               )}
@@ -240,11 +248,11 @@ export const EmployeeDashboard = () => {
         <Modal
           isOpen={!!selectedDate}
           onClose={() => setSelectedDate(null)}
-          title={`Appointments for ${format(selectedDate, 'MMMM d, yyyy')}`}
+          title={t(DASHBOARD.APPOINTMENTS_FOR_DATE, { date: format(selectedDate, 'MMMM d, yyyy') })}
         >
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
             {selectedDateAppointments.length === 0 ? (
-              <p className="text-sm text-carbon/60 text-center py-4">No appointments for this date</p>
+              <p className="text-sm text-carbon/60 text-center py-4">{t(DASHBOARD.NO_APPOINTMENTS_FOR_DATE)}</p>
             ) : (
               selectedDateAppointments.map((apt) => {
                 const aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
@@ -256,13 +264,13 @@ export const EmployeeDashboard = () => {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-carbon">
-                          {apt.patient_name || apt.guest_name || 'Unknown'}
+                          {apt.patient_name || apt.guest_name || t(COMMON.UNKNOWN)}
                         </p>
                         <p className="text-xs text-carbon/60 mt-1">
                           {format(aptDateTime, 'hh:mm a')}
                         </p>
                         {apt.doctor_name && (
-                          <p className="text-xs text-carbon/50 mt-1">Dr. {apt.doctor_name}</p>
+                          <p className="text-xs text-carbon/50 mt-1">{t(COMMON.DR_PREFIX)} {apt.doctor_name}</p>
                         )}
                         {apt.service_name && (
                           <p className="text-xs text-carbon/50">{apt.service_name}</p>
@@ -277,10 +285,10 @@ export const EmployeeDashboard = () => {
                             ? 'bg-blue-500/20 text-blue-600'
                             : apt.status === 'in_progress'
                             ? 'bg-yellow-500/20 text-yellow-600'
-                            : 'bg-carbon/10 text-carbon/70'
+                            : 'bg-carbon/10 text-carbon/70',
                         )}
                       >
-                        {apt.status.replace('_', ' ')}
+                        {translateStatus(apt.status)}
                       </span>
                     </div>
                     {apt.notes && (

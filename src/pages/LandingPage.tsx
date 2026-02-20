@@ -7,6 +7,7 @@ import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useSlots } from '@/hooks/useSlots';
 import { Button, Loading } from '@/components/ui';
 import { PublicHeader, PublicFooter } from '@/components/layout';
+import { useTranslation, LANDING } from '@/i18n';
 import { LocationInput } from '@/components/clinics/LocationInput';
 import { ClinicAutocomplete } from '@/components/clinics/ClinicAutocomplete';
 import { ClinicSlotsDisplay } from '@/components/clinics/ClinicSlotsDisplay';
@@ -29,6 +30,7 @@ import {
 
 export const LandingPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [clinicName, setClinicName] = useState('');
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [location, setLocation] = useState('');
@@ -376,7 +378,7 @@ export const LandingPage = () => {
       <PublicHeader />
 
       {/* Hero Section with Background */}
-      <section className="relative min-h-[60vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden pb-8">
+      <section className="relative min-h-[70vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden pt-8 pb-12">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -391,10 +393,10 @@ export const LandingPage = () => {
         {/* Content */}
         <div className="relative z-10 w-full max-w-6xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-white mb-4">
-            Find a Healthcare Clinic
+            {t(LANDING.HERO_TITLE)}
           </h1>
           <p className="text-xl sm:text-2xl text-white/90 mb-12">
-            Book Your Appointment
+            {t(LANDING.HERO_SUBTITLE)}
           </p>
 
           {/* Multi-Field Search Bar */}
@@ -406,7 +408,7 @@ export const LandingPage = () => {
                 value={clinicName}
                 onChange={handleClinicNameChange}
                 onClinicSelect={handleClinicSelect}
-                placeholder="Clinic Name or Establishment"
+                placeholder={t(LANDING.CLINIC_NAME_PLACEHOLDER)}
                 className="pl-12 pr-4"
               />
             </div>
@@ -446,7 +448,7 @@ export const LandingPage = () => {
                     }, 100);
                   }
                 }}
-                placeholder="City or Postal Code"
+                placeholder={t(LANDING.LOCATION_PLACEHOLDER)}
                 className="pl-12 pr-4"
                 disabled={!!selectedClinic}
               />
@@ -461,7 +463,7 @@ export const LandingPage = () => {
                 className="pl-12 pr-4 py-4 text-base border-0 focus:ring-2 focus:ring-azure-dragon/20 rounded-xl h-full w-full bg-[#f5f5f5] text-carbon appearance-none cursor-pointer"
                 style={{ backgroundColor: '#f5f5f5' }}
               >
-                <option value="">Clinic Type (Optional)</option>
+                <option value="">{t(LANDING.CLINIC_TYPE_OPTIONAL)}</option>
                 {clinicTypes?.map((type) => (
                   <option key={type.clinic_type_id} value={type.clinic_type_id}>
                     {type.name}
@@ -481,16 +483,16 @@ export const LandingPage = () => {
               {isGettingLocation ? (
                 <>
                   <Loading size="sm" className="mr-2" />
-                  Getting location...
+                  {t(LANDING.GETTING_LOCATION)}
                 </>
               ) : isLoading ? (
                 <>
                   <Loading size="sm" className="mr-2" />
-                  Searching...
+                  {t(LANDING.SEARCHING)}
                 </>
               ) : (
                 <>
-                  Search
+                  {t(LANDING.SEARCH)}
                   <MdSearch className="ml-2 h-5 w-5" />
                 </>
               )}
@@ -509,15 +511,17 @@ export const LandingPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-lg font-semibold text-carbon">
                     {displayClinics.length > 0
-                      ? `Found ${displayClinics.length} ${displayClinics.length === 1 ? 'clinic' : 'clinics'}`
-                      : 'Search Results'}
+                      ? displayClinics.length === 1
+                        ? t(LANDING.FOUND_CLINIC, { count: String(displayClinics.length) })
+                        : t(LANDING.FOUND_CLINICS, { count: String(displayClinics.length) })
+                      : t(LANDING.SEARCH_RESULTS)}
                   </p>
                   <button
                     onClick={clearSearch}
                     className="text-sm text-carbon/60 hover:text-carbon flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-carbon/5 transition-colors"
                   >
                     <MdClose className="h-4 w-4" />
-                    Clear
+                    {t(LANDING.CLEAR)}
                   </button>
                 </div>
                 
@@ -527,7 +531,7 @@ export const LandingPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-carbon mb-2">
-                          Search Radius: {radiusKm} km
+                          {t(LANDING.SEARCH_RADIUS, { radius: String(radiusKm) })}
                         </label>
                         <input
                           type="range"
@@ -544,7 +548,7 @@ export const LandingPage = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-carbon mb-2">
-                          Max Clinics: {maxClinics}
+                          {t(LANDING.MAX_CLINICS, { max: String(maxClinics) })}
                         </label>
                         <input
                           type="range"
@@ -563,7 +567,7 @@ export const LandingPage = () => {
                     {isLoadingSlots && (
                       <div className="mt-3 text-sm text-carbon/60 flex items-center gap-2">
                         <Loading size="sm" />
-                        <span>Updating results...</span>
+                        <span>{t(LANDING.UPDATING_RESULTS)}</span>
                       </div>
                     )}
                   </div>
@@ -582,7 +586,7 @@ export const LandingPage = () => {
                     <div className="text-center py-12">
                       <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
                       <p className="text-carbon/60 text-lg">
-                        Unable to search clinics. Please try again later.
+                        {t(LANDING.UNABLE_TO_SEARCH)}
                       </p>
                     </div>
                   ) : displayClinics.length > 0 ? (
@@ -600,7 +604,7 @@ export const LandingPage = () => {
                   ) : (
                     <div className="text-center py-12">
                       <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
-                      <p className="text-carbon/60 text-lg">No clinics found. Try a different search.</p>
+                      <p className="text-carbon/60 text-lg">{t(LANDING.NO_CLINICS_FOUND)}</p>
                     </div>
                   )}
                 </div>
@@ -653,10 +657,10 @@ export const LandingPage = () => {
                 <MdLocalHospital className="h-6 w-6 text-azure-dragon" />
               </div>
               <h3 className="text-base font-semibold text-carbon mb-1">
-                Find Trusted Clinics
+                {t(LANDING.FIND_TRUSTED_CLINICS)}
               </h3>
               <p className="text-sm text-carbon/60">
-                Connect with verified healthcare providers
+                {t(LANDING.FIND_TRUSTED_CLINICS_DESC)}
               </p>
             </div>
 
@@ -665,10 +669,10 @@ export const LandingPage = () => {
                 <MdCalendarToday className="h-6 w-6 text-azure-dragon" />
               </div>
               <h3 className="text-base font-semibold text-carbon mb-1">
-                Easy Booking
+                {t(LANDING.EASY_BOOKING)}
               </h3>
               <p className="text-sm text-carbon/60">
-                Schedule appointments in just a few clicks
+                {t(LANDING.EASY_BOOKING_DESC)}
               </p>
             </div>
 
@@ -677,10 +681,10 @@ export const LandingPage = () => {
                 <MdPeople className="h-6 w-6 text-azure-dragon" />
               </div>
               <h3 className="text-base font-semibold text-carbon mb-1">
-                Complete Care
+                {t(LANDING.COMPLETE_CARE)}
               </h3>
               <p className="text-sm text-carbon/60">
-                Manage your health records all in one place
+                {t(LANDING.COMPLETE_CARE_DESC)}
               </p>
             </div>
           </div>
@@ -694,43 +698,43 @@ export const LandingPage = () => {
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-heading font-bold text-carbon mb-4">
-              Everything You Need for Better Healthcare
+              {t(LANDING.FEATURES_TITLE)}
             </h2>
             <p className="text-lg text-carbon/70 max-w-2xl mx-auto">
-              Our comprehensive platform connects patients with healthcare providers, making healthcare management simple and accessible.
+              {t(LANDING.FEATURES_SUBTITLE)}
             </p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
               icon={<MdLocalHospital className="h-8 w-8" />}
-              title="Find Clinics"
-              description="Search and discover healthcare clinics near you. Filter by location, clinic type, and availability."
+              title={t(LANDING.FIND_CLINICS)}
+              description={t(LANDING.FIND_CLINICS_DESC)}
             />
             <FeatureCard
               icon={<MdCalendarToday className="h-8 w-8" />}
-              title="Book Appointments"
-              description="Schedule appointments online with ease. View available slots and book instantly."
+              title={t(LANDING.BOOK_APPOINTMENTS)}
+              description={t(LANDING.BOOK_APPOINTMENTS_DESC)}
             />
             <FeatureCard
               icon={<MdPeople className="h-8 w-8" />}
-              title="Patient Management"
-              description="Manage your health records, view medical history, and track your appointments all in one place."
+              title={t(LANDING.PATIENT_MANAGEMENT)}
+              description={t(LANDING.PATIENT_MANAGEMENT_DESC)}
             />
             <FeatureCard
               icon={<MdNotifications className="h-8 w-8" />}
-              title="Smart Reminders"
-              description="Receive timely reminders for appointments, medications, and important health checkups."
+              title={t(LANDING.SMART_REMINDERS)}
+              description={t(LANDING.SMART_REMINDERS_DESC)}
             />
             <FeatureCard
               icon={<MdSecurity className="h-8 w-8" />}
-              title="Secure & Private"
-              description="Your health data is protected with enterprise-grade security and privacy controls."
+              title={t(LANDING.SECURE_PRIVATE)}
+              description={t(LANDING.SECURE_PRIVATE_DESC)}
             />
             <FeatureCard
               icon={<MdAccessibility className="h-8 w-8" />}
-              title="Easy Access"
-              description="Access your healthcare information anytime, anywhere. Available on all devices."
+              title={t(LANDING.EASY_ACCESS)}
+              description={t(LANDING.EASY_ACCESS_DESC)}
             />
           </div>
         </div>
@@ -742,10 +746,10 @@ export const LandingPage = () => {
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-azure-dragon to-azure-dragon/80">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl sm:text-4xl font-heading font-bold text-white mb-6">
-            Ready to Get Started?
+            {t(LANDING.CTA_TITLE)}
           </h2>
           <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of patients who trust H360 for their healthcare needs. Register today and take control of your health.
+            {t(LANDING.CTA_SUBTITLE)}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -754,7 +758,7 @@ export const LandingPage = () => {
               onClick={() => navigate('/register')}
               className="bg-white text-azure-dragon hover:bg-white/90 border-white"
             >
-              Create Account
+              {t(LANDING.CREATE_ACCOUNT)}
               <MdArrowForward className="ml-2 h-5 w-5" />
             </Button>
             <Button
@@ -763,7 +767,7 @@ export const LandingPage = () => {
               onClick={() => navigate('/login')}
               className="text-white border-white hover:bg-white/10"
             >
-              Already have an account? Login
+              {t(LANDING.ALREADY_HAVE_ACCOUNT)}
             </Button>
           </div>
         </div>

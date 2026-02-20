@@ -1,25 +1,31 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useForgotPassword } from '@/hooks/useAuth';
-import { Button, Input, Card, CardContent } from '@/components/ui';
+import { Button, Input, Card, CardContent, LanguageSwitcher } from '@/components/ui';
 import { MdArrowBack, MdEmail } from 'react-icons/md';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, AUTH, COMMON } from '@/i18n';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-});
+type ForgotPasswordFormData = z.infer<ReturnType<typeof createForgotSchema>>;
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+function createForgotSchema(t: (key: string) => string) {
+  return z.object({
+    email: z.string().email(t(AUTH.INVALID_EMAIL)),
+  });
+}
 
 export const ForgotPasswordPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [success, setSuccess] = useState(false);
   const [emailSent, setEmailSent] = useState('');
   const forgotPasswordMutation = useForgotPassword();
   const { success: showSuccess, error: showError } = useToastStore();
+
+  const forgotPasswordSchema = useMemo(() => createForgotSchema(t), [t]);
 
   const {
     register,
@@ -34,9 +40,9 @@ export const ForgotPasswordPage = () => {
       await forgotPasswordMutation.mutateAsync(data.email);
       setEmailSent(data.email);
       setSuccess(true);
-      showSuccess('If an account with this email exists, a password reset OTP has been sent to your email.');
+      showSuccess(t(AUTH.OTP_SENT_MESSAGE));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(AUTH.SEND_FAILED);
       showError(errorMessage);
     }
   };
@@ -45,9 +51,9 @@ export const ForgotPasswordPage = () => {
     if (emailSent) {
       try {
         await forgotPasswordMutation.mutateAsync(emailSent);
-        showSuccess('A new OTP code has been sent to your email.');
+        showSuccess(t(AUTH.OTP_RESENT));
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to resend OTP. Please try again.';
+        const errorMessage = err instanceof Error ? err.message : t(AUTH.RESEND_FAILED);
         showError(errorMessage);
       }
     } else {
@@ -58,14 +64,18 @@ export const ForgotPasswordPage = () => {
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 md:p-6 overflow-hidden">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(/landing.jpg)',
         }}
       >
-        {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-azure-dragon/85 via-azure-dragon/75 to-azure-dragon/85"></div>
+      </div>
+
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher variant="light" />
       </div>
 
       {/* Content */}
@@ -73,10 +83,10 @@ export const ForgotPasswordPage = () => {
         {/* Logo/Brand */}
         <div className="mb-6 text-center">
           <h1 className="text-xl font-heading font-semibold text-white mb-1.5 tracking-tight">
-            H360 Clinic CRM
+            {t(COMMON.APP_NAME)}
           </h1>
           <p className="text-xs text-white/75 font-ui font-normal">
-            Reset your password
+            {t(AUTH.RESET_YOUR_PASSWORD)}
           </p>
         </div>
 
@@ -90,13 +100,13 @@ export const ForgotPasswordPage = () => {
                     <MdEmail className="h-8 w-8 text-azure-dragon" />
                   </div>
                   <h2 className="text-lg font-heading font-semibold text-carbon mb-2">
-                    Check Your Email
+                    {t(AUTH.CHECK_YOUR_EMAIL)}
                   </h2>
                   <p className="text-sm text-carbon/70 font-ui leading-relaxed">
-                    If an account with this email exists, a password reset OTP has been sent to your email.
+                    {t(AUTH.OTP_SENT_MESSAGE)}
                   </p>
                   <p className="text-xs text-carbon/60 font-ui mt-3">
-                    The OTP code expires in 15 minutes.
+                    {t(AUTH.OTP_EXPIRES)}
                   </p>
                 </div>
                 <div className="space-y-3 pt-4">
@@ -106,7 +116,7 @@ export const ForgotPasswordPage = () => {
                     className="w-full"
                     onClick={() => navigate(`/reset-password?email=${encodeURIComponent(emailSent)}`)}
                   >
-                    Enter OTP Code
+                    {t(AUTH.ENTER_OTP_CODE)}
                   </Button>
                   <div className="flex gap-3">
                     <Button
@@ -115,7 +125,7 @@ export const ForgotPasswordPage = () => {
                       className="flex-1"
                       onClick={() => navigate('/login')}
                     >
-                      Back to Login
+                      {t(COMMON.BACK_TO_LOGIN)}
                     </Button>
                     <Button
                       variant="outline"
@@ -124,7 +134,7 @@ export const ForgotPasswordPage = () => {
                       onClick={handleResendOTP}
                       disabled={forgotPasswordMutation.isPending}
                     >
-                      {forgotPasswordMutation.isPending ? 'Sending...' : 'Resend OTP'}
+                      {forgotPasswordMutation.isPending ? t(AUTH.SENDING) : t(AUTH.RESEND_OTP)}
                     </Button>
                   </div>
                 </div>
@@ -133,15 +143,15 @@ export const ForgotPasswordPage = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                 <div className="mb-2">
                   <p className="text-sm text-carbon/70 font-ui leading-relaxed">
-                    Enter your email address and we'll send you a 6-digit OTP code to reset your password.
+                    {t(AUTH.FORGOT_INSTRUCTIONS)}
                   </p>
                 </div>
 
                 <div>
                   <Input
-                    label="Email Address"
+                    label={t(AUTH.EMAIL_ADDRESS)}
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t(AUTH.EMAIL_PLACEHOLDER)}
                     error={errors.email?.message}
                     autoComplete="email"
                     {...register('email')}
@@ -156,7 +166,7 @@ export const ForgotPasswordPage = () => {
                   isLoading={forgotPasswordMutation.isPending}
                   disabled={forgotPasswordMutation.isPending}
                 >
-                  Send Reset Code
+                  {t(AUTH.SEND_RESET_CODE)}
                 </Button>
               </form>
             )}
@@ -170,7 +180,7 @@ export const ForgotPasswordPage = () => {
             className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
           >
             <MdArrowBack className="h-4 w-4" />
-            Back to Login
+            {t(COMMON.BACK_TO_LOGIN)}
           </button>
         </div>
       </div>

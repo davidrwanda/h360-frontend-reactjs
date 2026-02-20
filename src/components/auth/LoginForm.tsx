@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useLogin } from '@/hooks/useAuth';
-import { Button, Input, Card, CardContent } from '@/components/ui';
+import { Button, Input, Card, CardContent, LanguageSwitcher } from '@/components/ui';
 import { MdVisibility, MdVisibilityOff, MdArrowBack } from 'react-icons/md';
+import { useTranslation, AUTH, COMMON } from '@/i18n';
 
-const loginSchema = z.object({
-  username: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required'),
-});
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
 
-type LoginFormData = z.infer<typeof loginSchema>;
+function createLoginSchema(t: (key: string) => string) {
+  return z.object({
+    username: z.string().min(1, t(AUTH.USERNAME_REQUIRED)),
+    password: z.string().min(1, t(AUTH.PASSWORD_REQUIRED)),
+  });
+}
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -21,9 +24,12 @@ interface LoginFormProps {
 
 export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }: LoginFormProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const loginMutation = useLogin({ skipNavigation: !!onSuccess });
+
+  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
 
   const {
     register,
@@ -37,8 +43,6 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
     setError(null);
     try {
       await loginMutation.mutateAsync(data);
-      // Call onSuccess callback if provided (for modal usage)
-      // Use a small delay to ensure state is updated
       if (onSuccess) {
         setTimeout(() => {
           onSuccess();
@@ -46,9 +50,9 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
       }
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || 'Login failed. Please check your credentials.');
+        setError(err.message || t(AUTH.LOGIN_FAILED));
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        setError(t(AUTH.UNEXPECTED_ERROR));
       }
     }
   };
@@ -56,14 +60,18 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 md:p-6 overflow-hidden">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(/landing.jpg)',
         }}
       >
-        {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-azure-dragon/85 via-azure-dragon/75 to-azure-dragon/85"></div>
+      </div>
+
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher variant="light" />
       </div>
 
       {/* Content */}
@@ -71,10 +79,10 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
         {/* Logo/Brand */}
         <div className="mb-6 text-center">
           <h1 className="text-xl font-heading font-semibold text-white mb-1.5 tracking-tight">
-            H360 Clinic CRM
+            {t(COMMON.APP_NAME)}
           </h1>
           <p className="text-xs text-white/75 font-ui font-normal">
-            Sign in to your account
+            {t(AUTH.SIGN_IN_SUBTITLE)}
           </p>
         </div>
 
@@ -90,11 +98,11 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
 
               <div>
                 <Input
-                  label="Username or Email"
+                  label={t(AUTH.USERNAME_OR_EMAIL)}
                   type="text"
-                  placeholder="Enter your username or email"
+                  placeholder={t(AUTH.USERNAME_PLACEHOLDER)}
                   error={errors.username?.message}
-                  helperText="Username can contain letters, numbers, underscores, @, dots, and plus signs"
+                  helperText={t(AUTH.USERNAME_HELPER)}
                   autoComplete="username"
                   {...register('username')}
                 />
@@ -102,12 +110,12 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
 
               <div>
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  Password
+                  {t(AUTH.PASSWORD)}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder={t(AUTH.PASSWORD_PLACEHOLDER)}
                     autoComplete="current-password"
                     className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 pr-10 py-2.5 text-sm font-ui text-carbon transition-all duration-150 placeholder:text-carbon/35 placeholder:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0 focus-visible:border-azure-dragon/60"
                     {...register('password')}
@@ -117,7 +125,7 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-carbon/40 hover:text-carbon transition-colors"
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t(AUTH.HIDE_PASSWORD) : t(AUTH.SHOW_PASSWORD)}
                   >
                     {showPassword ? (
                       <MdVisibilityOff className="h-5 w-5" />
@@ -139,7 +147,7 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
                 isLoading={loginMutation.isPending}
                 disabled={loginMutation.isPending}
               >
-                Sign In
+                {t(COMMON.SIGN_IN)}
               </Button>
 
               <div className="mt-4 text-center">
@@ -148,14 +156,14 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
                   onClick={() => navigate('/forgot-password')}
                   className="text-sm text-azure-dragon hover:text-azure-dragon/80 transition-colors font-medium"
                 >
-                  Forgot Password?
+                  {t(AUTH.FORGOT_PASSWORD)}
                 </button>
               </div>
             </form>
 
             <div className="mt-5 pt-5 border-t border-carbon/8">
               <p className="text-[11px] text-center text-carbon/45 font-ui leading-relaxed">
-                Use your employee credentials or system user credentials to sign in
+                {t(AUTH.CREDENTIALS_HINT)}
               </p>
             </div>
           </CardContent>
@@ -168,7 +176,7 @@ export const LoginForm = ({ onSuccess, showBackButton: _showBackButton = true }:
             className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
           >
             <MdArrowBack className="h-4 w-4" />
-            Back to Home
+            {t(COMMON.BACK_TO_HOME)}
           </button>
         </div>
       </div>

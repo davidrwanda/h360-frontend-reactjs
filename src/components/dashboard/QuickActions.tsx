@@ -16,197 +16,189 @@ import {
   MdSearch,
   MdHistory,
 } from 'react-icons/md';
+import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
 interface QuickAction {
-  label: string;
+  labelKey: string;
   path: string;
   icon: ReactNode;
   variant?: 'primary' | 'outline';
-  description?: string;
+  descriptionKey?: string;
 }
 
 export const QuickActions = () => {
   const { user, role } = useAuth();
+  const { t } = useTranslation();
 
-  // SYSTEM user actions
   const systemActions: QuickAction[] = [
     {
-      label: 'Create New Clinic',
+      labelKey: DASHBOARD.CREATE_NEW_CLINIC,
       path: '/clinics/create',
       icon: <MdAdd className="h-4 w-4" />,
       variant: 'primary',
-      description: 'Create a clinic and assign an admin',
+      descriptionKey: DASHBOARD.CREATE_CLINIC_DESC,
     },
     {
-      label: 'Manage Clinics',
+      labelKey: DASHBOARD.MANAGE_CLINICS,
       path: '/clinics',
       icon: <MdBusiness className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Manage Users',
+      labelKey: DASHBOARD.MANAGE_USERS,
       path: '/users',
       icon: <MdPerson className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // Clinic ADMIN actions
   const adminActions: QuickAction[] = [
     {
-      label: 'Manage Patients',
+      labelKey: DASHBOARD.MANAGE_PATIENTS,
       path: '/patients',
       icon: <MdPeople className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Manage Doctors',
+      labelKey: DASHBOARD.MANAGE_DOCTORS,
       path: '/doctors',
       icon: <MdLocalHospital className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Manage Services',
+      labelKey: DASHBOARD.MANAGE_SERVICES,
       path: '/services',
       icon: <MdMedicalServices className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'View Appointments',
+      labelKey: DASHBOARD.VIEW_APPOINTMENTS,
       path: '/appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // DOCTOR actions
   const doctorActions: QuickAction[] = [
     {
-      label: 'My Appointments',
+      labelKey: DASHBOARD.MY_APPOINTMENTS,
       path: '/appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'primary',
     },
     {
-      label: 'My Patients',
+      labelKey: DASHBOARD.MY_PATIENTS,
       path: '/patients',
       icon: <MdPeople className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'My Schedule',
+      labelKey: DASHBOARD.MY_SCHEDULE,
       path: '/doctors',
       icon: <MdSchedule className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // RECEPTIONIST actions
   const receptionistActions: QuickAction[] = [
     {
-      label: 'Queue Management',
+      labelKey: DASHBOARD.QUEUE_MANAGEMENT,
       path: '/queue',
       icon: <MdQueue className="h-4 w-4" />,
       variant: 'primary',
     },
     {
-      label: 'Book Appointment',
+      labelKey: DASHBOARD.BOOK_APPOINTMENT,
       path: '/appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Register Patient',
+      labelKey: DASHBOARD.REGISTER_PATIENT,
       path: '/patients',
       icon: <MdPeople className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // NURSE actions
   const nurseActions: QuickAction[] = [
     {
-      label: 'View Patients',
+      labelKey: DASHBOARD.VIEW_PATIENTS,
       path: '/patients',
       icon: <MdPeople className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'View Appointments',
+      labelKey: DASHBOARD.VIEW_APPOINTMENTS,
       path: '/appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Queue Status',
+      labelKey: DASHBOARD.QUEUE_STATUS,
       path: '/queue',
       icon: <MdQueue className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // PATIENT actions
   const patientActions: QuickAction[] = [
     {
-      label: 'Book Appointment',
+      labelKey: DASHBOARD.BOOK_APPOINTMENT,
       path: '/my-appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'primary',
-      description: 'Schedule a new appointment',
+      descriptionKey: DASHBOARD.SCHEDULE_APPOINTMENT,
     },
     {
-      label: 'My Appointments',
+      labelKey: DASHBOARD.MY_APPOINTMENTS,
       path: '/my-appointments',
       icon: <MdHistory className="h-4 w-4" />,
       variant: 'outline',
-      description: 'View upcoming and past appointments',
+      descriptionKey: DASHBOARD.VIEW_APPOINTMENTS_DESC,
     },
     {
-      label: 'My Profile',
+      labelKey: DASHBOARD.MY_PROFILE,
       path: '/my-profile',
       icon: <MdAccountCircle className="h-4 w-4" />,
       variant: 'outline',
-      description: 'Manage your personal information',
+      descriptionKey: DASHBOARD.MY_PROFILE_DESC,
     },
     {
-      label: 'Find Clinics',
+      labelKey: DASHBOARD.FIND_CLINICS,
       path: '/',
       icon: <MdSearch className="h-4 w-4" />,
       variant: 'outline',
-      description: 'Search and subscribe to clinics',
+      descriptionKey: DASHBOARD.FIND_CLINICS_DESC,
     },
   ];
 
-  // EMPLOYEE user actions (default fallback)
   const employeeActions: QuickAction[] = [
     {
-      label: 'View Patients',
+      labelKey: DASHBOARD.VIEW_PATIENTS,
       path: '/patients',
       icon: <MdPeople className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'View Appointments',
+      labelKey: DASHBOARD.VIEW_APPOINTMENTS,
       path: '/appointments',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'outline',
     },
     {
-      label: 'Queue Management',
+      labelKey: DASHBOARD.QUEUE_MANAGEMENT,
       path: '/queue',
       icon: <MdQueue className="h-4 w-4" />,
       variant: 'outline',
     },
   ];
 
-  // Determine actions based on role
   let actions: QuickAction[] = employeeActions;
 
-  // Normalize role for comparison (handle both "Admin" and "ADMIN")
   const normalizedRole = role?.toUpperCase();
   const normalizedUserRole = user?.role?.toUpperCase();
 
-  // PATIENT users see patient-specific actions
   if (user?.user_type === 'PATIENT' || normalizedRole === 'PATIENT' || normalizedUserRole === 'PATIENT') {
     actions = patientActions;
   } else if (user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') {
@@ -228,7 +220,7 @@ export const QuickActions = () => {
   return (
     <Card variant="elevated">
       <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
+        <CardTitle>{t(COMMON.QUICK_ACTIONS)}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -241,9 +233,9 @@ export const QuickActions = () => {
               >
                 {action.icon}
                 <div className="ml-2 flex flex-col items-start">
-                  <span>{action.label}</span>
-                  {action.description && (
-                    <span className="text-xs text-carbon/60 mt-0.5">{action.description}</span>
+                  <span>{t(action.labelKey)}</span>
+                  {action.descriptionKey && (
+                    <span className="text-xs text-carbon/60 mt-0.5">{t(action.descriptionKey)}</span>
                   )}
                 </div>
               </Button>
@@ -252,7 +244,7 @@ export const QuickActions = () => {
           {(user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN' || normalizedUserRole === 'ADMIN') && (
             <div className="pt-2 mt-2 border-t border-carbon/10">
               <p className="text-xs text-carbon/60">
-                Create and manage clinics and users. Admins manage system-level resources only.
+                {t(DASHBOARD.ADMIN_FOOTER_DESC)}
               </p>
             </div>
           )}

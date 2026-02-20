@@ -3,53 +3,55 @@ import { QuickActions } from './QuickActions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { MdEvent, MdPeople, MdQueue, MdLocalHospital } from 'react-icons/md';
+import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
 export const NurseDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Dashboard
+          {t(COMMON.DASHBOARD)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Welcome back, <span className="font-medium">
-            {user?.employee?.first_name || 
-             user?.employee?.full_name?.split(' ')[0] ||
-             user?.first_name ||
-             user?.username || 
-             user?.email}
-          </span>!
+          {t(COMMON.WELCOME_BACK, {
+            name: user?.employee?.first_name ||
+              user?.employee?.full_name?.split(' ')[0] ||
+              user?.first_name ||
+              user?.username ||
+              user?.email || '',
+          })}
         </p>
         {user?.clinic_id && (
-          <p className="text-xs text-carbon/50 mt-1">Nursing Staff</p>
+          <p className="text-xs text-carbon/50 mt-1">{t(DASHBOARD.NURSING_STAFF)}</p>
         )}
       </div>
 
-      {/* Statistics Cards - Nurse-specific stats */}
+      {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Patients Today"
+          title={t(DASHBOARD.PATIENTS_TODAY)}
           value="—"
           icon={<MdPeople className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Appointments"
+          title={t(DASHBOARD.APPOINTMENTS)}
           value="—"
           icon={<MdEvent className="h-6 w-6" />}
           variant="primary"
         />
         <StatCard
-          title="Queue Status"
+          title={t(DASHBOARD.QUEUE_STATUS)}
           value="—"
           icon={<MdQueue className="h-6 w-6" />}
           variant="success"
         />
         <StatCard
-          title="Assigned Patients"
+          title={t(DASHBOARD.ASSIGNED_PATIENTS)}
           value="—"
           icon={<MdLocalHospital className="h-6 w-6" />}
           variant="primary"
@@ -63,22 +65,22 @@ export const NurseDashboard = () => {
         {/* Nurse Info Card */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Patient Care</CardTitle>
+            <CardTitle>{t(DASHBOARD.PATIENT_CARE)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-carbon/60">
-                Manage patient care and assist with appointments.
+                {t(DASHBOARD.PATIENT_CARE_DESC)}
               </p>
               <div className="space-y-2">
                 <div className="text-xs text-carbon/50">
-                  • Patient records
+                  • {t(DASHBOARD.PATIENT_RECORDS_BULLET)}
                 </div>
                 <div className="text-xs text-carbon/50">
-                  • Appointment assistance
+                  • {t(DASHBOARD.APPOINTMENT_ASSISTANCE_BULLET)}
                 </div>
                 <div className="text-xs text-carbon/50">
-                  • Queue monitoring
+                  • {t(DASHBOARD.QUEUE_MONITORING_BULLET)}
                 </div>
               </div>
             </div>
@@ -88,12 +90,12 @@ export const NurseDashboard = () => {
         {/* Today's Schedule */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Today's Schedule</CardTitle>
+            <CardTitle>{t(DASHBOARD.TODAYS_SCHEDULE)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <p className="text-sm text-carbon/60">
-                Your schedule will be displayed here once the Appointments module is implemented.
+                {t(DASHBOARD.SCHEDULE_PLACEHOLDER)}
               </p>
             </div>
           </CardContent>

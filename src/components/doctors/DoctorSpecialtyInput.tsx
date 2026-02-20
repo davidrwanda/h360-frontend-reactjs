@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useDoctorSpecialties } from '@/hooks/useDoctorSpecialties';
 import { cn } from '@/utils/cn';
 
@@ -22,7 +22,7 @@ export const DoctorSpecialtyInput = ({
   value = [],
   onChange,
   onBlur,
-  placeholder = 'Select or type to filter specialties',
+  placeholder = 'Select specialties…',
   error,
   label,
   required,
@@ -32,7 +32,9 @@ export const DoctorSpecialtyInput = ({
   clinicId,
 }: DoctorSpecialtyInputProps) => {
   const inputId = id || `specialty-${Math.random().toString(36).substr(2, 9)}`;
+  const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: specialties = [], isLoading } = useDoctorSpecialties({
     clinic_id: clinicId ?? undefined,
@@ -51,6 +53,16 @@ export const DoctorSpecialtyInput = ({
     );
   }, [specialties, filter]);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
   const handleToggle = (specialtyId: string) => {
     if (!onChange) return;
     if (selectedSet.has(specialtyId)) {
@@ -60,8 +72,22 @@ export const DoctorSpecialtyInput = ({
     }
   };
 
+  const selectedNames = useMemo(
+    () =>
+      value
+        .map((id) => specialties.find((s) => s.specialty_id === id)?.name)
+        .filter(Boolean) as string[],
+    [value, specialties]
+  );
+  const triggerLabel =
+    selectedNames.length > 0
+      ? selectedNames.length === 1
+        ? selectedNames[0]
+        : `${selectedNames.length} selected`
+      : placeholder;
+
   return (
-    <div className={cn('w-full', className)}>
+    <div ref={containerRef} className={cn('w-full relative', className)}>
       {label && (
         <label
           htmlFor={inputId}
@@ -72,49 +98,91 @@ export const DoctorSpecialtyInput = ({
         </label>
       )}
 
-      {/* Filter / custom hint */}
-      <input
-        type="text"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
+      <button
+        type="button"
+        id={inputId}
+        onClick={() => !disabled && !isLoading && setOpen((o) => !o)}
         onBlur={onBlur}
-        placeholder={placeholder}
         disabled={disabled || isLoading}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label || 'Specialties'}
         className={cn(
-          'flex h-10 w-full rounded-md border bg-white px-3.5 py-2.5 text-sm mb-3',
-          'font-ui text-carbon placeholder:text-carbon/35',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30',
-          'disabled:opacity-50 disabled:bg-white-smoke border-carbon/15'
+          'flex h-10 w-full items-center justify-between rounded-md border bg-white px-3.5 py-2.5 text-sm text-left font-ui transition-all duration-150',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0',
+          'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white-smoke',
+          error
+            ? 'border-smudged-lips/40 focus-visible:border-smudged-lips focus-visible:ring-smudged-lips/30'
+            : 'border-carbon/15 focus-visible:border-azure-dragon/60',
+          !selectedNames.length && 'text-carbon/50'
         )}
         aria-describedby={error ? `${inputId}-error` : undefined}
-      />
+      >
+        <span className="truncate">{triggerLabel}</span>
+        <svg
+          className={cn('h-4 w-4 shrink-0 text-carbon/50 transition-transform', open && 'rotate-180')}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-      {/* Selectable specialty buttons (by ID) – multi-select */}
-      {filteredSpecialties.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {filteredSpecialties.map((specialty) => (
-            <button
-              key={specialty.specialty_id}
-              type="button"
-              onClick={() => handleToggle(specialty.specialty_id)}
-              disabled={disabled || isLoading}
-              className={cn(
-                'inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-ui transition-colors',
-                'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-1',
-                selectedSet.has(specialty.specialty_id)
-                  ? 'border-azure-dragon bg-azure-dragon/10 text-azure-dragon'
-                  : 'border-carbon/20 bg-white text-carbon/80 hover:border-azure-dragon/40 hover:bg-azure-dragon/5',
-                (disabled || isLoading) && 'cursor-not-allowed opacity-50'
-              )}
-            >
-              {specialty.description ? `${specialty.name} – ${specialty.description}` : specialty.name}
-            </button>
-          ))}
+      {open && (
+        <div
+          role="listbox"
+          aria-multiselectable
+          aria-label="Specialties"
+          className={cn(
+            'absolute z-50 mt-1 w-full rounded-md border border-carbon/15 bg-white shadow-lg',
+            'max-h-64 overflow-hidden flex flex-col'
+          )}
+        >
+          <input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Type to filter…"
+            className={cn(
+              'flex h-9 shrink-0 border-b border-carbon/10 mx-2 mt-2 px-2 py-1.5 text-sm',
+              'font-ui text-carbon placeholder:text-carbon/40',
+              'focus:outline-none focus:ring-0'
+            )}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="overflow-y-auto p-2 min-h-0">
+            {filteredSpecialties.length > 0 ? (
+              <div className="space-y-0.5">
+                {filteredSpecialties.map((specialty) => {
+                  const isSelected = selectedSet.has(specialty.specialty_id);
+                  return (
+                    <label
+                      key={specialty.specialty_id}
+                      className={cn(
+                        'flex items-center gap-2 cursor-pointer px-2 py-2 rounded-md text-sm font-ui text-carbon',
+                        'hover:bg-azure-dragon/5 transition-colors'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggle(specialty.specialty_id)}
+                        disabled={disabled || isLoading}
+                        className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon disabled:opacity-50 h-4 w-4 shrink-0"
+                      />
+                      <span className="truncate">{specialty.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-carbon/50 py-2 px-2">
+                {isLoading ? 'Loading…' : filter.trim() ? 'No matches.' : 'No specialties.'}
+              </p>
+            )}
+          </div>
         </div>
-      ) : (
-        <p className="text-xs text-carbon/50 py-2">
-          {isLoading ? 'Loading specialties…' : filter.trim() ? 'No matching specialties.' : 'No specialties available.'}
-        </p>
       )}
 
       {error && (

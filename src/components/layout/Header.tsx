@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useLogout } from '@/hooks/useAuth';
 import { MdMenu, MdNotifications, MdAccountCircle } from 'react-icons/md';
+import { LanguageSwitcher } from '@/components/ui';
+import { useTranslation, COMMON } from '@/i18n';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -11,6 +13,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user } = useAuth();
   const logoutMutation = useLogout();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
@@ -30,20 +33,22 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         </button>
         <div className="flex items-center gap-2">
           <h1 className="text-base font-heading font-semibold text-azure-dragon tracking-tight">
-            H360 Clinic CRM
+            {t(COMMON.APP_NAME)}
           </h1>
         </div>
       </div>
 
-      {/* Right: Notifications and user menu */}
+      {/* Right: Language, Notifications and user menu */}
       <div className="flex items-center gap-2">
+        {/* Language Switcher */}
+        <LanguageSwitcher />
+
         {/* Notifications - Future implementation */}
         <button
           className="relative flex h-9 w-9 items-center justify-center rounded-md text-carbon/70 transition-colors hover:bg-white-smoke hover:text-azure-dragon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30"
           aria-label="Notifications"
         >
           <MdNotifications className="h-5 w-5" />
-          {/* Badge can be added here */}
         </button>
 
         {/* User menu */}
@@ -74,8 +79,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                          : user?.employee?.full_name ||
                            (user?.employee?.first_name && user?.employee?.last_name
                              ? `${user.employee.first_name} ${user.employee.last_name}`
-                             : user?.full_name || 
-                               (user?.first_name && user?.last_name 
+                             : user?.full_name ||
+                               (user?.first_name && user?.last_name
                                  ? `${user.first_name} ${user.last_name}`
                                  : user?.employee_profile?.full_name ||
                                    (user?.employee_profile?.first_name && user?.employee_profile?.last_name
@@ -88,7 +93,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     </p>
                     {user?.permissions && (
                       <p className="mt-0.5 text-[10px] text-carbon/40">
-                        {user.permissions === 'ALL' ? 'Full Access' : user.permissions}
+                        {user.permissions === 'ALL' ? t(COMMON.FULL_ACCESS) : user.permissions}
                       </p>
                     )}
                   </div>
@@ -99,7 +104,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm text-carbon/80 transition-colors hover:bg-white-smoke"
                   >
-                    Settings
+                    {t(COMMON.SETTINGS)}
                   </button>
                   <button
                     onClick={() => {
@@ -108,7 +113,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm text-smudged-lips transition-colors hover:bg-white-smoke"
                   >
-                    Logout
+                    {t(COMMON.LOGOUT)}
                   </button>
                 </div>
               </div>
