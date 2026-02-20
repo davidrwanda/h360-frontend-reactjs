@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClinics } from '@/hooks/useClinics';
 import { useUsers, useClinicAdmins, useSystemAdmins, useDeactivateUser, useActivateUser } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, USERS, CLINIC, COMMON } from '@/i18n';
 import { ClinicAdminsTable } from '@/components/users/ClinicAdminsTable';
 import { SystemAdminsTable } from '@/components/users/SystemAdminsTable';
 import { CreateSystemAdminForm } from '@/components/users/CreateSystemAdminForm';
@@ -15,6 +16,7 @@ import type { User } from '@/api/users';
 export const UsersPage = () => {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useTranslation();
   
   // Get clinic_id from storage (fallback to user object)
   const getClinicIdFromStorage = (): string | undefined => {
@@ -167,10 +169,10 @@ export const UsersPage = () => {
 
     try {
       await deleteMutation.mutateAsync(adminToDelete.user_id);
-      showSuccess('User deactivated successfully!');
+      showSuccess(t(USERS.USER_DEACTIVATED));
       setAdminToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate user';
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_DEACTIVATE_USER);
       console.error('Failed to deactivate clinic admin:', error);
       showError(errorMessage);
     }
@@ -183,10 +185,10 @@ export const UsersPage = () => {
 
     try {
       await activateMutation.mutateAsync(adminToDelete.user_id);
-      showSuccess('User activated successfully!');
+      showSuccess(t(USERS.USER_ACTIVATED));
       setAdminToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to activate user';
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_ACTIVATE_USER);
       console.error('Failed to activate clinic admin:', error);
       showError(errorMessage);
     }
@@ -210,10 +212,10 @@ export const UsersPage = () => {
 
     try {
       await systemAdminDeleteMutation.mutateAsync(systemAdminToDelete.user_id);
-      showSuccess('System admin deactivated successfully!');
+      showSuccess(t(USERS.SYSTEM_ADMIN_DEACTIVATED));
       setSystemAdminToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate system admin';
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_DEACTIVATE_SYSTEM_ADMIN);
       console.error('Failed to deactivate system admin:', error);
       showError(errorMessage);
     }
@@ -224,10 +226,10 @@ export const UsersPage = () => {
 
     try {
       await systemAdminActivateMutation.mutateAsync(systemAdminToDelete.user_id);
-      showSuccess('System admin activated successfully!');
+      showSuccess(t(USERS.SYSTEM_ADMIN_ACTIVATED));
       setSystemAdminToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to activate system admin';
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_ACTIVATE_SYSTEM_ADMIN);
       console.error('Failed to activate system admin:', error);
       showError(errorMessage);
     }
@@ -255,10 +257,10 @@ export const UsersPage = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Users Management
+            {t(USERS.USERS_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Manage users and view system administrators
+            {t(USERS.MANAGE_USERS_DESC)}
           </p>
         </div>
         {activeTab === 'clinic-admins' && (
@@ -268,7 +270,7 @@ export const UsersPage = () => {
             onClick={() => navigate('/users/create')}
           >
             <MdAdd className="h-4 w-4 mr-2" />
-            Create User
+            {t(USERS.CREATE_USER)}
           </Button>
         )}
         {activeTab === 'system-admins' && (
@@ -278,7 +280,7 @@ export const UsersPage = () => {
             onClick={() => setShowCreateSystemAdminModal(true)}
           >
             <MdAdd className="h-4 w-4 mr-2" />
-            Create System Admin
+            {t(USERS.CREATE_SYSTEM_ADMIN)}
           </Button>
         )}
       </div>
@@ -304,7 +306,7 @@ export const UsersPage = () => {
               }
             `}
           >
-            Users
+            {t(USERS.USERS_TAB)}
           </button>
           {/* Only show System Admins tab for system admins */}
           {isSystemAdmin && (
@@ -319,7 +321,7 @@ export const UsersPage = () => {
                 }
               `}
             >
-              System Admins
+              {t(USERS.SYSTEM_ADMINS_TAB)}
             </button>
           )}
         </div>
@@ -334,7 +336,7 @@ export const UsersPage = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <MdFilterList className="h-4 w-4" />
-                  Filters & Search
+                  {t(CLINIC.FILTERS_SORTING)}
                 </CardTitle>
                 {hasActiveFilters && (
                   <Button
@@ -344,7 +346,7 @@ export const UsersPage = () => {
                     className="text-xs"
                   >
                     <MdClear className="h-3 w-3 mr-1" />
-                    Clear All
+                    {t(CLINIC.CLEAR_ALL)}
                   </Button>
                 )}
               </div>
@@ -354,14 +356,14 @@ export const UsersPage = () => {
                 {/* Only show clinic selector for system admins */}
                 {isSystemAdmin && (
                   <Select
-                    label="Select Clinic"
+                    label={t(USERS.SELECT_CLINIC)}
                     value={selectedClinicId}
                     onChange={(e) => {
                       setSelectedClinicId(e.target.value);
                       setPage(1);
                     }}
                     options={[
-                      { value: '', label: 'All Clinics' },
+                      { value: '', label: t(USERS.PLEASE_SELECT_CLINIC) },
                       ...(clinicsData?.data.map((clinic) => ({
                         value: clinic.clinic_id,
                         label: clinic.name,
@@ -372,25 +374,25 @@ export const UsersPage = () => {
                 {/* Role filter - show for clinic managers, hide for system admins (they only see Managers) */}
                 {isClinicManager && (
                   <Select
-                    label="Role"
+                    label={t(COMMON.ROLE)}
                     value={roleFilter}
                     onChange={(e) => {
                       setRoleFilter(e.target.value);
                       setPage(1);
                     }}
                     options={[
-                      { value: '', label: 'All Roles' },
-                      { value: 'Manager', label: 'Manager' },
-                      { value: 'Doctor', label: 'Doctor' },
-                      { value: 'Nurse', label: 'Nurse' },
-                      { value: 'Receptionist', label: 'Receptionist' },
+                      { value: '', label: t(USERS.ALL_ROLES) },
+                      { value: 'Manager', label: t(USERS.ROLE_MANAGER) },
+                      { value: 'Doctor', label: t(USERS.ROLE_DOCTOR) },
+                      { value: 'Nurse', label: t(USERS.ROLE_NURSE) },
+                      { value: 'Receptionist', label: t(USERS.ROLE_RECEPTIONIST) },
                     ]}
                   />
                 )}
                 <div className="relative">
                   <Input
-                    label="Search"
-                    placeholder="Search by name, email, username..."
+                    label={t(CLINIC.SEARCH)}
+                    placeholder={t(USERS.SEARCH_PLACEHOLDER)}
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -400,16 +402,16 @@ export const UsersPage = () => {
                   <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
                 </div>
                 <Select
-                  label="Status"
+                  label={t(CLINIC.TH_STATUS)}
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
                   options={[
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' },
-                    { value: 'all', label: 'All' },
+                    { value: 'active', label: t(USERS.ACTIVE) },
+                    { value: 'inactive', label: t(USERS.INACTIVE) },
+                    { value: 'all', label: t(USERS.ALL) },
                   ]}
                 />
               </div>
@@ -422,8 +424,8 @@ export const UsersPage = () => {
               <CardHeader>
                 <CardTitle>
                   {isClinicManager 
-                    ? `Users (${displayData?.total || 0})`
-                    : `Clinic Admins for ${selectedClinic?.name} (${displayData?.total || 0})`
+                    ? `${t(USERS.USERS_COUNT)} (${displayData?.total || 0})`
+                    : `${t(USERS.CLINIC_ADMINS_FOR)} ${selectedClinic?.name} (${displayData?.total || 0})`
                   }
                 </CardTitle>
               </CardHeader>
@@ -431,7 +433,7 @@ export const UsersPage = () => {
                 {displayError && (
                   <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
                     <p className="text-xs text-smudged-lips">
-                      Failed to load users. Please try again.
+                      {t(USERS.FAILED_LOAD_USERS)}
                     </p>
                   </div>
                 )}
@@ -449,8 +451,8 @@ export const UsersPage = () => {
                 {displayData && displayData.total > limit && (
                   <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-carbon/60">
-                      Showing {(page - 1) * limit + 1} to {Math.min(page * limit, displayData.total)} of{' '}
-                      {displayData.total} users
+                      {t(USERS.SHOWING)} {(page - 1) * limit + 1} {t(USERS.TO)} {Math.min(page * limit, displayData.total)} {t(USERS.OF)}{' '}
+                      {displayData.total} {t(USERS.USERS_LOWER)}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -459,7 +461,7 @@ export const UsersPage = () => {
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
                       >
-                        Previous
+                        {t(USERS.PREVIOUS)}
                       </Button>
                       <Button
                         variant="outline"
@@ -467,7 +469,7 @@ export const UsersPage = () => {
                         onClick={() => setPage((p) => p + 1)}
                         disabled={page * limit >= (displayData?.total || 0)}
                       >
-                        Next
+                        {t(USERS.NEXT)}
                       </Button>
                     </div>
                   </div>
@@ -482,10 +484,10 @@ export const UsersPage = () => {
                   <div className="text-center">
                     <MdPerson className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
                     <p className="text-sm text-carbon/60 mb-2">
-                      Please select a clinic to view its administrators
+                      {t(USERS.SELECT_CLINIC_MESSAGE)}
                     </p>
                     <p className="text-xs text-carbon/40">
-                      Use the clinic filter above to get started
+                      {t(USERS.SELECT_CLINIC_HINT)}
                     </p>
                   </div>
                 </CardContent>
@@ -499,8 +501,8 @@ export const UsersPage = () => {
               isOpen={!!adminToDelete}
               onClose={() => setAdminToDelete(null)}
               onConfirm={handleDeleteConfirm}
-              title="Deactivate Clinic Admin"
-              message="Are you sure you want to deactivate this clinic admin? The admin will be marked as inactive and will not be able to access the system."
+              title={t(USERS.DEACTIVATE_CLINIC_ADMIN)}
+              message={t(USERS.DEACTIVATE_CLINIC_ADMIN_MSG)}
               itemName={`${adminToDelete.first_name} ${adminToDelete.last_name}`}
               isLoading={deleteMutation.isPending}
               variant="deactivate"
@@ -513,11 +515,11 @@ export const UsersPage = () => {
               isOpen={!!adminToDelete}
               onClose={() => setAdminToDelete(null)}
               onConfirm={handleActivateConfirm}
-              title="Activate Clinic Admin"
-              message="Are you sure you want to activate this clinic admin? The admin will be able to access the system again."
+              title={t(USERS.ACTIVATE_CLINIC_ADMIN)}
+              message={t(USERS.ACTIVATE_CLINIC_ADMIN_MSG)}
               itemName={`${adminToDelete.first_name} ${adminToDelete.last_name}`}
               isLoading={activateMutation.isPending}
-              actionLabel="Activate"
+              actionLabel={t(USERS.ACTIVATE_ACTION)}
               variant="delete"
             />
           )}
@@ -533,7 +535,7 @@ export const UsersPage = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <MdFilterList className="h-4 w-4" />
-                  Filters & Search
+                  {t(CLINIC.FILTERS_SORTING)}
                 </CardTitle>
                 {systemAdminHasActiveFilters && (
                   <Button
@@ -543,7 +545,7 @@ export const UsersPage = () => {
                     className="text-xs"
                   >
                     <MdClear className="h-3 w-3 mr-1" />
-                    Clear All
+                    {t(CLINIC.CLEAR_ALL)}
                   </Button>
                 )}
               </div>
@@ -552,8 +554,8 @@ export const UsersPage = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="relative">
                   <Input
-                    label="Search"
-                    placeholder="Search by name, email, username..."
+                    label={t(CLINIC.SEARCH)}
+                    placeholder={t(USERS.SEARCH_PLACEHOLDER)}
                     value={systemAdminSearch}
                     onChange={(e) => {
                       setSystemAdminSearch(e.target.value);
@@ -563,16 +565,16 @@ export const UsersPage = () => {
                   <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
                 </div>
                 <Select
-                  label="Status"
+                  label={t(CLINIC.TH_STATUS)}
                   value={systemAdminStatusFilter}
                   onChange={(e) => {
                     setSystemAdminStatusFilter(e.target.value);
                     setSystemAdminPage(1);
                   }}
                   options={[
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' },
-                    { value: 'all', label: 'All' },
+                    { value: 'active', label: t(USERS.ACTIVE) },
+                    { value: 'inactive', label: t(USERS.INACTIVE) },
+                    { value: 'all', label: t(USERS.ALL) },
                   ]}
                 />
               </div>
@@ -583,14 +585,14 @@ export const UsersPage = () => {
           <Card variant="elevated">
             <CardHeader>
               <CardTitle>
-                System Admins ({systemAdminsData?.total || 0})
+                {t(USERS.SYSTEM_ADMINS_COUNT)} ({systemAdminsData?.total || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {systemAdminsError && (
                 <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
                   <p className="text-xs text-smudged-lips">
-                    Failed to load system admins. Please try again.
+                    {t(USERS.FAILED_LOAD_SYSTEM_ADMINS)}
                   </p>
                 </div>
               )}
@@ -607,8 +609,8 @@ export const UsersPage = () => {
               {systemAdminsData && systemAdminsData.total > limit && (
                 <div className="mt-6 flex items-center justify-between">
                   <div className="text-sm text-carbon/60">
-                    Showing {(systemAdminPage - 1) * limit + 1} to {Math.min(systemAdminPage * limit, systemAdminsData.total)} of{' '}
-                    {systemAdminsData.total} admins
+                    {t(USERS.SHOWING)} {(systemAdminPage - 1) * limit + 1} {t(USERS.TO)} {Math.min(systemAdminPage * limit, systemAdminsData.total)} {t(USERS.OF)}{' '}
+                    {systemAdminsData.total} {t(USERS.ADMINS_LOWER)}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -617,7 +619,7 @@ export const UsersPage = () => {
                       onClick={() => setSystemAdminPage((p) => Math.max(1, p - 1))}
                       disabled={systemAdminPage === 1}
                     >
-                      Previous
+                      {t(USERS.PREVIOUS)}
                     </Button>
                     <Button
                       variant="outline"
@@ -625,7 +627,7 @@ export const UsersPage = () => {
                       onClick={() => setSystemAdminPage((p) => p + 1)}
                       disabled={systemAdminPage * limit >= systemAdminsData.total}
                     >
-                      Next
+                      {t(USERS.NEXT)}
                     </Button>
                   </div>
                 </div>
@@ -639,8 +641,8 @@ export const UsersPage = () => {
               isOpen={!!systemAdminToDelete}
               onClose={() => setSystemAdminToDelete(null)}
               onConfirm={handleSystemAdminDeleteConfirm}
-              title="Deactivate System Admin"
-              message="Are you sure you want to deactivate this system admin? The admin will be marked as inactive and will not be able to access the system."
+              title={t(USERS.DEACTIVATE_SYSTEM_ADMIN)}
+              message={t(USERS.DEACTIVATE_SYSTEM_ADMIN_MSG)}
               itemName={`${systemAdminToDelete.first_name} ${systemAdminToDelete.last_name}`}
               isLoading={systemAdminDeleteMutation.isPending}
               variant="deactivate"
@@ -653,11 +655,11 @@ export const UsersPage = () => {
               isOpen={!!systemAdminToDelete}
               onClose={() => setSystemAdminToDelete(null)}
               onConfirm={handleSystemAdminActivateConfirm}
-              title="Activate System Admin"
-              message="Are you sure you want to activate this system admin? The admin will be able to access the system again."
+              title={t(USERS.ACTIVATE_SYSTEM_ADMIN)}
+              message={t(USERS.ACTIVATE_SYSTEM_ADMIN_MSG)}
               itemName={`${systemAdminToDelete.first_name} ${systemAdminToDelete.last_name}`}
               isLoading={systemAdminActivateMutation.isPending}
-              actionLabel="Activate"
+              actionLabel={t(USERS.ACTIVATE_ACTION)}
               variant="delete"
             />
           )}
@@ -667,7 +669,7 @@ export const UsersPage = () => {
             <Modal
               isOpen={showCreateSystemAdminModal}
               onClose={() => setShowCreateSystemAdminModal(false)}
-              title="Create System Admin"
+              title={t(USERS.CREATE_SYSTEM_ADMIN)}
               size="xl"
             >
               <CreateSystemAdminForm
@@ -682,7 +684,7 @@ export const UsersPage = () => {
             <Modal
               isOpen={!!systemAdminToEdit}
               onClose={() => setSystemAdminToEdit(null)}
-              title="Edit System Admin"
+              title={t(USERS.EDIT_SYSTEM_ADMIN)}
               size="xl"
             >
               <EditSystemAdminForm

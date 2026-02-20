@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { useUpdateUser } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
-import { DepartmentInput } from '@/components/departments';
 import { MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
 
@@ -19,9 +18,6 @@ const editClinicAdminSchema = z.object({
   role: z.enum(['MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'Operator'], {
     required_error: 'Role is required',
   }),
-  department: z.string().min(1, 'Department is required'),
-  position: z.string().min(1, 'Position is required'),
-  hire_date: z.string().min(1, 'Hire date is required'),
 });
 
 type EditClinicAdminFormData = z.infer<typeof editClinicAdminSchema>;
@@ -49,9 +45,6 @@ export const EditClinicAdminForm = ({
     register,
     handleSubmit,
     control,
-    watch,
-    setValue,
-    trigger,
     formState: { errors },
     reset,
   } = useForm<EditClinicAdminFormData>({
@@ -85,9 +78,6 @@ export const EditClinicAdminForm = ({
         date_of_birth: admin.date_of_birth || '',
         gender: (admin.gender as 'M' | 'F' | 'Other') || 'M',
         role: normalizedRole || 'MANAGER',
-        department: admin.department || '',
-        position: admin.position || '',
-        hire_date: admin.hire_date || '',
       });
     }
   }, [admin, reset]);
@@ -106,9 +96,6 @@ export const EditClinicAdminForm = ({
           date_of_birth: data.date_of_birth,
           gender: data.gender,
           role: data.role,
-          department: data.department,
-          position: data.position,
-          hire_date: data.hire_date,
         },
       });
 
@@ -246,36 +233,6 @@ export const EditClinicAdminForm = ({
                       )}
                     </div>
                   )}
-                />
-              </div>
-            </div>
-
-            {/* Employment Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-carbon mb-4">Employment Information</h3>
-              <div className="grid gap-4 md:grid-cols-3">
-                <DepartmentInput
-                  label="Department"
-                  required={true}
-                  error={errors.department?.message}
-                  value={watch('department') || ''}
-                  onChange={(value) => setValue('department', value)}
-                  onBlur={() => trigger('department')}
-                />
-
-                <Input
-                  label="Position"
-                  required={true}
-                  error={errors.position?.message}
-                  {...register('position')}
-                />
-
-                <Input
-                  label="Hire Date"
-                  type="date"
-                  required={true}
-                  error={errors.hire_date?.message}
-                  {...register('hire_date')}
                 />
               </div>
             </div>

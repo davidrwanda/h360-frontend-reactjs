@@ -1,10 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
 import { getFilteredNavigation } from '@/config/navigation';
+import { useTranslation } from '@/i18n';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 
 export const MenuOverviewPage = () => {
   const { user, role } = useAuth();
-  const navigationItems = getFilteredNavigation(role, user?.user_type);
+  const { t } = useTranslation();
+  const navigationItems = getFilteredNavigation(role, user?.user_type, t);
 
   const menuSections = [
     {

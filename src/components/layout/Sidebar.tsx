@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getFilteredNavigation } from '@/config/navigation';
+import { useTranslation } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 interface SidebarProps {
@@ -10,6 +11,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { user, role } = useAuth();
+  const { t } = useTranslation();
   
   // Debug logging (remove in production if needed)
   if (import.meta.env.DEV) {
@@ -29,7 +31,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   
   // Ensure role is a string - fallback to user.role if mapped role is undefined
   const roleString = role ? String(role) : (user?.role ? String(user.role) : undefined);
-  const navigationItems = getFilteredNavigation(roleString, user?.user_type);
+  const navigationItems = getFilteredNavigation(roleString, user?.user_type, t);
   
   // Debug logging for navigation items
   if (import.meta.env.DEV) {

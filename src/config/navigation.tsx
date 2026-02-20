@@ -15,11 +15,17 @@ import {
   MdSchedule,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
+import { NAVIGATION } from '@/i18n';
 
-export const navigationConfig: NavigationConfig = [
+/**
+ * Get navigation config with translations
+ * @param t - Translation function
+ * @returns Navigation config array with translated labels
+ */
+export const getNavigationConfig = (t: (key: string) => string): NavigationConfig => [
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: t(NAVIGATION.DASHBOARD),
     path: '/dashboard',
     icon: MdDashboard,
   },
@@ -30,21 +36,21 @@ export const navigationConfig: NavigationConfig = [
   },
   {
     id: 'clinics',
-    label: 'Clinics',
+    label: t(NAVIGATION.CLINICS),
     path: '/clinics',
     icon: MdBusiness,
     roles: ['ADMIN'], // Only for SYSTEM/Admin users, not clinic managers
   },
   {
     id: 'clinic-info',
-    label: 'Clinic Info',
+    label: t(NAVIGATION.CLINIC_INFO),
     path: '/clinic-info',
     icon: MdInfo,
     roles: ['MANAGER'], // Only for clinic managers/admins
   },
   {
     id: 'timetable',
-    label: 'Timetable',
+    label: t(NAVIGATION.TIMETABLE),
     path: '/clinic-calendar',
     icon: MdSchedule,
     roles: ['MANAGER'], // Clinic and doctor schedules
@@ -56,21 +62,21 @@ export const navigationConfig: NavigationConfig = [
   },
   {
     id: 'patients',
-    label: 'Patients',
+    label: t(NAVIGATION.PATIENTS),
     path: '/patients',
     icon: MdPeople,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE'],
   },
   {
     id: 'doctors',
-    label: 'Doctors',
+    label: t(NAVIGATION.DOCTORS),
     path: '/doctors',
     icon: MdLocalHospital,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR'],
   },
   {
     id: 'services',
-    label: 'Services',
+    label: t(NAVIGATION.SERVICES),
     path: '/services',
     icon: MdMedicalServices,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST'],
@@ -82,35 +88,35 @@ export const navigationConfig: NavigationConfig = [
   },
   {
     id: 'appointments',
-    label: 'Appointments',
+    label: t(NAVIGATION.APPOINTMENTS),
     path: '/appointments',
     icon: MdEvent,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE'],
   },
   {
     id: 'my-appointments',
-    label: 'My Appointments',
+    label: t(NAVIGATION.MY_APPOINTMENTS),
     path: '/my-appointments',
     icon: MdEvent,
     roles: ['PATIENT'],
   },
   {
     id: 'my-profile',
-    label: 'My Profile',
+    label: t(NAVIGATION.MY_PROFILE),
     path: '/my-profile',
     icon: MdAccountCircle,
     roles: ['PATIENT'],
   },
   {
     id: 'queue',
-    label: 'Queue',
+    label: t(NAVIGATION.QUEUE),
     path: '/queue',
     icon: MdQueue,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE'],
   },
   {
     id: 'users',
-    label: 'Users',
+    label: t(NAVIGATION.USERS),
     path: '/users',
     icon: MdPerson,
     roles: ['ADMIN', 'MANAGER'], // Only for clinic admins/managers, not system admins
@@ -122,14 +128,14 @@ export const navigationConfig: NavigationConfig = [
   },
   {
     id: 'notifications',
-    label: 'Notifications',
+    label: t(NAVIGATION.NOTIFICATIONS),
     path: '/notifications',
     icon: MdNotifications,
     roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST'],
   },
   {
     id: 'activity-logs',
-    label: 'Activity Logs',
+    label: t(NAVIGATION.ACTIVITY_LOGS),
     path: '/activity-logs',
     icon: MdHistory,
     roles: ['ADMIN', 'MANAGER'],
@@ -141,7 +147,7 @@ export const navigationConfig: NavigationConfig = [
   },
   {
     id: 'settings',
-    label: 'Settings',
+    label: t(NAVIGATION.SETTINGS),
     path: '/settings',
     icon: MdSettings,
   },
@@ -149,11 +155,22 @@ export const navigationConfig: NavigationConfig = [
 
 /**
  * Filter navigation items based on user role and user type
+ * @param userRole - User's role
+ * @param userType - User type (SYSTEM | EMPLOYEE)
+ * @param t - Translation function
+ * @returns Filtered navigation config
  */
 export const getFilteredNavigation = (
   userRole?: string,
-  userType?: 'SYSTEM' | 'EMPLOYEE' | string
+  userType?: 'SYSTEM' | 'EMPLOYEE' | string,
+  t?: (key: string) => string
 ): NavigationConfig => {
+  // Default translation function if not provided (returns key as-is)
+  const translate = t || ((key: string) => key);
+  
+  // Get navigation config with translations
+  const navigationConfig = getNavigationConfig(translate);
+  
   // Debug logging
   if (import.meta.env.DEV) {
     console.log('getFilteredNavigation called with:', { userRole, userType });
@@ -181,13 +198,13 @@ export const getFilteredNavigation = (
       console.log('getFilteredNavigation: Returning patient menu');
     }
     const patientMenu: NavigationConfig = [
-      { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: MdDashboard },
+      { id: 'dashboard', label: translate(NAVIGATION.DASHBOARD), path: '/dashboard', icon: MdDashboard },
       { id: 'divider-1', label: '', path: '' },
-      { id: 'my-appointments', label: 'My Appointments', path: '/my-appointments', icon: MdEvent },
+      { id: 'my-appointments', label: translate(NAVIGATION.MY_APPOINTMENTS), path: '/my-appointments', icon: MdEvent },
       { id: 'divider-2', label: '', path: '' },
-      { id: 'my-profile', label: 'My Profile', path: '/my-profile', icon: MdAccountCircle },
+      { id: 'my-profile', label: translate(NAVIGATION.MY_PROFILE), path: '/my-profile', icon: MdAccountCircle },
       { id: 'divider-3', label: '', path: '' },
-      { id: 'settings', label: 'Settings', path: '/settings', icon: MdSettings },
+      { id: 'settings', label: translate(NAVIGATION.SETTINGS), path: '/settings', icon: MdSettings },
     ];
     return patientMenu;
   }
@@ -198,18 +215,18 @@ export const getFilteredNavigation = (
       console.log('getFilteredNavigation: Returning doctor menu');
     }
     const doctorMenu: NavigationConfig = [
-      { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: MdDashboard },
+      { id: 'dashboard', label: translate(NAVIGATION.DASHBOARD), path: '/dashboard', icon: MdDashboard },
       { id: 'divider-1', label: '', path: '' },
-      { id: 'appointments', label: 'Appointments', path: '/appointments', icon: MdEvent },
+      { id: 'appointments', label: translate(NAVIGATION.APPOINTMENTS), path: '/appointments', icon: MdEvent },
       { id: 'divider-2', label: '', path: '' },
-      { id: 'patients', label: 'Patients', path: '/patients', icon: MdPeople },
-      { id: 'services', label: 'Services', path: '/services', icon: MdMedicalServices },
+      { id: 'patients', label: translate(NAVIGATION.PATIENTS), path: '/patients', icon: MdPeople },
+      { id: 'services', label: translate(NAVIGATION.SERVICES), path: '/services', icon: MdMedicalServices },
       { id: 'divider-3', label: '', path: '' },
-      { id: 'queue', label: 'Queue', path: '/queue', icon: MdQueue },
+      { id: 'queue', label: translate(NAVIGATION.QUEUE), path: '/queue', icon: MdQueue },
       { id: 'divider-4', label: '', path: '' },
-      { id: 'my-profile', label: 'Profile', path: '/my-profile', icon: MdAccountCircle },
+      { id: 'my-profile', label: translate(NAVIGATION.PROFILE), path: '/my-profile', icon: MdAccountCircle },
       { id: 'divider-5', label: '', path: '' },
-      { id: 'settings', label: 'Settings', path: '/settings', icon: MdSettings },
+      { id: 'settings', label: translate(NAVIGATION.SETTINGS), path: '/settings', icon: MdSettings },
     ];
     return doctorMenu;
   }

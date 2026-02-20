@@ -14,6 +14,7 @@ import {
   MdPerson,
   MdPlayArrow,
 } from 'react-icons/md';
+import { useTranslation, CLINIC } from '@/i18n';
 
 /**
  * Clinic Info Page - Shows the logged-in clinic admin's clinic information
@@ -22,6 +23,7 @@ import {
 export const ClinicInfoPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get clinic_id from storage (fallback to user object)
   const getClinicIdFromStorage = (): string | undefined => {
@@ -51,9 +53,9 @@ export const ClinicInfoPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">No Clinic Assigned</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(CLINIC.NO_CLINIC_ASSIGNED)}</h2>
           <p className="text-sm text-carbon/60">
-            You are not assigned to any clinic. Please contact your administrator.
+            {t(CLINIC.NO_CLINIC_ASSIGNED_DESC)}
           </p>
         </div>
       </div>
@@ -72,9 +74,9 @@ export const ClinicInfoPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">Clinic Not Found</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(CLINIC.CLINIC_NOT_FOUND)}</h2>
           <p className="text-sm text-carbon/60">
-            Unable to load clinic information. Please contact your administrator.
+            {t(CLINIC.UNABLE_LOAD_CLINIC)}
           </p>
         </div>
       </div>
@@ -89,7 +91,7 @@ export const ClinicInfoPage = () => {
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
             {clinic.name}
           </h1>
-          <p className="text-sm text-carbon/60">Clinic Information</p>
+          <p className="text-sm text-carbon/60">{t(CLINIC.CLINIC_INFORMATION)}</p>
         </div>
         {clinic.is_active && (
           <Button
@@ -98,7 +100,7 @@ export const ClinicInfoPage = () => {
             onClick={() => navigate(`/clinics/${clinic.clinic_id}/edit`)}
           >
             <MdEdit className="h-4 w-4 mr-2" />
-            Edit Clinic Info
+            {t(CLINIC.EDIT_CLINIC_INFO)}
           </Button>
         )}
       </div>
@@ -112,7 +114,7 @@ export const ClinicInfoPage = () => {
               : 'bg-carbon/10 text-carbon/60'
           }`}
         >
-          {clinic.is_active ? 'Active' : 'Inactive'}
+          {clinic.is_active ? t(CLINIC.ACTIVE) : t(CLINIC.INACTIVE)}
         </span>
       </div>
 
@@ -123,24 +125,24 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdBusiness className="h-5 w-5 text-azure-dragon" />
-              Basic Information
+              {t(CLINIC.BASIC_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-carbon/60">Clinic Name</label>
+                <label className="text-xs font-medium text-carbon/60">{t(CLINIC.CLINIC_NAME)}</label>
                 <p className="text-sm text-carbon font-medium mt-1">{clinic.name}</p>
               </div>
               {clinic.clinic_code && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Clinic Code</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.CLINIC_CODE)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.clinic_code}</p>
                 </div>
               )}
               {clinic.description && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Description</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.DESCRIPTION)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.description}</p>
                 </div>
               )}
@@ -153,20 +155,20 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdLocationOn className="h-5 w-5 text-azure-dragon" />
-              Location
+              {t(CLINIC.LOCATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {clinic.address && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Address</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.ADDRESS)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.address}</p>
                 </div>
               )}
               {(clinic.city || clinic.state || clinic.postal_code || clinic.country) && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Location</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.LOCATION)}</label>
                   <p className="text-sm text-carbon mt-1">
                     {[clinic.city, clinic.state, clinic.postal_code, clinic.country]
                       .filter(Boolean)
@@ -183,26 +185,26 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPhone className="h-5 w-5 text-azure-dragon" />
-              Contact
+              {t(CLINIC.CONTACT)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {clinic.phone && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Phone</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.PHONE)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.phone}</p>
                 </div>
               )}
               {clinic.email && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Email</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.EMAIL)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.email}</p>
                 </div>
               )}
               {clinic.website && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Website</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.WEBSITE)}</label>
                   <a
                     href={
                       clinic.website.startsWith('http://') || clinic.website.startsWith('https://')
@@ -226,33 +228,33 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdSchedule className="h-5 w-5 text-azure-dragon" />
-              Operational
+              {t(CLINIC.OPERATIONAL)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {clinic.timezone && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Timezone</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.TIMEZONE)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.timezone}</p>
                 </div>
               )}
               {clinic.currency && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Currency</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.CURRENCY)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.currency}</p>
                 </div>
               )}
               {clinic.language && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Language</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.LANGUAGE)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.language}</p>
                 </div>
               )}
               {clinic.operating_hours && (
                 <div>
                   <label className="text-xs font-medium text-carbon/60 mb-2 block">
-                    Operating Hours
+                    {t(CLINIC.OPERATING_HOURS)}
                   </label>
                   <OperatingHoursDisplay operatingHours={clinic.operating_hours} />
                 </div>
@@ -266,40 +268,40 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdSettings className="h-5 w-5 text-azure-dragon" />
-              Settings
+              {t(CLINIC.SETTINGS_CONFIG)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {clinic.appointment_slot_duration && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Slot Duration</label>
-                  <p className="text-sm text-carbon mt-1">{clinic.appointment_slot_duration} minutes</p>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.SLOT_DURATION)}</label>
+                  <p className="text-sm text-carbon mt-1">{t(CLINIC.MINUTES, { count: String(clinic.appointment_slot_duration) })}</p>
                 </div>
               )}
               {clinic.max_daily_appointments && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Max Daily Appointments</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.MAX_DAILY_APPOINTMENTS)}</label>
                   <p className="text-sm text-carbon mt-1">{clinic.max_daily_appointments}</p>
                 </div>
               )}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-carbon/60">Online Booking</span>
+                  <span className="text-carbon/60">{t(CLINIC.ONLINE_BOOKING)}</span>
                   <span className="text-carbon">
-                    {clinic.allow_online_booking ? 'Enabled' : 'Disabled'}
+                    {clinic.allow_online_booking ? t(CLINIC.ENABLED) : t(CLINIC.DISABLED)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-carbon/60">SMS Reminders</span>
+                  <span className="text-carbon/60">{t(CLINIC.SMS_REMINDERS)}</span>
                   <span className="text-carbon">
-                    {clinic.send_sms_reminders ? 'Enabled' : 'Disabled'}
+                    {clinic.send_sms_reminders ? t(CLINIC.ENABLED) : t(CLINIC.DISABLED)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-carbon/60">Email Reminders</span>
+                  <span className="text-carbon/60">{t(CLINIC.EMAIL_REMINDERS)}</span>
                   <span className="text-carbon">
-                    {clinic.send_email_reminders ? 'Enabled' : 'Disabled'}
+                    {clinic.send_email_reminders ? t(CLINIC.ENABLED) : t(CLINIC.DISABLED)}
                   </span>
                 </div>
               </div>
@@ -314,12 +316,12 @@ export const ClinicInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdCalendarToday className="h-5 w-5 text-azure-dragon" />
-              Timetable
+              {t(CLINIC.TIMETABLE)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-carbon/60 mb-4">
-              Manage clinic and doctor schedules, and generate appointment slots.
+              {t(CLINIC.TIMETABLE_SECTION_DESC)}
             </p>
             <div className="grid gap-3 md:grid-cols-3">
               <Button
@@ -330,8 +332,8 @@ export const ClinicInfoPage = () => {
               >
                 <MdCalendarToday className="h-5 w-5 mr-2 text-azure-dragon" />
                 <div className="text-left">
-                  <div className="font-medium text-carbon">Clinic Timetable</div>
-                  <div className="text-xs text-carbon/60">Configure clinic schedule</div>
+                  <div className="font-medium text-carbon">{t(CLINIC.CLINIC_TIMETABLE)}</div>
+                  <div className="text-xs text-carbon/60">{t(CLINIC.CONFIGURE_CLINIC_SCHEDULE)}</div>
                 </div>
               </Button>
               <Button
@@ -342,8 +344,8 @@ export const ClinicInfoPage = () => {
               >
                 <MdPerson className="h-5 w-5 mr-2 text-azure-dragon" />
                 <div className="text-left">
-                  <div className="font-medium text-carbon">Doctor Timetable</div>
-                  <div className="text-xs text-carbon/60">Manage doctor schedules</div>
+                  <div className="font-medium text-carbon">{t(CLINIC.DOCTOR_TIMETABLE)}</div>
+                  <div className="text-xs text-carbon/60">{t(CLINIC.MANAGE_DOCTOR_SCHEDULES)}</div>
                 </div>
               </Button>
               <Button
@@ -354,8 +356,8 @@ export const ClinicInfoPage = () => {
               >
                 <MdPlayArrow className="h-5 w-5 mr-2 text-azure-dragon" />
                 <div className="text-left">
-                  <div className="font-medium text-carbon">Slot Generation</div>
-                  <div className="text-xs text-carbon/60">Generate appointment slots</div>
+                  <div className="font-medium text-carbon">{t(CLINIC.SLOT_GENERATION)}</div>
+                  <div className="text-xs text-carbon/60">{t(CLINIC.GENERATE_APPOINTMENT_SLOTS)}</div>
                 </div>
               </Button>
             </div>

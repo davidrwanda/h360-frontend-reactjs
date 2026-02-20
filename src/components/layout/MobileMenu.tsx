@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getFilteredNavigation } from '@/config/navigation';
+import { useTranslation } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 interface MobileMenuProps {
@@ -10,7 +11,8 @@ interface MobileMenuProps {
 
 export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const { user, role } = useAuth();
-  const navigationItems = getFilteredNavigation(role, user?.user_type);
+  const { t } = useTranslation();
+  const navigationItems = getFilteredNavigation(role, user?.user_type, t);
 
   if (!isOpen) return null;
 

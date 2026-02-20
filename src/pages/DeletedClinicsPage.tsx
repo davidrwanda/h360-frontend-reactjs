@@ -5,8 +5,10 @@ import { ClinicsTable } from '@/components/clinics/ClinicsTable';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal } from '@/components/ui';
 import { MdArrowBack, MdSearch, MdFilterList } from 'react-icons/md';
 import type { Clinic } from '@/api/clinics';
+import { useTranslation, CLINIC } from '@/i18n';
 
 export const DeletedClinicsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -63,10 +65,10 @@ export const DeletedClinicsPage = () => {
           </Link>
           <div>
             <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-              Deactivated Clinics
+              {t(CLINIC.DEACTIVATED_CLINICS)}
             </h1>
             <p className="text-sm text-carbon/60">
-              View and manage deactivated clinics
+              {t(CLINIC.DEACTIVATED_CLINICS_DESC)}
             </p>
           </div>
         </div>
@@ -77,15 +79,15 @@ export const DeletedClinicsPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdFilterList className="h-4 w-4" />
-            Filters
+            {t(CLINIC.FILTERS)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="relative">
               <Input
-                label="Search"
-                placeholder="Search by name, address, phone..."
+                label={t(CLINIC.SEARCH)}
+                placeholder={t(CLINIC.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -95,8 +97,8 @@ export const DeletedClinicsPage = () => {
               <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40" />
             </div>
             <Input
-              label="City"
-              placeholder="Filter by city"
+              label={t(CLINIC.CITY)}
+              placeholder={t(CLINIC.FILTER_BY_CITY)}
               value={cityFilter}
               onChange={(e) => {
                 setCityFilter(e.target.value);
@@ -104,8 +106,8 @@ export const DeletedClinicsPage = () => {
               }}
             />
             <Input
-              label="State"
-              placeholder="Filter by state"
+              label={t(CLINIC.STATE)}
+              placeholder={t(CLINIC.FILTER_BY_STATE)}
               value={stateFilter}
               onChange={(e) => {
                 setStateFilter(e.target.value);
@@ -120,14 +122,14 @@ export const DeletedClinicsPage = () => {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>
-            Deactivated Clinics ({data?.total || 0})
+            {t(CLINIC.DEACTIVATED_CLINICS)} ({data?.total || 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
               <p className="text-xs text-smudged-lips">
-                Failed to load deactivated clinics. Please try again.
+                {t(CLINIC.FAILED_LOAD_DEACTIVATED)}
               </p>
             </div>
           )}
@@ -144,8 +146,7 @@ export const DeletedClinicsPage = () => {
           {data && data.total > limit && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-carbon/60">
-                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.total)} of{' '}
-                {data.total} clinics
+                {t(CLINIC.SHOWING_PAGINATION, { from: String((page - 1) * limit + 1), to: String(Math.min(page * limit, data.total)), total: String(data.total) })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -154,7 +155,7 @@ export const DeletedClinicsPage = () => {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Previous
+                  {t(CLINIC.PREVIOUS)}
                 </Button>
                 <Button
                   variant="outline"
@@ -162,7 +163,7 @@ export const DeletedClinicsPage = () => {
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page * limit >= data.total}
                 >
-                  Next
+                  {t(CLINIC.NEXT)}
                 </Button>
               </div>
             </div>
@@ -176,11 +177,11 @@ export const DeletedClinicsPage = () => {
           isOpen={!!clinicToActivate}
           onClose={() => setClinicToActivate(null)}
           onConfirm={handleActivateConfirm}
-          title="Activate Clinic"
-          message="Are you sure you want to activate this clinic? The clinic will be available for appointments and operations."
+          title={t(CLINIC.ACTIVATE_CLINIC)}
+          message={t(CLINIC.ACTIVATE_CLINIC_MSG)}
           itemName={clinicToActivate.name}
           isLoading={activateMutation.isPending}
-          actionLabel="Activate"
+          actionLabel={t(CLINIC.ACTIVATE)}
           variant="delete"
         />
       )}

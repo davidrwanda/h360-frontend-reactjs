@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,13 +31,27 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor - Add auth token
+// Request interceptor - Add auth token and Accept-Language header
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Set Accept-Language from persisted i18n store
+    try {
+      const i18nStorage = localStorage.getItem('h360-i18n-storage');
+      if (i18nStorage) {
+        const lang = JSON.parse(i18nStorage)?.state?.lang;
+        if (lang && config.headers) {
+          config.headers['Accept-Language'] = lang;
+        }
+      }
+    } catch {
+      // Fallback silently if parsing fails
+    }
+
     return config;
   },
   (error: AxiosError) => {

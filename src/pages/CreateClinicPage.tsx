@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { CreateClinicWithAdminForm } from '@/components/clinics/CreateClinicWithAdminForm';
+import { useTranslation, CLINIC } from '@/i18n';
 
 export const CreateClinicPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleSuccess = () => {
@@ -17,10 +19,10 @@ export const CreateClinicPage = () => {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-2">
-          Create New Clinic
+          {t(CLINIC.CREATE_NEW_CLINIC)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Create a clinic and assign an administrator to manage it
+          {t(CLINIC.CREATE_CLINIC_DESC)}
         </p>
       </div>
 

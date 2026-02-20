@@ -106,9 +106,14 @@ export interface CreateClinicRequest {
   tax_id?: string;
   registration_number?: string;
   type_ids?: string[];
+  // Admin fields (optional — creates clinic admin in one request)
+  admin_email?: string;
+  admin_first_name?: string;
+  admin_last_name?: string;
+  admin_phone?: string;
 }
 
-export interface UpdateClinicRequest extends Partial<CreateClinicRequest> {
+export interface UpdateClinicRequest extends Partial<Omit<CreateClinicRequest, 'admin_email' | 'admin_first_name' | 'admin_last_name' | 'admin_phone'>> {
   is_active?: boolean;
 }
 
@@ -146,6 +151,13 @@ export interface ClinicListParams {
   is_active?: boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface NearestClinicsParams {
+  latitude: number;
+  longitude: number;
+  radius_km?: number;
+  limit?: number;
 }
 
 export const clinicsApi = {
@@ -271,6 +283,22 @@ export const clinicsApi = {
       return (response.data as ApiResponse<PaginatedResponse<Clinic>>).data;
     }
     return response.data as PaginatedResponse<Clinic>;
+  },
+
+  /**
+   * Find nearest clinics by geolocation
+   * GET /api/clinics/nearest
+   * Access: Public
+   */
+  nearest: async (params: NearestClinicsParams): Promise<Clinic[]> => {
+    const response = await apiClient.get<ApiResponse<Clinic[]> | Clinic[]>(
+      '/clinics/nearest',
+      { params }
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Clinic[]>).data;
+    }
+    return response.data as Clinic[];
   },
 
   /**

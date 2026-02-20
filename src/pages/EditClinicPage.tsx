@@ -7,6 +7,7 @@ import { useClinic, useUpdateClinic } from '@/hooks/useClinics';
 import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useAuth } from '@/hooks/useAuth';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, CLINIC } from '@/i18n';
 import { Input, Select, Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { OperatingHoursEditor } from '@/components/clinics/OperatingHoursEditor';
@@ -166,6 +167,7 @@ export const EditClinicPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useTranslation();
   const { data: clinic, isLoading } = useClinic(id);
   const updateMutation = useUpdateClinic();
   const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
@@ -287,10 +289,10 @@ export const EditClinicPage = () => {
         id,
         data: payload,
       });
-      useToastStore.getState().success('Clinic updated successfully!');
+      useToastStore.getState().success(t(CLINIC.CLINIC_UPDATED));
       navigate(`/clinics/${id}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update clinic';
+      const errorMessage = error instanceof Error ? error.message : t(CLINIC.UPDATE_FAILED);
       console.error('Failed to update clinic:', error);
       useToastStore.getState().error(errorMessage);
     }
@@ -308,9 +310,9 @@ export const EditClinicPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">Clinic Not Found</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(CLINIC.CLINIC_NOT_FOUND)}</h2>
           <Link to="/clinics">
-            <Button variant="outline">Back to Clinics</Button>
+            <Button variant="outline">{t(CLINIC.BACK_TO_CLINICS)}</Button>
           </Link>
         </div>
       </div>
@@ -327,7 +329,7 @@ export const EditClinicPage = () => {
           </Button>
         </Link>
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Edit Clinic
+          {t(CLINIC.EDIT_CLINIC)}
         </h1>
         <p className="text-sm text-carbon/60">{clinic.name}</p>
       </div>
@@ -338,25 +340,25 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdBusiness className="h-5 w-5 text-azure-dragon" />
-              {isSystemAdmin ? 'Clinic Information' : 'Basic Information'}
+              {isSystemAdmin ? t(CLINIC.CLINIC_INFORMATION) : t(CLINIC.BASIC_INFORMATION)}
             </CardTitle>
             {isSystemAdmin && (
               <p className="text-xs text-carbon/60 mt-1">
-                System admins can edit only basic clinic information here. Other settings are managed at the clinic.
+                {t(CLINIC.SYSTEM_ADMIN_HELPER)}
               </p>
             )}
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Clinic Name"
+                label={t(CLINIC.CLINIC_NAME)}
                 placeholder="Enter clinic name"
                 error={errors.name?.message}
                 required
                 {...register('name')}
               />
               <Input
-                label="Clinic Code"
+                label={t(CLINIC.CLINIC_CODE)}
                 placeholder="e.g., CLINIC001"
                 error={errors.clinic_code?.message}
                 required
@@ -365,7 +367,7 @@ export const EditClinicPage = () => {
               {!isSystemAdmin && (
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-carbon/60 mb-1.5">
-                    Description
+                    {t(CLINIC.DESCRIPTION)}
                   </label>
                   <textarea
                     {...register('description')}
@@ -379,7 +381,7 @@ export const EditClinicPage = () => {
                 <>
                   <div className="md:col-span-2">
                     <AddressInput
-                      label="Address"
+                      label={t(CLINIC.ADDRESS)}
                       value={address || ''}
                       onChange={(value) => setValue('address', value)}
                       onAddressSelect={(addressData) => {
@@ -395,26 +397,26 @@ export const EditClinicPage = () => {
                       required
                     />
                   </div>
-                  <Input label="City" placeholder="City" error={errors.city?.message} required {...register('city')} />
-                  <Input label="State/Province" placeholder="State or Province" error={errors.state?.message} {...register('state')} />
-                  <Input label="Postal Code" placeholder="Postal code" error={errors.postal_code?.message} {...register('postal_code')} />
-                  <Input label="Country" placeholder="Country" error={errors.country?.message} {...register('country')} />
-                  <Input label="Phone" type="tel" placeholder="+1234567890" error={errors.phone?.message} required {...register('phone')} />
-                  <Input label="Email" type="email" placeholder="clinic@example.com" error={errors.email?.message} required {...register('email')} />
-                  <Input label="Website" placeholder="www.example.com" error={errors.website?.message} {...register('website')} />
+                  <Input label={t(CLINIC.CITY)} placeholder="City" error={errors.city?.message} required {...register('city')} />
+                  <Input label={t(CLINIC.STATE_PROVINCE)} placeholder="State or Province" error={errors.state?.message} {...register('state')} />
+                  <Input label={t(CLINIC.POSTAL_CODE)} placeholder="Postal code" error={errors.postal_code?.message} {...register('postal_code')} />
+                  <Input label={t(CLINIC.COUNTRY)} placeholder="Country" error={errors.country?.message} {...register('country')} />
+                  <Input label={t(CLINIC.PHONE)} type="tel" placeholder="+1234567890" error={errors.phone?.message} required {...register('phone')} />
+                  <Input label={t(CLINIC.EMAIL)} type="email" placeholder="clinic@example.com" error={errors.email?.message} required {...register('email')} />
+                  <Input label={t(CLINIC.WEBSITE)} placeholder="www.example.com" error={errors.website?.message} {...register('website')} />
                   <div className="md:col-span-2 grid gap-4 md:grid-cols-3">
-                    <Select label="Timezone" error={errors.timezone?.message} options={timezones} {...register('timezone')} />
-                    <Select label="Currency" error={errors.currency?.message} options={currencies} {...register('currency')} />
-                    <Select label="Language" error={errors.language?.message} options={languages} {...register('language')} />
+                    <Select label={t(CLINIC.TIMEZONE)} error={errors.timezone?.message} options={timezones} {...register('timezone')} />
+                    <Select label={t(CLINIC.CURRENCY)} error={errors.currency?.message} options={currencies} {...register('currency')} />
+                    <Select label={t(CLINIC.LANGUAGE)} error={errors.language?.message} options={languages} {...register('language')} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                      Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
+                      {t(CLINIC.CLINIC_TYPES)} <span className="text-smudged-lips ml-0.5">*</span>
                     </label>
                     {isLoadingTypes ? (
                       <div className="flex items-center gap-2 py-2">
                         <Loading size="sm" />
-                        <span className="text-xs text-carbon/60">Loading clinic types...</span>
+                        <span className="text-xs text-carbon/60">{t(CLINIC.LOADING_CLINIC_TYPES)}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
@@ -466,14 +468,14 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdLocationOn className="h-5 w-5 text-azure-dragon" />
-              Location Information
+              {t(CLINIC.LOCATION_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <AddressInput
-                  label="Address"
+                  label={t(CLINIC.ADDRESS)}
                   value={address || ''}
                   onChange={(value) => setValue('address', value)}
                   onAddressSelect={(addressData) => {
@@ -490,32 +492,32 @@ export const EditClinicPage = () => {
                 />
               </div>
               <Input
-                label="City"
+                label={t(CLINIC.CITY)}
                 placeholder="City"
                 error={errors.city?.message}
                 required
                 {...register('city')}
               />
               <Input
-                label="State/Province"
+                label={t(CLINIC.STATE_PROVINCE)}
                 placeholder="State or Province"
                 error={errors.state?.message}
                 {...register('state')}
               />
               <Input
-                label="Postal Code"
+                label={t(CLINIC.POSTAL_CODE)}
                 placeholder="Postal code"
                 error={errors.postal_code?.message}
                 {...register('postal_code')}
               />
               <Input
-                label="Country"
+                label={t(CLINIC.COUNTRY)}
                 placeholder="Country"
                 error={errors.country?.message}
                 {...register('country')}
               />
               <Input
-                label="Latitude"
+                label={t(CLINIC.LATITUDE)}
                 type="number"
                 step="any"
                 placeholder="Auto-filled from address"
@@ -526,7 +528,7 @@ export const EditClinicPage = () => {
                 {...register('latitude', { valueAsNumber: true })}
               />
               <Input
-                label="Longitude"
+                label={t(CLINIC.LONGITUDE)}
                 type="number"
                 step="any"
                 placeholder="Auto-filled from address"
@@ -547,13 +549,13 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPhone className="h-5 w-5 text-azure-dragon" />
-              Contact Information
+              {t(CLINIC.CONTACT_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Phone"
+                label={t(CLINIC.PHONE)}
                 type="tel"
                 placeholder="+1234567890"
                 error={errors.phone?.message}
@@ -561,14 +563,14 @@ export const EditClinicPage = () => {
                 {...register('phone')}
               />
               <Input
-                label="Fax"
+                label={t(CLINIC.FAX)}
                 type="tel"
                 placeholder="+1234567890"
                 error={errors.fax?.message}
                 {...register('fax')}
               />
               <Input
-                label="Email"
+                label={t(CLINIC.EMAIL)}
                 type="email"
                 placeholder="clinic@example.com"
                 error={errors.email?.message}
@@ -576,7 +578,7 @@ export const EditClinicPage = () => {
                 {...register('email')}
               />
               <Input
-                label="Website"
+                label={t(CLINIC.WEBSITE)}
                 placeholder="www.example.com"
                 error={errors.website?.message}
                 {...register('website')}
@@ -593,26 +595,26 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdSchedule className="h-5 w-5 text-azure-dragon" />
-              Operational Information
+              {t(CLINIC.OPERATIONAL_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <Select
-                  label="Timezone"
+                  label={t(CLINIC.TIMEZONE)}
                   error={errors.timezone?.message}
                   options={timezones}
                   {...register('timezone')}
                 />
                 <Select
-                  label="Currency"
+                  label={t(CLINIC.CURRENCY)}
                   error={errors.currency?.message}
                   options={currencies}
                   {...register('currency')}
                 />
                 <Select
-                  label="Language"
+                  label={t(CLINIC.LANGUAGE)}
                   error={errors.language?.message}
                   options={languages}
                   {...register('language')}
@@ -622,12 +624,12 @@ export const EditClinicPage = () => {
               {/* Clinic Types Multi-Select */}
               <div>
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
+                  {t(CLINIC.CLINIC_TYPES)} <span className="text-smudged-lips ml-0.5">*</span>
                 </label>
                 {isLoadingTypes ? (
                   <div className="flex items-center gap-2 py-2">
                     <Loading size="sm" />
-                    <span className="text-xs text-carbon/60">Loading clinic types...</span>
+                    <span className="text-xs text-carbon/60">{t(CLINIC.LOADING_CLINIC_TYPES)}</span>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
@@ -672,7 +674,7 @@ export const EditClinicPage = () => {
 
               <div>
                 <label className="block text-xs font-medium text-carbon/60 mb-2">
-                  Operating Hours <span className="text-smudged-lips">*</span>
+                  {t(CLINIC.OPERATING_HOURS)} <span className="text-smudged-lips">*</span>
                 </label>
                 <Controller
                   name="operating_hours"
@@ -687,7 +689,7 @@ export const EditClinicPage = () => {
                   </p>
                 )}
                 <p className="text-xs text-carbon/50 mt-1">
-                  At least one day must have operating hours configured
+                  {t(CLINIC.AT_LEAST_ONE_DAY)}
                 </p>
               </div>
             </div>
@@ -699,27 +701,27 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdSettings className="h-5 w-5 text-azure-dragon" />
-              Settings & Configuration
+              {t(CLINIC.SETTINGS_CONFIG)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Appointment Slot Duration (minutes)"
+                label={t(CLINIC.SLOT_DURATION_LABEL)}
                 type="number"
                 placeholder="30"
                 error={errors.appointment_slot_duration?.message}
                 {...register('appointment_slot_duration', { valueAsNumber: true })}
               />
               <Input
-                label="Max Daily Appointments"
+                label={t(CLINIC.MAX_DAILY_APPOINTMENTS)}
                 type="number"
                 placeholder="50"
                 error={errors.max_daily_appointments?.message}
                 {...register('max_daily_appointments', { valueAsNumber: true })}
               />
               <Input
-                label="Reminder Hours Before"
+                label={t(CLINIC.REMINDER_HOURS_BEFORE)}
                 type="number"
                 placeholder="24"
                 error={errors.reminder_hours_before?.message}
@@ -733,7 +735,7 @@ export const EditClinicPage = () => {
                   {...register('allow_online_booking')}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-sm font-medium text-carbon">Allow Online Booking</span>
+                <span className="text-sm font-medium text-carbon">{t(CLINIC.ALLOW_ONLINE_BOOKING)}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -741,7 +743,7 @@ export const EditClinicPage = () => {
                   {...register('send_sms_reminders')}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-sm font-medium text-carbon">Send SMS Reminders</span>
+                <span className="text-sm font-medium text-carbon">{t(CLINIC.SEND_SMS_REMINDERS)}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -749,7 +751,7 @@ export const EditClinicPage = () => {
                   {...register('send_email_reminders')}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-sm font-medium text-carbon">Send Email Reminders</span>
+                <span className="text-sm font-medium text-carbon">{t(CLINIC.SEND_EMAIL_REMINDERS)}</span>
               </label>
             </div>
           </CardContent>
@@ -760,25 +762,25 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdInfo className="h-5 w-5 text-azure-dragon" />
-              Status & Management
+              {t(CLINIC.STATUS_MANAGEMENT)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Established Date"
+                label={t(CLINIC.ESTABLISHED_DATE)}
                 type="date"
                 error={errors.established_date?.message}
                 {...register('established_date')}
               />
               <Input
-                label="License Number"
+                label={t(CLINIC.LICENSE_NUMBER)}
                 placeholder="License number"
                 error={errors.license_number?.message}
                 {...register('license_number')}
               />
               <Input
-                label="License Expiry Date"
+                label={t(CLINIC.LICENSE_EXPIRY)}
                 type="date"
                 error={errors.license_expiry_date?.message}
                 {...register('license_expiry_date')}
@@ -790,10 +792,10 @@ export const EditClinicPage = () => {
                     {...register('is_active')}
                     className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                   />
-                  <span className="text-sm font-medium text-carbon">Active</span>
+                  <span className="text-sm font-medium text-carbon">{t(CLINIC.ACTIVE_CHECKBOX)}</span>
                 </label>
                 <p className="text-xs text-carbon/50 mt-1">
-                  Inactive clinics will not appear in certain operations
+                  {t(CLINIC.INACTIVE_HELPER)}
                 </p>
               </div>
             </div>
@@ -805,19 +807,19 @@ export const EditClinicPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdAttachMoney className="h-5 w-5 text-azure-dragon" />
-              Financial Information
+              {t(CLINIC.FINANCIAL_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Tax ID"
+                label={t(CLINIC.TAX_ID)}
                 placeholder="Tax identification number"
                 error={errors.tax_id?.message}
                 {...register('tax_id')}
               />
               <Input
-                label="Registration Number"
+                label={t(CLINIC.REGISTRATION_NUMBER)}
                 placeholder="Registration number"
                 error={errors.registration_number?.message}
                 {...register('registration_number')}
@@ -829,12 +831,12 @@ export const EditClinicPage = () => {
         {/* Additional Information */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Additional Information</CardTitle>
+            <CardTitle>{t(CLINIC.ADDITIONAL_INFORMATION)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-carbon/60 mb-1.5">Notes</label>
+                <label className="block text-xs font-medium text-carbon/60 mb-1.5">{t(CLINIC.NOTES)}</label>
                 <textarea
                   {...register('notes')}
                   rows={4}
@@ -844,13 +846,13 @@ export const EditClinicPage = () => {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="Logo URL"
+                  label={t(CLINIC.LOGO_URL)}
                   placeholder="https://example.com/logo.png"
                   error={errors.logo_url?.message}
                   {...register('logo_url')}
                 />
                 <Input
-                  label="Image URL"
+                  label={t(CLINIC.IMAGE_URL)}
                   placeholder="https://example.com/image.png"
                   error={errors.image_url?.message}
                   {...register('image_url')}
@@ -866,7 +868,7 @@ export const EditClinicPage = () => {
         <div className="flex gap-3">
           <Link to={`/clinics/${clinic.clinic_id}`} className="flex-1">
             <Button type="button" variant="outline" size="md" className="w-full">
-              Cancel
+              {t(CLINIC.CANCEL)}
             </Button>
           </Link>
           <Button
@@ -877,7 +879,7 @@ export const EditClinicPage = () => {
             isLoading={updateMutation.isPending}
             disabled={updateMutation.isPending}
           >
-            Save Changes
+            {t(CLINIC.SAVE_CHANGES)}
           </Button>
         </div>
       </form>

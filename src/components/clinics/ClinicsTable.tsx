@@ -2,6 +2,7 @@ import { Clinic } from '@/api/clinics';
 import { Button } from '@/components/ui';
 import { MdEdit, MdDelete, MdVisibility, MdBusiness, MdCheckCircle } from 'react-icons/md';
 import { cn } from '@/utils/cn';
+import { useTranslation, CLINIC } from '@/i18n';
 
 interface ClinicsTableProps {
   clinics: Clinic[];
@@ -20,6 +21,8 @@ export const ClinicsTable = ({
   onView,
   onActivate,
 }: ClinicsTableProps) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -34,7 +37,7 @@ export const ClinicsTable = ({
     return (
       <div className="text-center py-12">
         <MdBusiness className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
-        <p className="text-sm text-carbon/60">No clinics found</p>
+        <p className="text-sm text-carbon/60">{t(CLINIC.NO_CLINICS_FOUND)}</p>
       </div>
     );
   }
@@ -44,11 +47,11 @@ export const ClinicsTable = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-carbon/10">
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Name</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Location</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Contact</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Status</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(CLINIC.TH_NAME)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(CLINIC.TH_LOCATION)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(CLINIC.TH_CONTACT)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(CLINIC.TH_STATUS)}</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(CLINIC.TH_ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -101,7 +104,7 @@ export const ClinicsTable = ({
                       : 'bg-carbon/10 text-carbon/60'
                   )}
                 >
-                  {clinic.is_active ? 'Active' : 'Inactive'}
+                  {clinic.is_active ? t(CLINIC.ACTIVE) : t(CLINIC.INACTIVE)}
                 </span>
               </td>
               <td className="py-3 px-4">
@@ -112,7 +115,7 @@ export const ClinicsTable = ({
                       size="sm"
                       onClick={() => onView(clinic)}
                       className="h-8 w-8 p-0"
-                      aria-label="View clinic"
+                      aria-label={t(CLINIC.VIEW_CLINIC)}
                     >
                       <MdVisibility className="h-4 w-4" />
                     </Button>
@@ -125,7 +128,7 @@ export const ClinicsTable = ({
                           size="sm"
                           onClick={() => onEdit(clinic)}
                           className="h-8 w-8 p-0"
-                          aria-label="Edit clinic"
+                          aria-label={t(CLINIC.EDIT_CLINIC_ARIA)}
                         >
                           <MdEdit className="h-4 w-4" />
                         </Button>
@@ -136,7 +139,7 @@ export const ClinicsTable = ({
                           size="sm"
                           onClick={() => onDelete(clinic)}
                           className="h-8 w-8 p-0 text-smudged-lips hover:text-smudged-lips"
-                          aria-label="Delete clinic"
+                          aria-label={t(CLINIC.DELETE_CLINIC)}
                         >
                           <MdDelete className="h-4 w-4" />
                         </Button>
@@ -149,7 +152,7 @@ export const ClinicsTable = ({
                         size="sm"
                         onClick={() => onActivate(clinic)}
                         className="h-8 w-8 p-0 text-azure-dragon hover:text-azure-dragon"
-                        aria-label="Activate clinic"
+                        aria-label={t(CLINIC.ACTIVATE_CLINIC_ARIA)}
                       >
                         <MdCheckCircle className="h-4 w-4" />
                       </Button>

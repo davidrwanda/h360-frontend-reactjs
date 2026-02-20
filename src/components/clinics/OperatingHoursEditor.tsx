@@ -1,22 +1,25 @@
 import { OperatingHours } from '@/api/clinics';
 import { Input } from '@/components/ui';
+import { useTranslation, CLINIC } from '@/i18n';
 
 interface OperatingHoursEditorProps {
   value?: OperatingHours;
   onChange: (value: OperatingHours) => void;
 }
 
-const days = [
-  { key: 'monday' as const, label: 'Monday' },
-  { key: 'tuesday' as const, label: 'Tuesday' },
-  { key: 'wednesday' as const, label: 'Wednesday' },
-  { key: 'thursday' as const, label: 'Thursday' },
-  { key: 'friday' as const, label: 'Friday' },
-  { key: 'saturday' as const, label: 'Saturday' },
-  { key: 'sunday' as const, label: 'Sunday' },
-];
-
 export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEditorProps) => {
+  const { t } = useTranslation();
+
+  const days = [
+    { key: 'monday' as const, label: t(CLINIC.MONDAY) },
+    { key: 'tuesday' as const, label: t(CLINIC.TUESDAY) },
+    { key: 'wednesday' as const, label: t(CLINIC.WEDNESDAY) },
+    { key: 'thursday' as const, label: t(CLINIC.THURSDAY) },
+    { key: 'friday' as const, label: t(CLINIC.FRIDAY) },
+    { key: 'saturday' as const, label: t(CLINIC.SATURDAY) },
+    { key: 'sunday' as const, label: t(CLINIC.SUNDAY) },
+  ];
+
   const updateDay = (day: keyof OperatingHours, updates: Partial<OperatingHours[typeof day]>) => {
     onChange({
       ...value,
@@ -38,7 +41,7 @@ export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEdi
             </div>
             <div className="flex items-center gap-2 flex-1">
               <div className="flex items-center gap-2 flex-1">
-                <span className="text-xs text-carbon/60 w-10 shrink-0">Open</span>
+                <span className="text-xs text-carbon/60 w-10 shrink-0">{t(CLINIC.OPEN)}</span>
                 <Input
                   type="time"
                   value={dayHours.open || ''}
@@ -49,7 +52,7 @@ export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEdi
                 />
               </div>
               <div className="flex items-center gap-2 flex-1">
-                <span className="text-xs text-carbon/60 w-12 shrink-0">Close</span>
+                <span className="text-xs text-carbon/60 w-12 shrink-0">{t(CLINIC.CLOSE)}</span>
                 <Input
                   type="time"
                   value={dayHours.close || ''}
@@ -66,7 +69,7 @@ export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEdi
                   onChange={(e) => updateDay(day.key, { closed: !e.target.checked })}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-xs text-carbon/60">Active</span>
+                <span className="text-xs text-carbon/60">{t(CLINIC.ACTIVE)}</span>
               </div>
             </div>
           </div>

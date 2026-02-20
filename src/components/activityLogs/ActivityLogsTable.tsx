@@ -74,7 +74,6 @@ export const ActivityLogsTable = ({
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">User</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Action</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Entity</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Entity Name</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Clinic</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Description</th>
             <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
@@ -116,11 +115,6 @@ export const ActivityLogsTable = ({
               </td>
               <td className="py-3 px-4">
                 <div className="text-sm text-carbon/70">{formatEntityType(log.entity_type)}</div>
-              </td>
-              <td className="py-3 px-4">
-                <div className="text-sm text-carbon/70">
-                  {log.entity_name || log.entity_id || '—'}
-                </div>
               </td>
               <td className="py-3 px-4">
                 {log.clinic_name ? (

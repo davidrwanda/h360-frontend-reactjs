@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { clinicsApi, type CreateClinicRequest, type UpdateClinicRequest, type ClinicListParams } from '@/api/clinics';
+import { clinicsApi, type CreateClinicRequest, type UpdateClinicRequest, type ClinicListParams, type NearestClinicsParams } from '@/api/clinics';
 
 /**
  * Hook to fetch clinics list with filters and pagination
@@ -97,6 +97,18 @@ export const useActivateClinic = () => {
       queryClient.invalidateQueries({ queryKey: ['clinics', 'deleted'] });
       queryClient.invalidateQueries({ queryKey: ['clinics', id] });
     },
+  });
+};
+
+/**
+ * Hook to find nearest clinics by geolocation
+ */
+export const useNearestClinics = (params: NearestClinicsParams | undefined) => {
+  return useQuery({
+    queryKey: ['clinics', 'nearest', params],
+    queryFn: () => clinicsApi.nearest(params!),
+    enabled: !!params?.latitude && !!params?.longitude,
+    staleTime: 60000, // 1 minute
   });
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser, useUpdateUser, useMyPreferences, useUpdateMyPreferences } from '@/hooks/useUsers';
 import { useUpdatePatient } from '@/hooks/usePatients';
@@ -7,6 +7,8 @@ import { useClinic } from '@/hooks/useClinics';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToastStore } from '@/store/toastStore';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
+import { useI18nStore, useTranslation, SETTINGS, SUPPORTED_LANGS } from '@/i18n';
+import type { SupportedLang } from '@/i18n';
 import {
   MdPerson,
   MdLock,
@@ -22,30 +24,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-const profileSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email'),
-  phone: z.string().optional(),
-});
-
-const passwordSchema = z
-  .object({
-    current_password: z.string().min(1, 'Current password is required'),
-    new_password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        'Password must contain uppercase, lowercase, and number'
-      ),
-    confirm_password: z.string(),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: "Passwords don't match",
-    path: ['confirm_password'],
-  });
-
 const preferencesSchema = z.object({
   theme: z.string().optional(),
   language: z.string().optional(),
@@ -56,18 +34,50 @@ const preferencesSchema = z.object({
   in_app_notifications: z.boolean().optional(),
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
-type PasswordFormData = z.infer<typeof passwordSchema>;
 type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
 type SettingsTab = 'profile' | 'preferences' | 'clinic' | 'system' | 'security';
 
 export const SettingsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [profileError, setProfileError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  // Reactive Zod schemas for translated validation messages
+  const profileSchema = useMemo(
+    () =>
+      z.object({
+        first_name: z.string().min(1, t(SETTINGS.FIRST_NAME_REQUIRED)),
+        last_name: z.string().min(1, t(SETTINGS.LAST_NAME_REQUIRED)),
+        email: z.string().email(t(SETTINGS.INVALID_EMAIL)),
+        phone: z.string().optional(),
+      }),
+    [t],
+  );
+
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .object({
+          current_password: z.string().min(1, t(SETTINGS.CURRENT_PASSWORD_REQUIRED)),
+          new_password: z
+            .string()
+            .min(8, t(SETTINGS.PASSWORD_MIN_LENGTH))
+            .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, t(SETTINGS.PASSWORD_COMPLEXITY)),
+          confirm_password: z.string(),
+        })
+        .refine((data) => data.new_password === data.confirm_password, {
+          message: t(SETTINGS.PASSWORDS_DONT_MATCH),
+          path: ['confirm_password'],
+        }),
+    [t],
+  );
+
+  type ProfileFormData = z.infer<typeof profileSchema>;
+  type PasswordFormData = z.infer<typeof passwordSchema>;
 
   // Fetch current user data (only for EMPLOYEE/SYSTEM users, not PATIENT)
   const { data: userData } = useUser(user?.user_id || '', {
@@ -87,6 +97,7 @@ export const SettingsPage = () => {
   // Fetch preferences
   const { data: preferencesData } = useMyPreferences();
   const updatePreferencesMutation = useUpdateMyPreferences();
+  const setLang = useI18nStore((s) => s.setLang);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -156,7 +167,7 @@ export const SettingsPage = () => {
     setProfileError(null);
 
     if (!user?.user_id) {
-      setProfileError('User ID not found');
+      setProfileError(t(SETTINGS.USER_ID_NOT_FOUND));
       return;
     }
 
@@ -185,10 +196,10 @@ export const SettingsPage = () => {
           },
         });
       }
-      showSuccess('Profile updated successfully!');
+      showSuccess(t(SETTINGS.PROFILE_UPDATED));
       // Success - form will update via useUser query or auth query
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : t(SETTINGS.PROFILE_UPDATE_FAILED);
       setProfileError(errorMessage);
       showError(errorMessage);
     }
@@ -205,11 +216,11 @@ export const SettingsPage = () => {
         confirm_password: data.confirm_password,
       });
       setPasswordSuccess(true);
-      showSuccess('Password changed successfully!');
+      showSuccess(t(SETTINGS.PASSWORD_CHANGED));
       passwordForm.reset();
       setTimeout(() => setPasswordSuccess(false), 5000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to change password. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : t(SETTINGS.PASSWORD_CHANGE_FAILED);
       setPasswordError(errorMessage);
       showError(errorMessage);
     }
@@ -226,27 +237,33 @@ export const SettingsPage = () => {
         sms_notifications: data.sms_notifications,
         in_app_notifications: data.in_app_notifications,
       });
-      showSuccess('Preferences updated successfully!');
+
+      // Sync language to i18n store so UI updates immediately
+      if (data.language && SUPPORTED_LANGS.includes(data.language as SupportedLang)) {
+        setLang(data.language as SupportedLang);
+      }
+
+      showSuccess(t(SETTINGS.PREFS_UPDATED));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update preferences. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : t(SETTINGS.PREFS_UPDATE_FAILED);
       showError(errorMessage);
     }
   };
 
   const tabs = [
-    { id: 'profile' as SettingsTab, label: 'Profile', icon: MdPerson },
-    { id: 'preferences' as SettingsTab, label: 'Preferences', icon: MdPalette },
-    ...(isClinicAdmin ? [{ id: 'clinic' as SettingsTab, label: 'Clinic Settings', icon: MdBusiness }] : []),
-    ...(isSystemAdmin ? [{ id: 'system' as SettingsTab, label: 'System Settings', icon: MdSettings }] : []),
-    { id: 'security' as SettingsTab, label: 'Security', icon: MdSecurity },
+    { id: 'profile' as SettingsTab, label: t(SETTINGS.TAB_PROFILE), icon: MdPerson },
+    { id: 'preferences' as SettingsTab, label: t(SETTINGS.TAB_PREFERENCES), icon: MdPalette },
+    ...(isClinicAdmin ? [{ id: 'clinic' as SettingsTab, label: t(SETTINGS.TAB_CLINIC), icon: MdBusiness }] : []),
+    ...(isSystemAdmin ? [{ id: 'system' as SettingsTab, label: t(SETTINGS.TAB_SYSTEM), icon: MdSettings }] : []),
+    { id: 'security' as SettingsTab, label: t(SETTINGS.TAB_SECURITY), icon: MdSecurity },
   ];
 
   return (
     <div className="mx-auto max-w-6xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-1">Settings</h1>
-        <p className="text-sm text-carbon/60">Manage your account settings and preferences</p>
+        <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-1">{t(SETTINGS.PAGE_TITLE)}</h1>
+        <p className="text-sm text-carbon/60">{t(SETTINGS.PAGE_SUBTITLE)}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">
@@ -288,7 +305,7 @@ export const SettingsPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <MdPerson className="h-5 w-5" />
-                      Personal Information
+                      {t(SETTINGS.PERSONAL_INFO)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -301,25 +318,25 @@ export const SettingsPage = () => {
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <Input
-                          label="First Name"
+                          label={t(SETTINGS.FIRST_NAME)}
                           {...profileForm.register('first_name')}
                           error={profileForm.formState.errors.first_name?.message}
                         />
                         <Input
-                          label="Last Name"
+                          label={t(SETTINGS.LAST_NAME)}
                           {...profileForm.register('last_name')}
                           error={profileForm.formState.errors.last_name?.message}
                         />
                         <Input
-                          label="Email"
+                          label={t(SETTINGS.EMAIL)}
                           type="email"
                           {...profileForm.register('email')}
                           error={profileForm.formState.errors.email?.message}
                           disabled
-                          helperText="Email cannot be changed"
+                          helperText={t(SETTINGS.EMAIL_CANNOT_CHANGE)}
                         />
                         <Input
-                          label="Phone"
+                          label={t(SETTINGS.PHONE)}
                           type="tel"
                           {...profileForm.register('phone')}
                           error={profileForm.formState.errors.phone?.message}
@@ -333,7 +350,7 @@ export const SettingsPage = () => {
                           size="md"
                           disabled={profileForm.formState.isSubmitting}
                         >
-                          {profileForm.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                          {profileForm.formState.isSubmitting ? t(SETTINGS.SAVING) : t(SETTINGS.SAVE_CHANGES)}
                         </Button>
                       </div>
                     </form>
@@ -347,7 +364,7 @@ export const SettingsPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <MdLock className="h-5 w-5" />
-                      Change Password
+                      {t(SETTINGS.CHANGE_PASSWORD)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -359,24 +376,24 @@ export const SettingsPage = () => {
                       )}
                       {passwordSuccess && (
                         <div className="rounded-md bg-bright-halo/10 border border-bright-halo/25 px-3.5 py-2.5">
-                          <p className="text-xs text-azure-dragon">Password changed successfully!</p>
+                          <p className="text-xs text-azure-dragon">{t(SETTINGS.PASSWORD_CHANGED)}</p>
                         </div>
                       )}
 
                       <Input
-                        label="Current Password"
+                        label={t(SETTINGS.CURRENT_PASSWORD)}
                         type="password"
                         {...passwordForm.register('current_password')}
                         error={passwordForm.formState.errors.current_password?.message}
                       />
                       <Input
-                        label="New Password"
+                        label={t(SETTINGS.NEW_PASSWORD)}
                         type="password"
                         {...passwordForm.register('new_password')}
                         error={passwordForm.formState.errors.new_password?.message}
                       />
                       <Input
-                        label="Confirm New Password"
+                        label={t(SETTINGS.CONFIRM_NEW_PASSWORD)}
                         type="password"
                         {...passwordForm.register('confirm_password')}
                         error={passwordForm.formState.errors.confirm_password?.message}
@@ -389,7 +406,7 @@ export const SettingsPage = () => {
                           size="md"
                           disabled={changePasswordMutation.isPending}
                         >
-                          {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                          {changePasswordMutation.isPending ? t(SETTINGS.CHANGING) : t(SETTINGS.CHANGE_PASSWORD)}
                         </Button>
                       </div>
                     </form>
@@ -399,28 +416,28 @@ export const SettingsPage = () => {
 
               <Card variant="elevated">
                 <CardHeader>
-                  <CardTitle>Account Information</CardTitle>
+                  <CardTitle>{t(SETTINGS.ACCOUNT_INFO)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Username</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(SETTINGS.USERNAME)}</label>
                       <p className="text-sm text-carbon">{userData?.username || user?.username || '—'}</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Role</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(SETTINGS.ROLE)}</label>
                       <p className="text-sm text-carbon capitalize">{user?.role || user?.user_type || '—'}</p>
                     </div>
                     {(userData?.clinic_id || user?.clinic_id) && (
                       <div>
-                        <label className="block text-xs font-medium text-carbon/60 mb-1">Clinic Code</label>
+                        <label className="block text-xs font-medium text-carbon/60 mb-1">{t(SETTINGS.CLINIC_CODE)}</label>
                         <p className="text-sm text-carbon font-medium">
                           {clinicData?.clinic_code || '—'}
                         </p>
                       </div>
                     )}
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Account Status</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(SETTINGS.ACCOUNT_STATUS)}</label>
                       <span
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           userData?.is_active
@@ -428,7 +445,7 @@ export const SettingsPage = () => {
                             : 'bg-carbon/10 text-carbon/60'
                         }`}
                       >
-                        {userData?.is_active ? 'Active' : 'Inactive'}
+                        {userData?.is_active ? t(SETTINGS.ACTIVE) : t(SETTINGS.INACTIVE)}
                       </span>
                     </div>
                   </div>
@@ -447,23 +464,23 @@ export const SettingsPage = () => {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <MdPalette className="h-5 w-5" />
-                        Appearance
+                        {t(SETTINGS.APPEARANCE)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-xs font-medium text-carbon/60 mb-2">Theme</label>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">{t(SETTINGS.THEME)}</label>
                           <Select
                             value={preferencesForm.watch('theme') || 'Light'}
                             onChange={(e) => preferencesForm.setValue('theme', e.target.value)}
                             options={[
-                              { value: 'Light', label: 'Light' },
-                              { value: 'Dark', label: 'Dark' },
-                              { value: 'System', label: 'System' },
+                              { value: 'Light', label: t(SETTINGS.THEME_LIGHT) },
+                              { value: 'Dark', label: t(SETTINGS.THEME_DARK) },
+                              { value: 'System', label: t(SETTINGS.THEME_SYSTEM) },
                             ]}
                           />
-                          <p className="text-xs text-carbon/50 mt-1.5">Choose your preferred color theme</p>
+                          <p className="text-xs text-carbon/50 mt-1.5">{t(SETTINGS.THEME_DESCRIPTION)}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -473,25 +490,25 @@ export const SettingsPage = () => {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <MdLanguage className="h-5 w-5" />
-                        Language & Locale
+                        {t(SETTINGS.LANGUAGE_LOCALE)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-xs font-medium text-carbon/60 mb-2">Language</label>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">{t(SETTINGS.LANGUAGE)}</label>
                           <Select
                             value={preferencesForm.watch('language') || 'en'}
                             onChange={(e) => preferencesForm.setValue('language', e.target.value)}
                             options={[
                               { value: 'en', label: 'English' },
-                              { value: 'fr', label: 'French' },
-                              { value: 'es', label: 'Spanish' },
+                              { value: 'fr', label: 'Français' },
+                              { value: 'rw', label: 'Ikinyarwanda' },
                             ]}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-carbon/60 mb-2">Date Format</label>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">{t(SETTINGS.DATE_FORMAT)}</label>
                           <Select
                             value={preferencesForm.watch('date_format') || 'MM/DD/YYYY'}
                             onChange={(e) => preferencesForm.setValue('date_format', e.target.value)}
@@ -499,11 +516,12 @@ export const SettingsPage = () => {
                               { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
                               { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
                               { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
+                              { value: 'DD MMM YYYY', label: 'DD MMM YYYY' },
                             ]}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-carbon/60 mb-2">Time Format</label>
+                          <label className="block text-xs font-medium text-carbon/60 mb-2">{t(SETTINGS.TIME_FORMAT)}</label>
                           <Select
                             value={
                               preferencesForm.watch('time_format') === '24 Hour'
@@ -516,8 +534,8 @@ export const SettingsPage = () => {
                               preferencesForm.setValue('time_format', e.target.value === '24h' ? '24 Hour' : '12 Hour')
                             }
                             options={[
-                              { value: '12h', label: '12 Hour' },
-                              { value: '24h', label: '24 Hour' },
+                              { value: '12h', label: t(SETTINGS.TIME_12H) },
+                              { value: '24h', label: t(SETTINGS.TIME_24H) },
                             ]}
                           />
                         </div>
@@ -529,15 +547,15 @@ export const SettingsPage = () => {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <MdNotifications className="h-5 w-5" />
-                        Notification Preferences
+                        {t(SETTINGS.NOTIFICATION_PREFS)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-sm font-medium text-carbon">Email Notifications</label>
-                            <p className="text-xs text-carbon/60">Receive notifications via email</p>
+                            <label className="text-sm font-medium text-carbon">{t(SETTINGS.EMAIL_NOTIFICATIONS)}</label>
+                            <p className="text-xs text-carbon/60">{t(SETTINGS.EMAIL_NOTIFICATIONS_DESC)}</p>
                           </div>
                           <input
                             type="checkbox"
@@ -548,8 +566,8 @@ export const SettingsPage = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-sm font-medium text-carbon">SMS Notifications</label>
-                            <p className="text-xs text-carbon/60">Receive notifications via SMS</p>
+                            <label className="text-sm font-medium text-carbon">{t(SETTINGS.SMS_NOTIFICATIONS)}</label>
+                            <p className="text-xs text-carbon/60">{t(SETTINGS.SMS_NOTIFICATIONS_DESC)}</p>
                           </div>
                           <input
                             type="checkbox"
@@ -560,8 +578,8 @@ export const SettingsPage = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
-                            <label className="text-sm font-medium text-carbon">In-App Notifications</label>
-                            <p className="text-xs text-carbon/60">Show notifications in the app</p>
+                            <label className="text-sm font-medium text-carbon">{t(SETTINGS.IN_APP_NOTIFICATIONS)}</label>
+                            <p className="text-xs text-carbon/60">{t(SETTINGS.IN_APP_NOTIFICATIONS_DESC)}</p>
                           </div>
                           <input
                             type="checkbox"
@@ -581,7 +599,7 @@ export const SettingsPage = () => {
                       size="md"
                       disabled={updatePreferencesMutation.isPending}
                     >
-                      {updatePreferencesMutation.isPending ? 'Saving...' : 'Save Preferences'}
+                      {updatePreferencesMutation.isPending ? t(SETTINGS.SAVING) : t(SETTINGS.SAVE_PREFERENCES)}
                     </Button>
                   </div>
                 </form>
@@ -589,7 +607,7 @@ export const SettingsPage = () => {
                 <Card variant="elevated">
                   <CardContent className="py-8">
                     <p className="text-sm text-carbon/60 text-center">
-                      Preferences settings are not available for system users.
+                      {t(SETTINGS.PREFS_NOT_AVAILABLE)}
                     </p>
                   </CardContent>
                 </Card>
@@ -603,15 +621,13 @@ export const SettingsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MdBusiness className="h-5 w-5" />
-                  Clinic Settings
+                  {t(SETTINGS.CLINIC_SETTINGS)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-carbon/60">
-                  Clinic-specific settings will be available here. This section is for clinic administrators to
-                  manage clinic preferences and configurations.
+                  {t(SETTINGS.CLINIC_SETTINGS_DESC)}
                 </p>
-                {/* TODO: Implement clinic settings */}
               </CardContent>
             </Card>
           )}
@@ -622,14 +638,13 @@ export const SettingsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MdSettings className="h-5 w-5" />
-                  System Settings
+                  {t(SETTINGS.SYSTEM_SETTINGS)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-carbon/60">
-                  System-wide settings and configurations. This section is only accessible to system administrators.
+                  {t(SETTINGS.SYSTEM_SETTINGS_DESC)}
                 </p>
-                {/* TODO: Implement system settings */}
               </CardContent>
             </Card>
           )}
@@ -641,23 +656,22 @@ export const SettingsPage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MdComputer className="h-5 w-5" />
-                    Active Sessions
+                    {t(SETTINGS.ACTIVE_SESSIONS)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-white-smoke rounded-md">
                       <div>
-                        <p className="text-sm font-medium text-carbon">Current Session</p>
-                        <p className="text-xs text-carbon/60">This device • Now</p>
+                        <p className="text-sm font-medium text-carbon">{t(SETTINGS.CURRENT_SESSION)}</p>
+                        <p className="text-xs text-carbon/60">{t(SETTINGS.THIS_DEVICE)}</p>
                       </div>
                       <span className="text-xs px-2 py-1 bg-azure-dragon/20 text-azure-dragon rounded">
-                        Active
+                        {t(SETTINGS.ACTIVE)}
                       </span>
                     </div>
                     <p className="text-xs text-carbon/50">
-                      You can view and manage your active sessions here. Logging out from other devices will
-                      invalidate their sessions.
+                      {t(SETTINGS.SESSION_INFO)}
                     </p>
                   </div>
                 </CardContent>
@@ -665,14 +679,12 @@ export const SettingsPage = () => {
 
               <Card variant="elevated">
                 <CardHeader>
-                  <CardTitle>Login History</CardTitle>
+                  <CardTitle>{t(SETTINGS.LOGIN_HISTORY)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-carbon/60">
-                    Recent login history will be displayed here. This helps you monitor account access and detect
-                    any unauthorized activity.
+                    {t(SETTINGS.LOGIN_HISTORY_DESC)}
                   </p>
-                  {/* TODO: Implement login history */}
                 </CardContent>
               </Card>
 
@@ -682,23 +694,22 @@ export const SettingsPage = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <MdSecurity className="h-5 w-5" />
-                      Two-Factor Authentication
+                      {t(SETTINGS.TWO_FACTOR_AUTH)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-sm font-medium text-carbon">Enable 2FA</label>
+                          <label className="text-sm font-medium text-carbon">{t(SETTINGS.ENABLE_2FA)}</label>
                           <p className="text-xs text-carbon/60">
-                            Add an extra layer of security to your account
+                            {t(SETTINGS.ENABLE_2FA_DESC)}
                           </p>
                         </div>
                         <input type="checkbox" className="h-4 w-4" />
                       </div>
                       <p className="text-xs text-carbon/50">
-                        Two-factor authentication is not yet available. This feature will be implemented in a future
-                        update.
+                        {t(SETTINGS.TWO_FA_NOT_AVAILABLE)}
                       </p>
                     </div>
                   </CardContent>

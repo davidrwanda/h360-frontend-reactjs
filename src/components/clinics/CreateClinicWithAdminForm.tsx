@@ -1,54 +1,33 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateClinic } from '@/hooks/useClinicFlow';
 import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useToastStore } from '@/store/toastStore';
-import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
+import { useTranslation, CLINIC } from '@/i18n';
+import { Button, Input, Select, MultiSelect, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { AddressInput } from './AddressInput';
-import { MdBusiness } from 'react-icons/md';
+import { AddClinicTypeModal } from './AddClinicTypeModal';
+import { MdBusiness, MdAdd } from 'react-icons/md';
 
-// Custom URL validation that accepts domains without protocol
-const urlOrDomainSchema = z
-  .string()
-  .optional()
-  .or(z.literal(''))
-  .refine(
-    (val) => {
-      if (!val || val === '') return true;
-      // Check if it's a valid URL with protocol
-      try {
-        new URL(val);
-        return true;
-      } catch {
-        // Check if it's a valid domain (www.example.com or example.com)
-        const domainPattern = /^(www\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
-        return domainPattern.test(val);
-      }
-    },
-    { message: 'Invalid URL or domain' }
-  );
-
-const createClinicSchema = z.object({
-  clinic_name: z.string().min(1, 'Clinic name is required'),
-  clinic_code: z.string().min(1, 'Clinic code is required').max(20),
-  clinic_address: z.string().min(1, 'Address is required').optional().or(z.literal('')),
-  clinic_city: z.string().min(1, 'City is required').optional().or(z.literal('')),
-  clinic_state: z.string().optional(),
-  clinic_postal_code: z.string().optional(),
-  clinic_country: z.string().optional(),
-  clinic_phone: z.string().min(1, 'Phone number is required').optional().or(z.literal('')),
-  clinic_email: z.string().email('Invalid email').min(1, 'Email is required').optional().or(z.literal('')),
-  clinic_website: urlOrDomainSchema,
-  clinic_timezone: z.string().optional().or(z.literal('')),
-  clinic_currency: z.string().optional().or(z.literal('')),
-  clinic_language: z.string().optional().or(z.literal('')),
-  clinic_type_ids: z.array(z.string()).min(1, 'At least one clinic type is required').optional(),
-});
-
-type CreateClinicFormData = z.infer<typeof createClinicSchema>;
+interface CreateClinicFormData {
+  clinic_name: string;
+  clinic_code: string;
+  clinic_address?: string;
+  clinic_city?: string;
+  clinic_state?: string;
+  clinic_postal_code?: string;
+  clinic_country?: string;
+  clinic_phone?: string;
+  clinic_email?: string;
+  clinic_website?: string;
+  clinic_timezone?: string;
+  clinic_currency?: string;
+  clinic_language?: string;
+  clinic_type_ids?: string[];
+}
 
 interface CreateClinicWithAdminFormProps {
   onSuccess?: () => void;
@@ -61,9 +40,46 @@ export const CreateClinicWithAdminForm = ({
 }: CreateClinicWithAdminFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
   const createMutation = useCreateClinic();
+  const { t } = useTranslation();
   const { success: showSuccess, error: showError } = useToastStore();
   const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
+
+  const urlOrDomainSchema = useMemo(() => z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (val) => {
+        if (!val || val === '') return true;
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          const domainPattern = /^(www\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+          return domainPattern.test(val);
+        }
+      },
+      { message: t(CLINIC.INVALID_URL) }
+    ), [t]);
+
+  const createClinicSchema = useMemo(() => z.object({
+    clinic_name: z.string().min(1, t(CLINIC.CLINIC_NAME_REQUIRED)),
+    clinic_code: z.string().min(1, t(CLINIC.CLINIC_CODE_REQUIRED)).max(20),
+    clinic_address: z.string().min(1, t(CLINIC.ADDRESS_REQUIRED)).optional().or(z.literal('')),
+    clinic_city: z.string().min(1, t(CLINIC.CITY_REQUIRED)).optional().or(z.literal('')),
+    clinic_state: z.string().optional(),
+    clinic_postal_code: z.string().optional(),
+    clinic_country: z.string().optional(),
+    clinic_phone: z.string().min(1, t(CLINIC.PHONE_REQUIRED)).optional().or(z.literal('')),
+    clinic_email: z.string().email(t(CLINIC.INVALID_EMAIL)).min(1, t(CLINIC.EMAIL_REQUIRED)).optional().or(z.literal('')),
+    clinic_website: urlOrDomainSchema,
+    clinic_timezone: z.string().optional().or(z.literal('')),
+    clinic_currency: z.string().optional().or(z.literal('')),
+    clinic_language: z.string().optional().or(z.literal('')),
+    clinic_type_ids: z.array(z.string()).min(1, t(CLINIC.CLINIC_TYPE_REQUIRED)).optional(),
+  }), [t, urlOrDomainSchema]);
 
   const {
     register,
@@ -108,7 +124,7 @@ export const CreateClinicWithAdminForm = ({
       });
 
       setSuccess(true);
-      showSuccess('Clinic created successfully!');
+      showSuccess(t(CLINIC.CLINIC_CREATED));
       reset();
 
       if (onSuccess) {
@@ -117,9 +133,9 @@ export const CreateClinicWithAdminForm = ({
         }, 2000);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? (err.message || 'Failed to create clinic. Please try again.')
-        : 'An unexpected error occurred. Please try again.';
+      const errorMessage = err instanceof Error
+        ? (err.message || t(CLINIC.CREATE_FAILED))
+        : t(CLINIC.CREATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -130,10 +146,10 @@ export const CreateClinicWithAdminForm = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MdBusiness className="h-5 w-5 text-azure-dragon" />
-          Create Clinic
+          {t(CLINIC.CREATE_CLINIC)}
         </CardTitle>
         <p className="text-xs text-carbon/60 mt-1">
-          Create a new clinic. Clinic managers are created separately via Users.
+          {t(CLINIC.CREATE_CLINIC_HELPER)}
         </p>
       </CardHeader>
       <CardContent>
@@ -147,7 +163,7 @@ export const CreateClinicWithAdminForm = ({
           {success && (
             <div className="rounded-md bg-bright-halo/20 border border-bright-halo/30 px-3.5 py-2.5">
               <p className="text-xs text-azure-dragon font-ui">
-                ✅ Clinic created successfully!
+                {t(CLINIC.CLINIC_CREATED_BANNER)}
               </p>
             </div>
           )}
@@ -156,28 +172,71 @@ export const CreateClinicWithAdminForm = ({
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-carbon/10">
               <MdBusiness className="h-4 w-4 text-azure-dragon" />
-              <h3 className="text-sm font-medium text-carbon">Clinic Information</h3>
+              <h3 className="text-sm font-medium text-carbon">{t(CLINIC.CLINIC_INFORMATION)}</h3>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Clinic Name"
-                placeholder="Enter clinic name"
+                label={t(CLINIC.CLINIC_NAME)}
+                placeholder={t(CLINIC.ENTER_CLINIC_NAME)}
                 error={errors.clinic_name?.message}
                 required
                 {...register('clinic_name')}
               />
 
               <Input
-                label="Clinic Code"
-                placeholder="e.g., CLINIC001"
+                label={t(CLINIC.CLINIC_CODE)}
+                placeholder={t(CLINIC.CLINIC_CODE_PLACEHOLDER)}
                 error={errors.clinic_code?.message}
                 required
                 {...register('clinic_code')}
               />
 
+              {/* Clinic Types Multi-Select */}
+              <div className="md:col-span-2">
+                <Controller
+                  name="clinic_type_ids"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-2">
+                      <MultiSelect
+                        label={t(CLINIC.CLINIC_TYPES)}
+                        placeholder={t(CLINIC.SELECT_CLINIC_TYPES)}
+                        required
+                        isLoading={isLoadingTypes}
+                        loadingText={t(CLINIC.LOADING_CLINIC_TYPES)}
+                        options={(clinicTypes || []).map((type) => ({
+                          value: type.clinic_type_id,
+                          label: type.name,
+                          color: type.color,
+                        }))}
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        error={errors.clinic_type_ids?.message}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAddTypeModal(true)}
+                        className="inline-flex items-center gap-1.5 text-xs font-ui text-azure-dragon hover:text-azure-dragon/80 transition-colors"
+                      >
+                        <MdAdd className="h-4 w-4" />
+                        {t(CLINIC.ADD_NEW_TYPE)}
+                      </button>
+                      <AddClinicTypeModal
+                        isOpen={showAddTypeModal}
+                        onClose={() => setShowAddTypeModal(false)}
+                        onCreated={(newTypeId) => {
+                          const currentIds = field.value || [];
+                          field.onChange([...currentIds, newTypeId]);
+                        }}
+                      />
+                    </div>
+                  )}
+                />
+              </div>
+
               <AddressInput
-                label="Address"
+                label={t(CLINIC.ADDRESS)}
                 value={clinicAddress || ''}
                 onChange={(value) => setValue('clinic_address', value)}
                 onAddressSelect={(addressData) => {
@@ -192,36 +251,36 @@ export const CreateClinicWithAdminForm = ({
               />
 
               <Input
-                label="City"
-                placeholder="City"
+                label={t(CLINIC.CITY)}
+                placeholder={t(CLINIC.CITY)}
                 error={errors.clinic_city?.message}
                 required
                 {...register('clinic_city')}
               />
 
               <Input
-                label="State"
-                placeholder="State/Province"
+                label={t(CLINIC.STATE)}
+                placeholder={t(CLINIC.STATE_PROVINCE)}
                 error={errors.clinic_state?.message}
                 {...register('clinic_state')}
               />
 
               <Input
-                label="Postal Code"
-                placeholder="Postal code"
+                label={t(CLINIC.POSTAL_CODE)}
+                placeholder={t(CLINIC.POSTAL_CODE)}
                 error={errors.clinic_postal_code?.message}
                 {...register('clinic_postal_code')}
               />
 
               <Input
-                label="Country"
-                placeholder="Country"
+                label={t(CLINIC.COUNTRY)}
+                placeholder={t(CLINIC.COUNTRY)}
                 error={errors.clinic_country?.message}
                 {...register('clinic_country')}
               />
 
               <Input
-                label="Phone"
+                label={t(CLINIC.PHONE)}
                 type="tel"
                 placeholder="+1234567890"
                 error={errors.clinic_phone?.message}
@@ -230,7 +289,7 @@ export const CreateClinicWithAdminForm = ({
               />
 
               <Input
-                label="Email"
+                label={t(CLINIC.EMAIL)}
                 type="email"
                 placeholder="clinic@example.com"
                 error={errors.clinic_email?.message}
@@ -239,7 +298,7 @@ export const CreateClinicWithAdminForm = ({
               />
 
               <Input
-                label="Website"
+                label={t(CLINIC.WEBSITE)}
                 type="url"
                 placeholder="www.example.com"
                 error={errors.clinic_website?.message}
@@ -247,76 +306,25 @@ export const CreateClinicWithAdminForm = ({
               />
 
               <Select
-                label="Timezone"
+                label={t(CLINIC.TIMEZONE)}
                 error={errors.clinic_timezone?.message}
                 options={timezones}
                 {...register('clinic_timezone')}
               />
 
               <Select
-                label="Currency"
+                label={t(CLINIC.CURRENCY)}
                 error={errors.clinic_currency?.message}
                 options={currencies}
                 {...register('clinic_currency')}
               />
 
               <Select
-                label="Language"
+                label={t(CLINIC.LANGUAGE)}
                 error={errors.clinic_language?.message}
                 options={languages}
                 {...register('clinic_language')}
               />
-
-              {/* Clinic Types Multi-Select */}
-              <div className="md:col-span-2">
-                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  Clinic Types <span className="text-smudged-lips ml-0.5">*</span>
-                </label>
-                {isLoadingTypes ? (
-                  <div className="flex items-center gap-2 py-2">
-                    <Loading size="sm" />
-                    <span className="text-xs text-carbon/60">Loading clinic types...</span>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
-                    <Controller
-                      name="clinic_type_ids"
-                      control={control}
-                      render={({ field }) => (
-                        <>
-                          {clinicTypes?.map((type) => (
-                            <label
-                              key={type.clinic_type_id}
-                              className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                value={type.clinic_type_id}
-                                checked={field.value?.includes(type.clinic_type_id) || false}
-                                onChange={(e) => {
-                                  const currentValue = field.value || [];
-                                  if (e.target.checked) {
-                                    field.onChange([...currentValue, type.clinic_type_id]);
-                                  } else {
-                                    field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
-                                  }
-                                }}
-                                className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
-                              />
-                              <span className="text-xs text-carbon">{type.name}</span>
-                            </label>
-                          ))}
-                        </>
-                      )}
-                    />
-                  </div>
-                )}
-                {errors.clinic_type_ids && (
-                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">
-                    {errors.clinic_type_ids.message}
-                  </p>
-                )}
-              </div>
             </div>
           </div>
 
@@ -330,7 +338,7 @@ export const CreateClinicWithAdminForm = ({
                 onClick={onCancel}
                 disabled={createMutation.isPending}
               >
-                Cancel
+                {t(CLINIC.CANCEL)}
               </Button>
             )}
             <Button
@@ -341,7 +349,7 @@ export const CreateClinicWithAdminForm = ({
               isLoading={createMutation.isPending}
               disabled={createMutation.isPending}
             >
-              Create Clinic
+              {t(CLINIC.CREATE_CLINIC)}
             </Button>
           </div>
         </form>

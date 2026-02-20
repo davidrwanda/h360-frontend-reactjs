@@ -11,24 +11,26 @@ import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/compo
 import { DepartmentInput } from '@/components/departments';
 import { MdArrowBack } from 'react-icons/md';
 import { cn } from '@/utils/cn';
+import { useTranslation } from '@/i18n';
+import { USERS } from '@/i18n/keys/users.keys';
 
 // Schema will be created dynamically based on whether user is SYSTEM ADMIN
-const createBaseUserSchema = (isSystemAdmin: boolean) => z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').min(1, 'Email is required'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  phone: z.string().min(1, 'Phone number is required'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
-  gender: z.enum(['M', 'F', 'Other'], { required_error: 'Gender is required' }),
+const createBaseUserSchema = (isSystemAdmin: boolean, t: (key: string) => string) => z.object({
+  first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
+  last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
+  email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
+  username: z.string().min(3, t(USERS.USERNAME_MIN_LENGTH)),
+  phone: z.string().min(1, t(USERS.PHONE_REQUIRED)),
+  date_of_birth: z.string().min(1, t(USERS.DATE_OF_BIRTH_REQUIRED)),
+  gender: z.enum(['M', 'F', 'Other'], { required_error: t(USERS.GENDER_REQUIRED) }),
   role: z.enum(['Operator', 'Manager'], {
-    required_error: 'Role is required'
+    required_error: t(USERS.ROLE_REQUIRED)
   }).default('Operator'),
   clinic_id: z.string().optional(),
   // Employment fields are optional for SYSTEM ADMIN, required for others
-  department: isSystemAdmin ? z.string().optional() : z.string().min(1, 'Department is required'),
-  position: isSystemAdmin ? z.string().optional() : z.string().min(1, 'Position is required'),
-  hire_date: isSystemAdmin ? z.string().optional() : z.string().min(1, 'Hire date is required'),
+  department: isSystemAdmin ? z.string().optional() : z.string().min(1, t(USERS.DEPARTMENT_REQUIRED)),
+  position: isSystemAdmin ? z.string().optional() : z.string().min(1, t(USERS.POSITION_REQUIRED)),
+  hire_date: isSystemAdmin ? z.string().optional() : z.string().min(1, t(USERS.HIRE_DATE_REQUIRED)),
 }).refine((data) => {
   // Clinic ID is required for Manager role
   if (data.role === 'Manager' && !data.clinic_id) {
@@ -36,7 +38,7 @@ const createBaseUserSchema = (isSystemAdmin: boolean) => z.object({
   }
   return true;
 }, {
-  message: 'Clinic is required for Manager role',
+  message: t(USERS.CLINIC_REQUIRED_FOR_MANAGER),
   path: ['clinic_id'],
 });
 
@@ -46,6 +48,7 @@ export const CreateUserPage = () => {
   const [error, setError] = useState<string | null>(null);
   const createUserMutation = useCreateUser();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
 
   // Check if current user is SYSTEM ADMIN
   const isSystemAdmin = user?.user_type === 'SYSTEM' || role === 'ADMIN' || user?.permissions === 'ALL';
@@ -78,7 +81,7 @@ export const CreateUserPage = () => {
   };
 
   // Create schema based on whether user is SYSTEM ADMIN
-  const userSchema = useMemo(() => createBaseUserSchema(isSystemAdmin), [isSystemAdmin]);
+  const userSchema = useMemo(() => createBaseUserSchema(isSystemAdmin, t), [isSystemAdmin, t]);
   type CreateUserFormData = z.infer<typeof userSchema>;
 
   const {
@@ -112,7 +115,7 @@ export const CreateUserPage = () => {
       // Use selected clinic_id if provided, otherwise fall back to storage (for Operator role)
       const clinicId = data.clinic_id || (selectedRole === 'Operator' ? getClinicIdFromStorage() : undefined);
       
-      const userData: any = {
+      const userData = {
         ...data,
         clinic_id: clinicId,
         password: 'TempPass123!', // Temporary password that user will change later
@@ -125,11 +128,12 @@ export const CreateUserPage = () => {
         if (!data.hire_date) delete userData.hire_date;
       }
 
-      await createUserMutation.mutateAsync(userData);
-      showSuccess('User created successfully!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createUserMutation.mutateAsync(userData as any);
+      showSuccess(t(USERS.USER_CREATED_SUCCESS));
       navigate('/users');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create user. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(USERS.FAILED_CREATE_USER);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -150,10 +154,10 @@ export const CreateUserPage = () => {
           </Button>
           <div>
             <h1 className="text-h1 text-carbon font-heading font-semibold">
-              Create New User
+              {t(USERS.CREATE_NEW_USER)}
             </h1>
             <p className="text-body text-carbon/60 font-ui">
-              Add a new user to the system
+              {t(USERS.ADD_NEW_USER_DESC)}
             </p>
           </div>
         </div>
@@ -170,12 +174,12 @@ export const CreateUserPage = () => {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Basic Information</CardTitle>
+                <CardTitle className="text-lg">{t(USERS.BASIC_INFORMATION)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 md:grid-cols-2">
                   <Input
-                    label="First Name"
+                    label={t(USERS.FIRST_NAME)}
                     required={true}
                     error={errors.first_name?.message}
                     className={isSystemAdmin ? "[&_input]:px-2 [&_input]:py-1.5 [&_input]:text-sm" : ""}
@@ -183,7 +187,7 @@ export const CreateUserPage = () => {
                   />
 
                   <Input
-                    label="Last Name"
+                    label={t(USERS.LAST_NAME)}
                     required={true}
                     error={errors.last_name?.message}
                     className={isSystemAdmin ? "[&_input]:px-2 [&_input]:py-1.5 [&_input]:text-sm" : ""}
@@ -191,7 +195,7 @@ export const CreateUserPage = () => {
                   />
 
                   <Input
-                    label="Email"
+                    label={t(USERS.EMAIL)}
                     type="email"
                     required={true}
                     error={errors.email?.message}
@@ -200,7 +204,7 @@ export const CreateUserPage = () => {
                   />
 
                   <Input
-                    label="Username"
+                    label={t(USERS.USERNAME)}
                     required={true}
                     error={errors.username?.message}
                     className={isSystemAdmin ? "[&_input]:px-2 [&_input]:py-1.5 [&_input]:text-sm" : ""}
@@ -208,7 +212,7 @@ export const CreateUserPage = () => {
                   />
 
                   <Input
-                    label="Phone"
+                    label={t(USERS.PHONE)}
                     type="tel"
                     required={true}
                     error={errors.phone?.message}
@@ -222,7 +226,7 @@ export const CreateUserPage = () => {
                     render={({ field }) => (
                       <div>
                         <label className={cn("block font-medium text-carbon/80 mb-1", isSystemAdmin ? "text-xs" : "text-sm")}>
-                          Gender <span className="text-smudged-lips ml-0.5">*</span>
+                          {t(USERS.GENDER)} <span className="text-smudged-lips ml-0.5">*</span>
                         </label>
                         <select
                           {...field}
@@ -231,10 +235,10 @@ export const CreateUserPage = () => {
                             isSystemAdmin ? "px-2 py-1.5 text-sm" : "px-3 py-2"
                           )}
                         >
-                          <option value="">Select gender</option>
-                          <option value="M">Male</option>
-                          <option value="F">Female</option>
-                          <option value="Other">Other</option>
+                          <option value="">{t(USERS.SELECT_GENDER)}</option>
+                          <option value="M">{t(USERS.MALE)}</option>
+                          <option value="F">{t(USERS.FEMALE)}</option>
+                          <option value="Other">{t(USERS.OTHER)}</option>
                         </select>
                         {errors.gender && (
                           <p className="text-xs text-smudged-lips mt-1">{errors.gender.message}</p>
@@ -244,7 +248,7 @@ export const CreateUserPage = () => {
                   />
 
                   <Input
-                    label="Date of Birth"
+                    label={t(USERS.DATE_OF_BIRTH)}
                     type="date"
                     required={true}
                     error={errors.date_of_birth?.message}
@@ -258,7 +262,7 @@ export const CreateUserPage = () => {
                     render={({ field }) => (
                       <div>
                         <label className={cn("block font-medium text-carbon/80 mb-1", isSystemAdmin ? "text-xs" : "text-sm")}>
-                          Role <span className="text-smudged-lips ml-0.5">*</span>
+                          {t(USERS.ROLE)} <span className="text-smudged-lips ml-0.5">*</span>
                         </label>
                         <select
                           {...field}
@@ -268,14 +272,16 @@ export const CreateUserPage = () => {
                             if (e.target.value === 'Operator') {
                               setValue('clinic_id', '');
                             }
+                            // Trigger validation after role change
+                            setTimeout(() => trigger('clinic_id'), 0);
                           }}
                           className={cn(
                             "w-full border border-carbon/20 rounded-md focus:outline-none focus:ring-2 focus:ring-azure-dragon/20 focus:border-azure-dragon text-carbon bg-white",
                             isSystemAdmin ? "px-2 py-1.5 text-sm" : "px-3 py-2"
                           )}
                         >
-                          <option value="Operator">Operator</option>
-                          <option value="Manager">Manager</option>
+                          <option value="Operator">{t(USERS.OPERATOR)}</option>
+                          <option value="Manager">{t(USERS.MANAGER)}</option>
                         </select>
                         {errors.role && (
                           <p className="text-xs text-smudged-lips mt-1">{errors.role.message}</p>
@@ -291,16 +297,21 @@ export const CreateUserPage = () => {
                       render={({ field }) => (
                         <div>
                           <label className={cn("block font-medium text-carbon/80 mb-1", isSystemAdmin ? "text-xs" : "text-sm")}>
-                            Clinic {selectedRole === 'Manager' && <span className="text-smudged-lips ml-0.5">*</span>}
+                            {t(USERS.CLINIC)} {selectedRole === 'Manager' && <span className="text-smudged-lips ml-0.5">*</span>}
                           </label>
                           <select
                             {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // Trigger validation when clinic changes
+                              setTimeout(() => trigger('clinic_id'), 0);
+                            }}
                             className={cn(
                               "w-full border border-carbon/20 rounded-md focus:outline-none focus:ring-2 focus:ring-azure-dragon/20 focus:border-azure-dragon text-carbon bg-white",
                               isSystemAdmin ? "px-2 py-1.5 text-sm" : "px-3 py-2"
                             )}
                           >
-                            <option value="">Select a clinic</option>
+                            <option value="">{t(USERS.SELECT_CLINIC_FILTER)}</option>
                             {clinics.map((clinic) => (
                               <option key={clinic.clinic_id} value={clinic.clinic_id}>
                                 {clinic.name}
@@ -323,12 +334,12 @@ export const CreateUserPage = () => {
             {!isSystemAdmin && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Employment Information</CardTitle>
+                  <CardTitle className="text-lg">{t(USERS.EMPLOYMENT_INFORMATION)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-3">
                     <DepartmentInput
-                      label="Department"
+                      label={t(USERS.DEPARTMENT)}
                       required={true}
                       error={errors.department?.message}
                       value={watch('department') || ''}
@@ -337,14 +348,14 @@ export const CreateUserPage = () => {
                     />
 
                     <Input
-                      label="Position"
+                      label={t(USERS.POSITION)}
                       required={true}
                       error={errors.position?.message}
                       {...register('position')}
                     />
 
                     <Input
-                      label="Hire Date"
+                      label={t(USERS.HIRE_DATE)}
                       type="date"
                       required={true}
                       error={errors.hire_date?.message}
@@ -364,7 +375,7 @@ export const CreateUserPage = () => {
               size="md"
               disabled={createUserMutation.isPending}
             >
-              {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+              {createUserMutation.isPending ? t(USERS.CREATING) : t(USERS.CREATE_USER)}
             </Button>
             <Button
               type="button"
@@ -372,7 +383,7 @@ export const CreateUserPage = () => {
               size="md"
               onClick={() => navigate('/users')}
             >
-              Cancel
+              {t(USERS.CANCEL)}
             </Button>
           </div>
         </form>

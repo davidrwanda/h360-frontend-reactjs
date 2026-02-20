@@ -6,15 +6,17 @@ import { Button, Input, Card, CardHeader, CardTitle, CardContent, DeleteConfirma
 import { timezones } from '@/config/clinicOptions';
 import { MdAdd, MdSearch, MdFilterList, MdDeleteOutline, MdClear } from 'react-icons/md';
 import type { Clinic } from '@/api/clinics';
+import { useTranslation, CLINIC } from '@/i18n';
 
 export const ClinicsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [timezoneFilter, setTimezoneFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to 'active'
+  const [statusFilter, setStatusFilter] = useState<string>('all'); // Default to 'all'
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -37,12 +39,12 @@ export const ClinicsPage = () => {
   });
 
   const hasActiveFilters = 
-    search || statusFilter !== 'active' || cityFilter || stateFilter || countryFilter || 
+    search || statusFilter !== 'all' || cityFilter || stateFilter || countryFilter || 
     timezoneFilter || dateFrom || dateTo || sortBy !== 'created_at' || sortOrder !== 'DESC';
 
   const handleClearFilters = () => {
     setSearch('');
-    setStatusFilter('active');
+    setStatusFilter('all');
     setCityFilter('');
     setStateFilter('');
     setCountryFilter('');
@@ -91,23 +93,23 @@ export const ClinicsPage = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Clinics Management
+            {t(CLINIC.CLINICS_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Manage all clinics in the system
+            {t(CLINIC.MANAGE_ALL_CLINICS)}
           </p>
         </div>
         <div className="flex gap-2">
           <Link to="/clinics/deleted">
             <Button variant="outline" size="md">
               <MdDeleteOutline className="h-4 w-4 mr-2" />
-              View Deactivated
+              {t(CLINIC.VIEW_DEACTIVATED)}
             </Button>
           </Link>
           <Link to="/clinics/create">
             <Button variant="primary" size="md">
               <MdAdd className="h-4 w-4 mr-2" />
-              Create Clinic
+              {t(CLINIC.CREATE_CLINIC)}
             </Button>
           </Link>
         </div>
@@ -119,7 +121,7 @@ export const ClinicsPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdFilterList className="h-4 w-4" />
-              Filters & Sorting
+              {t(CLINIC.FILTERS_SORTING)}
             </CardTitle>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
@@ -130,7 +132,7 @@ export const ClinicsPage = () => {
                   className="text-xs"
                 >
                   <MdClear className="h-3 w-3 mr-1" />
-                  Clear All
+                  {t(CLINIC.CLEAR_ALL)}
                 </Button>
               )}
               <Button
@@ -139,7 +141,7 @@ export const ClinicsPage = () => {
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className="text-xs"
               >
-                {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+                {showAdvancedFilters ? t(CLINIC.HIDE_ADVANCED) : t(CLINIC.SHOW_ADVANCED)}
               </Button>
             </div>
           </div>
@@ -149,8 +151,8 @@ export const ClinicsPage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
             <div className="relative">
               <Input
-                label="Search"
-                placeholder="Search by name, address, phone..."
+                label={t(CLINIC.SEARCH)}
+                placeholder={t(CLINIC.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -160,8 +162,8 @@ export const ClinicsPage = () => {
               <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
             </div>
             <Input
-              label="City"
-              placeholder="Filter by city"
+              label={t(CLINIC.CITY)}
+              placeholder={t(CLINIC.FILTER_BY_CITY)}
               value={cityFilter}
               onChange={(e) => {
                 setCityFilter(e.target.value);
@@ -169,8 +171,8 @@ export const ClinicsPage = () => {
               }}
             />
             <Input
-              label="State"
-              placeholder="Filter by state"
+              label={t(CLINIC.STATE)}
+              placeholder={t(CLINIC.FILTER_BY_STATE)}
               value={stateFilter}
               onChange={(e) => {
                 setStateFilter(e.target.value);
@@ -178,16 +180,16 @@ export const ClinicsPage = () => {
               }}
             />
             <Select
-              label="Status"
+              label={t(CLINIC.TH_STATUS)}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-                { value: 'all', label: 'All' },
+                { value: 'active', label: t(CLINIC.ACTIVE) },
+                { value: 'inactive', label: t(CLINIC.INACTIVE) },
+                { value: 'all', label: t(CLINIC.ALL) },
               ]}
             />
           </div>
@@ -196,8 +198,8 @@ export const ClinicsPage = () => {
           {showAdvancedFilters && (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-4 border-t border-carbon/10">
               <Input
-                label="Country"
-                placeholder="Filter by country"
+                label={t(CLINIC.COUNTRY)}
+                placeholder={t(CLINIC.FILTER_BY_COUNTRY)}
                 value={countryFilter}
                 onChange={(e) => {
                   setCountryFilter(e.target.value);
@@ -205,19 +207,19 @@ export const ClinicsPage = () => {
                 }}
               />
               <Select
-                label="Timezone"
+                label={t(CLINIC.TIMEZONE)}
                 value={timezoneFilter}
                 onChange={(e) => {
                   setTimezoneFilter(e.target.value);
                   setPage(1);
                 }}
                 options={[
-                  { value: '', label: 'All Timezones' },
+                  { value: '', label: t(CLINIC.ALL_TIMEZONES) },
                   ...timezones.map((tz) => ({ value: tz.value, label: tz.label })),
                 ]}
               />
               <Input
-                label="Date From"
+                label={t(CLINIC.DATE_FROM)}
                 type="date"
                 value={dateFrom}
                 onChange={(e) => {
@@ -226,7 +228,7 @@ export const ClinicsPage = () => {
                 }}
               />
               <Input
-                label="Date To"
+                label={t(CLINIC.DATE_TO)}
                 type="date"
                 value={dateTo}
                 onChange={(e) => {
@@ -240,31 +242,31 @@ export const ClinicsPage = () => {
           {/* Sorting */}
           <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-carbon/10">
             <Select
-              label="Sort By"
+              label={t(CLINIC.SORT_BY)}
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: 'created_at', label: 'Created Date' },
-                { value: 'updated_at', label: 'Updated Date' },
-                { value: 'name', label: 'Name' },
-                { value: 'city', label: 'City' },
-                { value: 'state', label: 'State' },
-                { value: 'country', label: 'Country' },
+                { value: 'created_at', label: t(CLINIC.CREATED_DATE) },
+                { value: 'updated_at', label: t(CLINIC.UPDATED_DATE) },
+                { value: 'name', label: t(CLINIC.TH_NAME) },
+                { value: 'city', label: t(CLINIC.CITY) },
+                { value: 'state', label: t(CLINIC.STATE) },
+                { value: 'country', label: t(CLINIC.COUNTRY) },
               ]}
             />
             <Select
-              label="Sort Order"
+              label={t(CLINIC.SORT_ORDER)}
               value={sortOrder}
               onChange={(e) => {
                 setSortOrder(e.target.value as 'ASC' | 'DESC');
                 setPage(1);
               }}
               options={[
-                { value: 'ASC', label: 'Ascending' },
-                { value: 'DESC', label: 'Descending' },
+                { value: 'ASC', label: t(CLINIC.ASCENDING) },
+                { value: 'DESC', label: t(CLINIC.DESCENDING) },
               ]}
             />
           </div>
@@ -275,14 +277,14 @@ export const ClinicsPage = () => {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>
-            Clinics ({data?.total || 0})
+            {t(CLINIC.CLINICS_MANAGEMENT)} ({data?.total || 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
               <p className="text-xs text-smudged-lips">
-                Failed to load clinics. Please try again.
+                {t(CLINIC.FAILED_LOAD_CLINICS)}
               </p>
             </div>
           )}
@@ -300,8 +302,7 @@ export const ClinicsPage = () => {
           {data && data.total > limit && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-carbon/60">
-                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.total)} of{' '}
-                {data.total} clinics
+                {t(CLINIC.SHOWING_PAGINATION, { from: String((page - 1) * limit + 1), to: String(Math.min(page * limit, data.total)), total: String(data.total) })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -310,7 +311,7 @@ export const ClinicsPage = () => {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Previous
+                  {t(CLINIC.PREVIOUS)}
                 </Button>
                 <Button
                   variant="outline"
@@ -318,7 +319,7 @@ export const ClinicsPage = () => {
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page * limit >= data.total}
                 >
-                  Next
+                  {t(CLINIC.NEXT)}
                 </Button>
               </div>
             </div>
@@ -332,8 +333,8 @@ export const ClinicsPage = () => {
           isOpen={!!clinicToDelete}
           onClose={() => setClinicToDelete(null)}
           onConfirm={handleDeleteConfirm}
-          title="Deactivate Clinic"
-          message="Are you sure you want to deactivate this clinic? The clinic will be marked as inactive and will not be available for new appointments."
+          title={t(CLINIC.DEACTIVATE_CLINIC)}
+          message={t(CLINIC.DEACTIVATE_CLINIC_MSG)}
           itemName={clinicToDelete.name}
           isLoading={deactivateMutation.isPending}
           variant="deactivate"
@@ -354,11 +355,11 @@ export const ClinicsPage = () => {
               console.error('Failed to activate clinic:', error);
             }
           }}
-          title="Activate Clinic"
-          message="Are you sure you want to activate this clinic? The clinic will be available for appointments and operations."
+          title={t(CLINIC.ACTIVATE_CLINIC)}
+          message={t(CLINIC.ACTIVATE_CLINIC_MSG)}
           itemName={clinicToDelete.name}
           isLoading={activateMutation.isPending}
-          actionLabel="Activate"
+          actionLabel={t(CLINIC.ACTIVATE)}
           variant="delete"
         />
       )}

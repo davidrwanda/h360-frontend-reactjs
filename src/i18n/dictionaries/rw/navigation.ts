@@ -1,0 +1,18 @@
+export const navigation: Record<string, string> = {
+  'navigation.dashboard': 'Ibikubiyemo',
+  'navigation.clinics': 'Ibigo',
+  'navigation.clinicInfo': 'Amakuru y\'Ikigo',
+  'navigation.timetable': 'Gahunda y\'Igihe',
+  'navigation.patients': 'Abarwayi',
+  'navigation.doctors': 'Abaganga',
+  'navigation.services': 'Serivisi',
+  'navigation.appointments': 'Gahunda z\'Igihe',
+  'navigation.myAppointments': 'Gahunda Zanjye',
+  'navigation.myProfile': 'Umwirondoro Wanjye',
+  'navigation.profile': 'Umwirondoro',
+  'navigation.queue': 'Umurongo',
+  'navigation.users': 'Abakoresha',
+  'navigation.notifications': 'Ubutumwa',
+  'navigation.activityLogs': 'Ibyakozwe',
+  'navigation.settings': 'Igenamiterere',
+};

@@ -1,0 +1,18 @@
+export const navigation: Record<string, string> = {
+  'navigation.dashboard': 'Tableau de Bord',
+  'navigation.clinics': 'Cliniques',
+  'navigation.clinicInfo': 'Info Clinique',
+  'navigation.timetable': 'Horaire',
+  'navigation.patients': 'Patients',
+  'navigation.doctors': 'Médecins',
+  'navigation.services': 'Services',
+  'navigation.appointments': 'Rendez-vous',
+  'navigation.myAppointments': 'Mes Rendez-vous',
+  'navigation.myProfile': 'Mon Profil',
+  'navigation.profile': 'Profil',
+  'navigation.queue': 'File d\'Attente',
+  'navigation.users': 'Utilisateurs',
+  'navigation.notifications': 'Notifications',
+  'navigation.activityLogs': 'Journaux d\'Activité',
+  'navigation.settings': 'Paramètres',
+};
