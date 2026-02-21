@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,30 +8,27 @@ import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/compo
 import { DoctorSpecialtyInput } from './DoctorSpecialtyInput';
 import { MdLocalHospital } from 'react-icons/md';
 import type { Doctor } from '@/api/doctors';
+import { useTranslation, DOCTOR } from '@/i18n';
 
-const editDoctorSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().optional(),
-  gender: z.enum(['M', 'F', 'Other']).optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  alternate_phone: z.string().optional().or(z.literal('')),
-  specialty: z.string().optional().or(z.literal('')),
-  specialty_ids: z.array(z.string()).optional(),
-  license_number: z.string().optional(),
-  license_expiry_date: z.string().optional(),
-  medical_school: z.string().optional(),
-  years_of_experience: z.number().min(0).optional(),
-  qualifications: z.string().optional(),
-  doctor_number: z.string().optional(),
-  bio: z.string().optional(),
-  profile_image_url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  // Note: Clinic-specific fields (appointment_duration_minutes, max_daily_patients,
-  // accepts_new_patients, consultation_fee, notes) must be updated via relationship endpoints
-});
-
-type EditDoctorFormData = z.infer<typeof editDoctorSchema>;
+interface EditDoctorFormData {
+  first_name: string;
+  last_name: string;
+  date_of_birth?: string;
+  gender?: 'M' | 'F' | 'Other';
+  email?: string;
+  phone?: string;
+  alternate_phone?: string;
+  specialty?: string;
+  specialty_ids?: string[];
+  license_number?: string;
+  license_expiry_date?: string;
+  medical_school?: string;
+  years_of_experience?: number;
+  qualifications?: string;
+  doctor_number?: string;
+  bio?: string;
+  profile_image_url?: string;
+}
 
 interface EditDoctorFormProps {
   doctor: Doctor;
@@ -46,10 +43,32 @@ export const EditDoctorForm = ({
   onSuccess,
   onCancel,
 }: EditDoctorFormProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateDoctor();
   const { success: showSuccess, error: showError } = useToastStore();
 
+  const editDoctorSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(DOCTOR.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(DOCTOR.LAST_NAME_REQUIRED)),
+    date_of_birth: z.string().optional(),
+    gender: z.enum(['M', 'F', 'Other']).optional(),
+    email: z.string().email(t(DOCTOR.INVALID_EMAIL)).optional().or(z.literal('')),
+    phone: z.string().optional(),
+    alternate_phone: z.string().optional().or(z.literal('')),
+    specialty: z.string().optional().or(z.literal('')),
+    specialty_ids: z.array(z.string()).optional(),
+    license_number: z.string().optional(),
+    license_expiry_date: z.string().optional(),
+    medical_school: z.string().optional(),
+    years_of_experience: z.number().min(0).optional(),
+    qualifications: z.string().optional(),
+    doctor_number: z.string().optional(),
+    bio: z.string().optional(),
+    profile_image_url: z.string().url(t(DOCTOR.INVALID_URL)).optional().or(z.literal('')),
+    // Note: Clinic-specific fields (appointment_duration_minutes, max_daily_patients,
+    // accepts_new_patients, consultation_fee, notes) must be updated via relationship endpoints
+  }), [t]);
 
   const {
     register,
@@ -114,12 +133,12 @@ export const EditDoctorForm = ({
         },
       });
 
-      showSuccess('Doctor updated successfully!');
+      showSuccess(t(DOCTOR.UPDATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update doctor. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(DOCTOR.UPDATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -131,7 +150,7 @@ export const EditDoctorForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdLocalHospital className="h-5 w-5 text-azure-dragon" />
-            Edit Doctor
+            {t(DOCTOR.EDIT_DOCTOR)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -143,32 +162,32 @@ export const EditDoctorForm = ({
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
-              label="First Name"
-              placeholder="e.g., John"
+              label={t(DOCTOR.FIRST_NAME)}
+              placeholder={t(DOCTOR.FIRST_NAME_PLACEHOLDER)}
               error={errors.first_name?.message}
               required
               {...register('first_name')}
             />
 
             <Input
-              label="Last Name"
-              placeholder="e.g., Smith"
+              label={t(DOCTOR.LAST_NAME)}
+              placeholder={t(DOCTOR.LAST_NAME_PLACEHOLDER)}
               error={errors.last_name?.message}
               required
               {...register('last_name')}
             />
 
             <Input
-              label="Email"
+              label={t(DOCTOR.EMAIL)}
               type="email"
-              placeholder="e.g., john.smith@clinic.com"
+              placeholder={t(DOCTOR.EMAIL_PLACEHOLDER)}
               error={errors.email?.message}
               {...register('email')}
             />
 
             <Input
-              label="Phone"
-              placeholder="e.g., +250788475841"
+              label={t(DOCTOR.PHONE)}
+              placeholder={t(DOCTOR.PHONE_PLACEHOLDER)}
               error={errors.phone?.message}
               {...register('phone')}
             />
@@ -178,8 +197,8 @@ export const EditDoctorForm = ({
               control={control}
               render={({ field }) => (
                 <DoctorSpecialtyInput
-                  label="Specialties"
-                  placeholder="Select or type to filter specialties"
+                  label={t(DOCTOR.SPECIALTIES)}
+                  placeholder={t(DOCTOR.SPECIALTIES_PLACEHOLDER)}
                   value={field.value || []}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -189,35 +208,35 @@ export const EditDoctorForm = ({
             />
 
             <Input
-              label="Custom specialty name (optional)"
-              placeholder="e.g., Cardiology — adds or links by name"
+              label={t(DOCTOR.CUSTOM_SPECIALTY)}
+              placeholder={t(DOCTOR.CUSTOM_SPECIALTY_PLACEHOLDER)}
               error={errors.specialty?.message}
               {...register('specialty')}
             />
 
             <Input
-              label="License Number"
-              placeholder="e.g., MD-LIC-2024-001"
+              label={t(DOCTOR.LICENSE_NUMBER)}
+              placeholder={t(DOCTOR.LICENSE_NUMBER_PLACEHOLDER)}
               error={errors.license_number?.message}
               {...register('license_number')}
             />
 
             <Input
-              label="License Expiry Date"
+              label={t(DOCTOR.LICENSE_EXPIRY_DATE)}
               type="date"
               error={errors.license_expiry_date?.message}
               {...register('license_expiry_date')}
             />
 
             <Input
-              label="Medical School"
-              placeholder="e.g., Harvard Medical School"
+              label={t(DOCTOR.MEDICAL_SCHOOL)}
+              placeholder={t(DOCTOR.MEDICAL_SCHOOL_PLACEHOLDER)}
               error={errors.medical_school?.message}
               {...register('medical_school')}
             />
 
             <Input
-              label="Years of Experience"
+              label={t(DOCTOR.YEARS_OF_EXPERIENCE)}
               type="number"
               placeholder="15"
               error={errors.years_of_experience?.message}
@@ -225,22 +244,22 @@ export const EditDoctorForm = ({
             />
 
             <Input
-              label="Qualifications"
-              placeholder="e.g., Board Certified"
+              label={t(DOCTOR.QUALIFICATIONS)}
+              placeholder={t(DOCTOR.QUALIFICATIONS_PLACEHOLDER)}
               error={errors.qualifications?.message}
               {...register('qualifications')}
             />
 
             <Input
-              label="Doctor Number"
-              placeholder="e.g., H260D-001"
+              label={t(DOCTOR.DOCTOR_NUMBER)}
+              placeholder={t(DOCTOR.DOCTOR_NUMBER_PLACEHOLDER)}
               error={errors.doctor_number?.message}
               readOnly
               {...register('doctor_number')}
             />
 
             <Input
-              label="Profile Image URL"
+              label={t(DOCTOR.PROFILE_IMAGE_URL)}
               type="url"
               placeholder="https://example.com/image.jpg"
               error={errors.profile_image_url?.message}
@@ -249,8 +268,8 @@ export const EditDoctorForm = ({
 
             <div className="md:col-span-2">
               <Input
-                label="Bio"
-                placeholder="Doctor biography"
+                label={t(DOCTOR.BIO)}
+                placeholder={t(DOCTOR.BIO_PLACEHOLDER)}
                 error={errors.bio?.message}
                 {...register('bio')}
               />
@@ -258,8 +277,7 @@ export const EditDoctorForm = ({
 
             <div className="md:col-span-2 rounded-md bg-azure-dragon/5 border border-azure-dragon/20 p-4">
               <p className="text-xs text-carbon/70">
-                <strong>Note:</strong> Clinic-specific settings (appointment duration, max daily patients, accepts new patients) 
-                must be updated via clinic relationship management. These fields are not editable here.
+                <strong>{t(DOCTOR.NOTES)}:</strong> {t(DOCTOR.CLINIC_FIELDS_NOTE)}
               </p>
             </div>
           </div>
@@ -271,7 +289,7 @@ export const EditDoctorForm = ({
               size="md"
               disabled={updateMutation.isPending}
             >
-              {updateMutation.isPending ? 'Updating...' : 'Update Doctor'}
+              {updateMutation.isPending ? t(DOCTOR.UPDATING) : t(DOCTOR.UPDATE_DOCTOR)}
             </Button>
             {onCancel && (
               <Button
@@ -280,7 +298,7 @@ export const EditDoctorForm = ({
                 size="md"
                 onClick={onCancel}
               >
-                Cancel
+                {t(DOCTOR.CANCEL)}
               </Button>
             )}
           </div>

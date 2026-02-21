@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActivityLogs } from '@/hooks/useActivityLogs';
 import { useUsers } from '@/hooks/useUsers';
 import { useClinics } from '@/hooks/useClinics';
+import { useTranslation, ACTIVITY_LOG } from '@/i18n';
 import { ActivityLogsTable } from '@/components/activityLogs/ActivityLogsTable';
 import {
   Button,
@@ -24,42 +25,43 @@ import {
 import type { ActivityLog, ActionType, EntityType } from '@/api/activityLogs';
 import { format } from 'date-fns';
 
-const ACTION_TYPES: { value: ActionType | ''; label: string }[] = [
-  { value: '', label: 'All Actions' },
-  { value: 'CREATE', label: 'Create' },
-  { value: 'UPDATE', label: 'Update' },
-  { value: 'DELETE', label: 'Delete' },
-  { value: 'ACTIVATE', label: 'Activate' },
-  { value: 'DEACTIVATE', label: 'Deactivate' },
-  { value: 'LOGIN', label: 'Login' },
-  { value: 'LOGOUT', label: 'Logout' },
-  { value: 'VIEW', label: 'View' },
-  { value: 'EXPORT', label: 'Export' },
-  { value: 'IMPORT', label: 'Import' },
-  { value: 'APPROVE', label: 'Approve' },
-  { value: 'REJECT', label: 'Reject' },
-  { value: 'ASSIGN', label: 'Assign' },
-  { value: 'UNASSIGN', label: 'Unassign' },
-  { value: 'CANCEL', label: 'Cancel' },
-  { value: 'RESCHEDULE', label: 'Reschedule' },
-  { value: 'COMPLETE', label: 'Complete' },
-  { value: 'TERMINATE', label: 'Terminate' },
+const ACTION_TYPES: { value: ActionType | ''; labelKey: string }[] = [
+  { value: '', labelKey: ACTIVITY_LOG.ALL_ACTIONS },
+  { value: 'CREATE', labelKey: ACTIVITY_LOG.ACTION_CREATE },
+  { value: 'UPDATE', labelKey: ACTIVITY_LOG.ACTION_UPDATE },
+  { value: 'DELETE', labelKey: ACTIVITY_LOG.ACTION_DELETE },
+  { value: 'ACTIVATE', labelKey: ACTIVITY_LOG.ACTION_ACTIVATE },
+  { value: 'DEACTIVATE', labelKey: ACTIVITY_LOG.ACTION_DEACTIVATE },
+  { value: 'LOGIN', labelKey: ACTIVITY_LOG.ACTION_LOGIN },
+  { value: 'LOGOUT', labelKey: ACTIVITY_LOG.ACTION_LOGOUT },
+  { value: 'VIEW', labelKey: ACTIVITY_LOG.ACTION_VIEW },
+  { value: 'EXPORT', labelKey: ACTIVITY_LOG.ACTION_EXPORT },
+  { value: 'IMPORT', labelKey: ACTIVITY_LOG.ACTION_IMPORT },
+  { value: 'APPROVE', labelKey: ACTIVITY_LOG.ACTION_APPROVE },
+  { value: 'REJECT', labelKey: ACTIVITY_LOG.ACTION_REJECT },
+  { value: 'ASSIGN', labelKey: ACTIVITY_LOG.ACTION_ASSIGN },
+  { value: 'UNASSIGN', labelKey: ACTIVITY_LOG.ACTION_UNASSIGN },
+  { value: 'CANCEL', labelKey: ACTIVITY_LOG.ACTION_CANCEL },
+  { value: 'RESCHEDULE', labelKey: ACTIVITY_LOG.ACTION_RESCHEDULE },
+  { value: 'COMPLETE', labelKey: ACTIVITY_LOG.ACTION_COMPLETE },
+  { value: 'TERMINATE', labelKey: ACTIVITY_LOG.ACTION_TERMINATE },
 ];
 
-const ENTITY_TYPES: { value: EntityType | ''; label: string }[] = [
-  { value: '', label: 'All Entities' },
-  { value: 'Patient', label: 'Patient' },
-  { value: 'Appointment', label: 'Appointment' },
-  { value: 'Doctor', label: 'Doctor' },
-  { value: 'Clinic', label: 'Clinic' },
-  { value: 'User', label: 'User' },
-  { value: 'Service', label: 'Service' },
-  { value: 'Slot', label: 'Slot' },
-  { value: 'Queue', label: 'Queue' },
-  { value: 'Timetable', label: 'Timetable' },
+const ENTITY_TYPES: { value: EntityType | ''; labelKey: string }[] = [
+  { value: '', labelKey: ACTIVITY_LOG.ALL_ENTITIES },
+  { value: 'Patient', labelKey: ACTIVITY_LOG.ENTITY_PATIENT },
+  { value: 'Appointment', labelKey: ACTIVITY_LOG.ENTITY_APPOINTMENT },
+  { value: 'Doctor', labelKey: ACTIVITY_LOG.ENTITY_DOCTOR },
+  { value: 'Clinic', labelKey: ACTIVITY_LOG.ENTITY_CLINIC },
+  { value: 'User', labelKey: ACTIVITY_LOG.ENTITY_USER },
+  { value: 'Service', labelKey: ACTIVITY_LOG.ENTITY_SERVICE },
+  { value: 'Slot', labelKey: ACTIVITY_LOG.ENTITY_SLOT },
+  { value: 'Queue', labelKey: ACTIVITY_LOG.ENTITY_QUEUE },
+  { value: 'Timetable', labelKey: ACTIVITY_LOG.ENTITY_TIMETABLE },
 ];
 
 export const ActivityLogsPage = () => {
+  const { t } = useTranslation();
   const { user, role } = useAuth();
   
   // Determine if user is a manager
@@ -181,7 +183,7 @@ export const ActivityLogsPage = () => {
 
   const handleExport = () => {
     if (!logsData || !logsData.data || logsData.data.length === 0) {
-      alert('No activity logs to export');
+      alert(t(ACTIVITY_LOG.NO_LOGS_TO_EXPORT));
       return;
     }
 
@@ -191,17 +193,17 @@ export const ActivityLogsPage = () => {
 
     // Convert to CSV format
     const headers = [
-      'Timestamp',
-      'User',
-      'Email',
-      'Action',
-      'Entity Type',
-      'Entity ID',
-      'Entity Name',
-      'Clinic',
-      'Description',
-      'IP Address',
-      'User Agent',
+      t(ACTIVITY_LOG.CSV_TIMESTAMP),
+      t(ACTIVITY_LOG.CSV_USER),
+      t(ACTIVITY_LOG.CSV_EMAIL),
+      t(ACTIVITY_LOG.CSV_ACTION),
+      t(ACTIVITY_LOG.CSV_ENTITY_TYPE),
+      t(ACTIVITY_LOG.CSV_ENTITY_ID),
+      t(ACTIVITY_LOG.CSV_ENTITY_NAME),
+      t(ACTIVITY_LOG.CSV_CLINIC),
+      t(ACTIVITY_LOG.CSV_DESCRIPTION),
+      t(ACTIVITY_LOG.CSV_IP_ADDRESS),
+      t(ACTIVITY_LOG.CSV_USER_AGENT),
     ];
 
     const csvRows = [
@@ -209,7 +211,7 @@ export const ActivityLogsPage = () => {
       ...logsToExport.map((log) => {
         const row = [
           format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
-          log.employee_name || 'System',
+          log.employee_name || t(ACTIVITY_LOG.SYSTEM),
           log.employee_email || '',
           log.action_type,
           log.entity_type,
@@ -254,7 +256,7 @@ export const ActivityLogsPage = () => {
   };
 
   const formatJSON = (data?: Record<string, unknown> | null): string => {
-    if (!data || Object.keys(data).length === 0) return 'No data available';
+    if (!data || Object.keys(data).length === 0) return t(ACTIVITY_LOG.NO_DATA);
     return JSON.stringify(data, null, 2);
   };
 
@@ -264,20 +266,20 @@ export const ActivityLogsPage = () => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-1">
-            Activity Logs
+            {t(ACTIVITY_LOG.ACTIVITY_LOGS)}
           </h1>
           <p className="text-sm text-carbon/60">
-            {isManager 
-              ? 'Monitor and track all activities for your clinic'
+            {isManager
+              ? t(ACTIVITY_LOG.MONITOR_CLINIC)
               : isSystemAdmin
-              ? 'Monitor and track all system activities and user actions'
-              : 'View your activity logs'
+              ? t(ACTIVITY_LOG.MONITOR_SYSTEM)
+              : t(ACTIVITY_LOG.VIEW_YOUR_LOGS)
             }
           </p>
         </div>
         <Button variant="outline" size="md" onClick={handleExport}>
           <MdDownload className="h-4 w-4 mr-2" />
-          Export
+          {t(ACTIVITY_LOG.EXPORT)}
         </Button>
       </div>
 
@@ -287,7 +289,7 @@ export const ActivityLogsPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdFilterList className="h-4 w-4" />
-              Filters & Search
+              {t(ACTIVITY_LOG.FILTERS_SEARCH)}
             </CardTitle>
             <div className="flex items-center gap-2">
               {/* Only show advanced filters button for managers and system admins */}
@@ -297,13 +299,13 @@ export const ActivityLogsPage = () => {
                   size="sm"
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 >
-                  {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+                  {showAdvancedFilters ? t(ACTIVITY_LOG.HIDE_ADVANCED) : t(ACTIVITY_LOG.SHOW_ADVANCED)}
                 </Button>
               )}
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-xs">
                   <MdClear className="h-3 w-3 mr-1" />
-                  Clear All
+                  {t(ACTIVITY_LOG.CLEAR_ALL)}
                 </Button>
               )}
             </div>
@@ -313,8 +315,8 @@ export const ActivityLogsPage = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="relative">
               <Input
-                label="Search"
-                placeholder="Search by description, entity name..."
+                label={t(ACTIVITY_LOG.SEARCH)}
+                placeholder={t(ACTIVITY_LOG.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -324,22 +326,22 @@ export const ActivityLogsPage = () => {
               <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
             </div>
             <Select
-              label="Action Type"
+              label={t(ACTIVITY_LOG.ACTION_TYPE)}
               value={actionType}
               onChange={(e) => {
                 setActionType(e.target.value as ActionType | '');
                 setPage(1);
               }}
-              options={ACTION_TYPES.map((opt) => ({ value: opt.value, label: opt.label }))}
+              options={ACTION_TYPES.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))}
             />
             <Select
-              label="Entity Type"
+              label={t(ACTIVITY_LOG.ENTITY_TYPE)}
               value={entityType}
               onChange={(e) => {
                 setEntityType(e.target.value as EntityType | '');
                 setPage(1);
               }}
-              options={ENTITY_TYPES.map((opt) => ({ value: opt.value, label: opt.label }))}
+              options={ENTITY_TYPES.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))}
             />
           </div>
 
@@ -348,14 +350,14 @@ export const ActivityLogsPage = () => {
               {/* Only show User filter for managers and system admins */}
               {(isManager || isSystemAdmin) && (
                 <Select
-                  label="User"
+                  label={t(ACTIVITY_LOG.USER)}
                   value={employeeId}
                   onChange={(e) => {
                     setEmployeeId(e.target.value);
                     setPage(1);
                   }}
                   options={[
-                    { value: '', label: 'All Users' },
+                    { value: '', label: t(ACTIVITY_LOG.ALL_USERS) },
                     ...(usersData?.data.map((user) => ({
                       value: user.user_id,
                       label: `${user.first_name} ${user.last_name}`,
@@ -366,14 +368,14 @@ export const ActivityLogsPage = () => {
               {/* Only show Clinic filter for system admins */}
               {isSystemAdmin && (
                 <Select
-                  label="Clinic"
+                  label={t(ACTIVITY_LOG.CLINIC)}
                   value={clinicId}
                   onChange={(e) => {
                     setClinicId(e.target.value);
                     setPage(1);
                   }}
                   options={[
-                    { value: '', label: 'All Clinics' },
+                    { value: '', label: t(ACTIVITY_LOG.ALL_CLINICS) },
                     ...(clinicsData?.data.map((clinic) => ({
                       value: clinic.clinic_id,
                       label: clinic.name,
@@ -383,7 +385,7 @@ export const ActivityLogsPage = () => {
               )}
               <div className="relative">
                 <Input
-                  label="Start Date"
+                  label={t(ACTIVITY_LOG.START_DATE)}
                   type="date"
                   value={startDate}
                   onChange={(e) => {
@@ -395,7 +397,7 @@ export const ActivityLogsPage = () => {
               </div>
               <div className="relative">
                 <Input
-                  label="End Date"
+                  label={t(ACTIVITY_LOG.END_DATE)}
                   type="date"
                   value={endDate}
                   onChange={(e) => {
@@ -414,14 +416,14 @@ export const ActivityLogsPage = () => {
       <Card variant="elevated">
         <CardHeader>
           <CardTitle>
-            Activity Logs ({logsData?.total || 0})
+            {t(ACTIVITY_LOG.ACTIVITY_LOGS_COUNT, { count: logsData?.total || 0 })}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
               <p className="text-xs text-smudged-lips">
-                Failed to load activity logs. Please try again.
+                {t(ACTIVITY_LOG.FAILED_TO_LOAD)}
               </p>
             </div>
           )}
@@ -436,8 +438,7 @@ export const ActivityLogsPage = () => {
           {logsData && logsData.total > limit && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-carbon/60">
-                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, logsData.total)} of{' '}
-                {logsData.total} logs
+                {t(ACTIVITY_LOG.SHOWING, { from: (page - 1) * limit + 1, to: Math.min(page * limit, logsData.total), total: logsData.total })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -446,7 +447,7 @@ export const ActivityLogsPage = () => {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Previous
+                  {t(ACTIVITY_LOG.PREVIOUS)}
                 </Button>
                 <Button
                   variant="outline"
@@ -454,7 +455,7 @@ export const ActivityLogsPage = () => {
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page * limit >= logsData.total}
                 >
-                  Next
+                  {t(ACTIVITY_LOG.NEXT)}
                 </Button>
               </div>
             </div>
@@ -467,24 +468,24 @@ export const ActivityLogsPage = () => {
         <Modal
           isOpen={!!selectedLog}
           onClose={() => setSelectedLog(null)}
-          title="Activity Log Details"
+          title={t(ACTIVITY_LOG.LOG_DETAILS)}
           size="xl"
         >
           <div className="space-y-6 max-h-[80vh] overflow-y-auto">
             {/* Basic Information */}
             <div>
-              <h3 className="text-sm font-semibold text-carbon mb-3">Basic Information</h3>
+              <h3 className="text-sm font-semibold text-carbon mb-3">{t(ACTIVITY_LOG.BASIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-carbon/60 mb-1">Timestamp</label>
+                  <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.TIMESTAMP)}</label>
                   <p className="text-sm text-carbon">
                     {format(new Date(selectedLog.created_at), 'PPpp')}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-carbon/60 mb-1">User</label>
+                  <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.USER)}</label>
                   <p className="text-sm text-carbon">
-                    {selectedLog.employee_name || 'System'}
+                    {selectedLog.employee_name || t(ACTIVITY_LOG.SYSTEM)}
                     {selectedLog.is_system_user && (
                       <span className="ml-2 text-xs px-2 py-0.5 bg-azure-dragon/20 text-azure-dragon rounded">
                         SYSTEM
@@ -496,32 +497,32 @@ export const ActivityLogsPage = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-carbon/60 mb-1">Action</label>
+                  <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.ACTION)}</label>
                   <p className="text-sm text-carbon">{selectedLog.action_type}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-carbon/60 mb-1">Entity Type</label>
+                  <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.ENTITY_TYPE)}</label>
                   <p className="text-sm text-carbon">{selectedLog.entity_type}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-carbon/60 mb-1">Entity ID</label>
+                  <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.ENTITY_ID)}</label>
                   <p className="text-sm text-carbon font-mono text-xs break-all">{selectedLog.entity_id || '—'}</p>
                 </div>
                 {selectedLog.clinic_id && (
                   <div>
-                    <label className="block text-xs font-medium text-carbon/60 mb-1">Clinic ID</label>
+                    <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.CLINIC_ID)}</label>
                     <p className="text-sm text-carbon font-mono text-xs break-all">{selectedLog.clinic_id}</p>
                   </div>
                 )}
                 {selectedLog.ip_address && (
                   <div>
-                    <label className="block text-xs font-medium text-carbon/60 mb-1">IP Address</label>
+                    <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.IP_ADDRESS)}</label>
                     <p className="text-sm text-carbon font-mono">{selectedLog.ip_address}</p>
                   </div>
                 )}
                 {selectedLog.user_agent && (
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-carbon/60 mb-1">User Agent</label>
+                    <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.USER_AGENT)}</label>
                     <p className="text-sm text-carbon text-xs break-words">{selectedLog.user_agent}</p>
                   </div>
                 )}
@@ -530,7 +531,7 @@ export const ActivityLogsPage = () => {
 
             {selectedLog.description && (
               <div>
-                <label className="block text-xs font-medium text-carbon/60 mb-1">Description</label>
+                <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.DESCRIPTION)}</label>
                 <p className="text-sm text-carbon">{selectedLog.description}</p>
               </div>
             )}
@@ -538,12 +539,12 @@ export const ActivityLogsPage = () => {
             {/* Request Data */}
             {selectedLog.request_data && (
               <div>
-                <h3 className="text-sm font-semibold text-carbon mb-3">Request Data</h3>
+                <h3 className="text-sm font-semibold text-carbon mb-3">{t(ACTIVITY_LOG.REQUEST_DATA)}</h3>
                 <div className="space-y-3">
                   <div className="grid gap-2">
                     {selectedLog.request_data.method && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-carbon/60">Method:</span>
+                        <span className="text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.METHOD)}:</span>
                         <span className="text-xs px-2 py-0.5 bg-azure-dragon/20 text-azure-dragon rounded font-medium">
                           {selectedLog.request_data.method}
                         </span>
@@ -551,7 +552,7 @@ export const ActivityLogsPage = () => {
                     )}
                     {selectedLog.request_data.url && (
                       <div>
-                        <span className="text-xs font-medium text-carbon/60">URL:</span>
+                        <span className="text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.URL)}:</span>
                         <p className="text-xs text-carbon font-mono mt-1 break-all bg-white-smoke p-2 rounded">
                           {selectedLog.request_data.url}
                         </p>
@@ -559,7 +560,7 @@ export const ActivityLogsPage = () => {
                     )}
                     {selectedLog.request_data.path && (
                       <div>
-                        <span className="text-xs font-medium text-carbon/60">Path:</span>
+                        <span className="text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.PATH)}:</span>
                         <p className="text-xs text-carbon font-mono mt-1 bg-white-smoke p-2 rounded">
                           {selectedLog.request_data.path}
                         </p>
@@ -568,7 +569,7 @@ export const ActivityLogsPage = () => {
                   </div>
                   {selectedLog.request_data.body && Object.keys(selectedLog.request_data.body).length > 0 && (
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Request Body</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.REQUEST_BODY)}</label>
                       <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-64 border border-carbon/10">
                         {formatJSON(selectedLog.request_data.body)}
                       </pre>
@@ -576,7 +577,7 @@ export const ActivityLogsPage = () => {
                   )}
                   {selectedLog.request_data.query && Object.keys(selectedLog.request_data.query).length > 0 && (
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Query Parameters</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.QUERY_PARAMS)}</label>
                       <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-48 border border-carbon/10">
                         {formatJSON(selectedLog.request_data.query)}
                       </pre>
@@ -584,7 +585,7 @@ export const ActivityLogsPage = () => {
                   )}
                   {selectedLog.request_data.params && Object.keys(selectedLog.request_data.params).length > 0 && (
                     <div>
-                      <label className="block text-xs font-medium text-carbon/60 mb-1">Path Parameters</label>
+                      <label className="block text-xs font-medium text-carbon/60 mb-1">{t(ACTIVITY_LOG.PATH_PARAMS)}</label>
                       <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-48 border border-carbon/10">
                         {formatJSON(selectedLog.request_data.params)}
                       </pre>
@@ -597,7 +598,7 @@ export const ActivityLogsPage = () => {
             {/* Response Data */}
             {selectedLog.response_data && Object.keys(selectedLog.response_data).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-carbon mb-3">Response Data</h3>
+                <h3 className="text-sm font-semibold text-carbon mb-3">{t(ACTIVITY_LOG.RESPONSE_DATA)}</h3>
                 <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-96 border border-carbon/10">
                   {formatJSON(selectedLog.response_data)}
                 </pre>
@@ -607,7 +608,7 @@ export const ActivityLogsPage = () => {
             {/* New Values (for UPDATE actions) */}
             {selectedLog.new_values && Object.keys(selectedLog.new_values).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-carbon mb-3">Updated Values</h3>
+                <h3 className="text-sm font-semibold text-carbon mb-3">{t(ACTIVITY_LOG.UPDATED_VALUES)}</h3>
                 <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-96 border border-carbon/10">
                   {formatJSON(selectedLog.new_values)}
                 </pre>
@@ -617,7 +618,7 @@ export const ActivityLogsPage = () => {
             {/* Metadata (fallback) */}
             {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-carbon mb-3">Metadata</h3>
+                <h3 className="text-sm font-semibold text-carbon mb-3">{t(ACTIVITY_LOG.METADATA)}</h3>
                 <pre className="text-xs bg-white-smoke p-3 rounded-md overflow-auto max-h-48 border border-carbon/10">
                   {formatJSON(selectedLog.metadata)}
                 </pre>

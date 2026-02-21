@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation, SERVICE } from '@/i18n';
 import { CreateServiceForm } from '@/components/services/CreateServiceForm';
 import { Loading } from '@/components/ui';
 
 export const CreateServicePage = () => {
   const navigate = useNavigate();
   const { user, role, isLoading } = useAuth();
+  const { t } = useTranslation();
 
   // Check if user can create services (only managers and admins)
   const normalizedRole = role?.toUpperCase();
@@ -23,9 +25,9 @@ export const CreateServicePage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Access Denied</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(SERVICE.ACCESS_DENIED)}</h1>
           <p className="text-body text-carbon/70">
-            Only Managers and Admins can create services.
+            {t(SERVICE.ACCESS_DENIED_CREATE)}
           </p>
         </div>
       </div>
@@ -39,9 +41,9 @@ export const CreateServicePage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Clinic Required</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(SERVICE.CLINIC_REQUIRED_PAGE)}</h1>
           <p className="text-body text-carbon/70">
-            You must be associated with a clinic to create services.
+            {t(SERVICE.CLINIC_REQUIRED_DESC)}
           </p>
         </div>
       </div>
@@ -60,10 +62,10 @@ export const CreateServicePage = () => {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-2">
-          Create New Service
+          {t(SERVICE.CREATE_NEW_SERVICE)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Add a new service to your clinic
+          {t(SERVICE.ADD_SERVICE_DESC)}
         </p>
       </div>
 

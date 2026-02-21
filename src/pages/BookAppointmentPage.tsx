@@ -21,19 +21,17 @@ import {
   MdLocalHospital,
   MdMedicalServices,
 } from 'react-icons/md';
+import { useTranslation, APPOINTMENT } from '@/i18n';
 
-const appointmentSchema = z.object({
-  doctor_id: z.string().min(1, 'Doctor is required'),
-  service_id: z.string().optional(),
-  reason: z.string().optional(),
-  notes: z.string().optional(),
-  // Guest booking fields
-  guest_name: z.string().optional(),
-  guest_phone: z.string().optional(),
-  guest_email: z.string().email('Invalid email').optional().or(z.literal('')),
-});
-
-type AppointmentFormData = z.infer<typeof appointmentSchema>;
+interface AppointmentFormData {
+  doctor_id: string;
+  service_id?: string;
+  reason?: string;
+  notes?: string;
+  guest_name?: string;
+  guest_phone?: string;
+  guest_email?: string;
+}
 
 type GuestInfoFormData = {
   guest_name: string;
@@ -48,6 +46,18 @@ export const BookAppointmentPage = () => {
   const { user, isAuthenticated, isLoading: isLoadingAuth } = useAuth();
   const { success: showSuccess, error: showError } = useToastStore();
   const createMutation = useCreateAppointment();
+  const { t } = useTranslation();
+
+  const appointmentSchema = useMemo(() => z.object({
+    doctor_id: z.string().min(1, t(APPOINTMENT.DOCTOR_REQUIRED)),
+    service_id: z.string().optional(),
+    reason: z.string().optional(),
+    notes: z.string().optional(),
+    // Guest booking fields
+    guest_name: z.string().optional(),
+    guest_phone: z.string().optional(),
+    guest_email: z.string().email(t(APPOINTMENT.INVALID_EMAIL)).optional().or(z.literal('')),
+  }), [t]);
 
   // Get guest info from location state (if coming from auth page)
   const guestInfoFromState = (location.state as { guestInfo?: GuestInfoFormData })?.guestInfo;
@@ -127,16 +137,16 @@ export const BookAppointmentPage = () => {
   // Show error if logged in but not a patient
   useEffect(() => {
     if (isLoggedInButNotPatient) {
-      showError('Only Patients are allowed to book an appointment');
+      showError(t(APPOINTMENT.ONLY_PATIENTS_ALLOWED));
     }
-  }, [isLoggedInButNotPatient, showError]);
+  }, [isLoggedInButNotPatient, showError, t]);
 
   // Show error if logged in but not a patient
   useEffect(() => {
     if (isLoggedInButNotPatient) {
-      showError('Only Patients are allowed to book an appointment');
+      showError(t(APPOINTMENT.ONLY_PATIENTS_ALLOWED));
     }
-  }, [isLoggedInButNotPatient, showError]);
+  }, [isLoggedInButNotPatient, showError, t]);
 
   const {
     register,
@@ -256,19 +266,19 @@ export const BookAppointmentPage = () => {
 
   const onSubmit = async (data: AppointmentFormData) => {
     if (!selectedSlot || !clinicId) {
-      showError('Slot information is missing. Please go back and select a slot again.');
+      showError(t(APPOINTMENT.SLOT_MISSING));
       return;
     }
 
     // Prevent booking if user is logged in but not a patient
     if (isLoggedInButNotPatient) {
-      showError('Only Patients are allowed to book an appointment');
+      showError(t(APPOINTMENT.ONLY_PATIENTS_ALLOWED));
       return;
     }
 
     // Use alternative slot if selected, otherwise use original slot
     if (!selectedSlot) {
-      showError('Slot information is missing. Please go back and select a slot again.');
+      showError(t(APPOINTMENT.SLOT_MISSING));
       return;
     }
     
@@ -284,7 +294,7 @@ export const BookAppointmentPage = () => {
     if (!selectedAlternativeSlot && data.doctor_id) {
       const selectedDoctor = availableDoctors.find((d) => d.doctor_id === data.doctor_id);
       if (selectedDoctor && !selectedDoctor.isAvailable) {
-        showError('The selected doctor is not available for this time slot. Please select an alternative slot below.');
+        showError(t(APPOINTMENT.DOCTOR_NOT_AVAILABLE));
         return;
       }
     }
@@ -299,16 +309,16 @@ export const BookAppointmentPage = () => {
       // If user is a PATIENT type but patient_id is not available yet, wait for it
       if (isPatientType && !patientId) {
         if (isLoadingAuth) {
-          showError('Loading patient information. Please wait...');
+          showError(t(APPOINTMENT.LOADING_PATIENT));
           return;
         }
-        showError('Patient information is missing. Please log in again.');
+        showError(t(APPOINTMENT.PATIENT_MISSING));
         return;
       }
 
       // If user is not a registered patient and no guest info provided, show error
       if (!isPatientType && !guestInfoFromState && !data.guest_name) {
-        showError('Please provide your information to continue as a guest.');
+        showError(t(APPOINTMENT.GUEST_INFO_REQUIRED));
         return;
       }
 
@@ -335,10 +345,10 @@ export const BookAppointmentPage = () => {
       };
 
       await createMutation.mutateAsync(appointmentPayload);
-      showSuccess('Appointment booked successfully!');
+      showSuccess(t(APPOINTMENT.BOOKED_SUCCESS));
       navigate('/');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to book appointment';
+      const errorMessage = error instanceof Error ? error.message : t(APPOINTMENT.BOOK_FAILED);
       showError(errorMessage);
     }
   };
@@ -362,10 +372,10 @@ export const BookAppointmentPage = () => {
         <div className="flex-1 mx-auto max-w-4xl w-full px-4 py-8">
           <Card variant="elevated">
             <CardContent className="py-12 text-center">
-              <h2 className="text-lg font-medium text-smudged-lips mb-4">Slot Not Found</h2>
-              <p className="text-carbon/60 mb-6">The selected slot is no longer available or invalid.</p>
+              <h2 className="text-lg font-medium text-smudged-lips mb-4">{t(APPOINTMENT.SLOT_NOT_FOUND)}</h2>
+              <p className="text-carbon/60 mb-6">{t(APPOINTMENT.SLOT_NOT_FOUND_DESC)}</p>
               <Link to="/">
-                <Button variant="primary">Back to Home</Button>
+                <Button variant="primary">{t(APPOINTMENT.BACK_TO_HOME)}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -383,10 +393,10 @@ export const BookAppointmentPage = () => {
         <div className="flex-1 mx-auto max-w-4xl w-full px-4 py-8">
           <Card variant="elevated">
             <CardContent className="py-12 text-center">
-              <h2 className="text-lg font-medium text-smudged-lips mb-4">Booking Not Allowed</h2>
-              <p className="text-carbon/60 mb-6">Only Patients are allowed to book an appointment.</p>
+              <h2 className="text-lg font-medium text-smudged-lips mb-4">{t(APPOINTMENT.BOOKING_NOT_ALLOWED)}</h2>
+              <p className="text-carbon/60 mb-6">{t(APPOINTMENT.ONLY_PATIENTS_ALLOWED)}</p>
               <Link to="/">
-                <Button variant="primary">Back to Home</Button>
+                <Button variant="primary">{t(APPOINTMENT.BACK_TO_HOME)}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -412,10 +422,10 @@ export const BookAppointmentPage = () => {
             className="inline-flex items-center gap-2 text-sm text-carbon/60 hover:text-carbon transition-colors mb-4"
           >
             <MdArrowBack className="h-4 w-4" />
-            Back to Search
+            {t(APPOINTMENT.BACK_TO_SEARCH)}
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-2">Book Appointment</h1>
-          <p className="text-sm text-carbon/60">Complete your appointment booking details</p>
+          <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-2">{t(APPOINTMENT.BOOK_APPOINTMENT)}</h1>
+          <p className="text-sm text-carbon/60">{t(APPOINTMENT.COMPLETE_BOOKING)}</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -424,7 +434,7 @@ export const BookAppointmentPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdCalendarToday className="h-5 w-5 text-azure-dragon" />
-              Selected Appointment Time
+              {t(APPOINTMENT.SELECTED_APPOINTMENT_TIME)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -432,21 +442,21 @@ export const BookAppointmentPage = () => {
               <div className="flex items-center gap-3">
                 <MdCalendarToday className="h-5 w-5 text-azure-dragon/60" />
                 <div>
-                  <p className="text-xs text-carbon/60 mb-1">Date</p>
+                  <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.DATE)}</p>
                   <p className="text-sm font-medium text-carbon">{formattedDate}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdAccessTime className="h-5 w-5 text-azure-dragon/60" />
                 <div>
-                  <p className="text-xs text-carbon/60 mb-1">Time</p>
+                  <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.TIME)}</p>
                   <p className="text-sm font-medium text-carbon">{formattedTime}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdLocalHospital className="h-5 w-5 text-azure-dragon/60" />
                 <div>
-                  <p className="text-xs text-carbon/60 mb-1">Clinic</p>
+                  <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.CLINIC)}</p>
                   <p className="text-sm font-medium text-carbon">{displaySlot!.clinic_name}</p>
                 </div>
               </div>
@@ -454,7 +464,7 @@ export const BookAppointmentPage = () => {
                 <div className="flex items-center gap-3">
                   <MdPerson className="h-5 w-5 text-azure-dragon/60" />
                   <div>
-                    <p className="text-xs text-carbon/60 mb-1">Doctor</p>
+                    <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.DOCTOR)}</p>
                     <p className="text-sm font-medium text-carbon">{displaySlot!.doctor_name}</p>
                   </div>
                 </div>
@@ -462,7 +472,7 @@ export const BookAppointmentPage = () => {
               {selectedAlternativeSlot && (
                 <div className="col-span-2">
                   <p className="text-xs text-azure-dragon/80 font-medium">
-                    ✓ Using alternative time slot
+                    {t(APPOINTMENT.USING_ALTERNATIVE_SLOT)}
                   </p>
                 </div>
               )}
@@ -475,14 +485,14 @@ export const BookAppointmentPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdMedicalServices className="h-5 w-5 text-azure-dragon" />
-              Appointment Details
+              {t(APPOINTMENT.APPOINTMENT_DETAILS)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Doctor Selection */}
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                Doctor <span className="text-smudged-lips ml-0.5">*</span>
+                {t(APPOINTMENT.DOCTOR)} <span className="text-smudged-lips ml-0.5">*</span>
               </label>
               <Controller
                 name="doctor_id"
@@ -492,7 +502,7 @@ export const BookAppointmentPage = () => {
                     {...field}
                     className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
                   >
-                    <option value="">Select a doctor</option>
+                    <option value="">{t(APPOINTMENT.SELECT_DOCTOR)}</option>
                     {availableDoctors.map((doctor) => (
                       <option
                         key={doctor.doctor_id}
@@ -503,7 +513,7 @@ export const BookAppointmentPage = () => {
                         {!doctor.isAvailable
                           ? doctor.unavailability_reason
                             ? ` (${doctor.unavailability_reason})`
-                            : ' (No available slots)'
+                            : ` (${t(APPOINTMENT.NO_AVAILABLE_SLOTS)})`
                           : ''}
                       </option>
                     ))}
@@ -515,12 +525,12 @@ export const BookAppointmentPage = () => {
               )}
               {availableDoctors.length > 0 && (
                 <p className="mt-1.5 text-xs text-carbon/60 font-ui">
-                  {availableDoctors.filter((d) => d.isAvailable).length} doctor(s) available for this time slot
+                  {t(APPOINTMENT.DOCTORS_AVAILABLE, { count: availableDoctors.filter((d) => d.isAvailable).length })}
                 </p>
               )}
               {selectedDoctorId && !selectedDoctorAvailable && (
                 <p className="mt-1.5 text-xs text-smudged-lips font-ui">
-                  This doctor is not available for the selected time slot. Please choose an alternative slot below.
+                  {t(APPOINTMENT.DOCTOR_NOT_AVAILABLE)}
                 </p>
               )}
             </div>
@@ -529,7 +539,7 @@ export const BookAppointmentPage = () => {
             {selectedDoctorId && !selectedDoctorAvailable && Object.keys(alternativeSlots).length > 0 && !selectedAlternativeSlot && (
               <div className="mt-4">
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-2 tracking-wide">
-                  Available Time Slots for Selected Doctor
+                  {t(APPOINTMENT.AVAILABLE_TIME_SLOTS)}
                 </label>
                 <div className="space-y-3">
                   {weekStart && weekEnd && (
@@ -564,7 +574,7 @@ export const BookAppointmentPage = () => {
                             </div>
                             <div className="space-y-1">
                               {daySlots.length === 0 ? (
-                                <div className="text-[10px] text-carbon/40 text-center py-2">No slots</div>
+                                <div className="text-[10px] text-carbon/40 text-center py-2">{t(APPOINTMENT.NO_SLOTS)}</div>
                               ) : (
                                 <>
                                   {daySlots
@@ -604,7 +614,7 @@ export const BookAppointmentPage = () => {
                                       }}
                                       className="w-full text-[10px] text-carbon/60 hover:text-carbon hover:bg-carbon/5 py-1.5 rounded border border-carbon/20 transition-colors"
                                     >
-                                      Show less
+                                      {t(APPOINTMENT.SHOW_LESS)}
                                     </button>
                                   )}
                                 </>
@@ -639,7 +649,7 @@ export const BookAppointmentPage = () => {
                             : 'text-azure-dragon hover:text-azure-dragon/80 hover:bg-azure-dragon/5 border-azure-dragon/20'
                         )}
                       >
-                        {isAllExpanded ? 'Show less' : 'Show more'}
+                        {isAllExpanded ? t(APPOINTMENT.SHOW_LESS) : t(APPOINTMENT.SHOW_MORE)}
                       </button>
                     </div>
                   )}
@@ -651,17 +661,17 @@ export const BookAppointmentPage = () => {
             {selectedAlternativeSlot && displaySlot && (
               <div className="mt-4 p-3 bg-azure-dragon/5 border border-azure-dragon/20 rounded-md">
                 <p className="text-xs font-medium text-azure-dragon mb-1">
-                  ✓ Alternative time slot selected
+                  {t(APPOINTMENT.ALTERNATIVE_SELECTED)}
                 </p>
                 <p className="text-xs text-carbon/70">
-                  Your appointment will be booked for {format(parseISO(displaySlot.slot_date), 'EEEE, MMMM d, yyyy')} at {displaySlot.formatted_time_slot}
+                  {t(APPOINTMENT.APPOINTMENT_BOOKED_FOR)} {format(parseISO(displaySlot.slot_date), 'EEEE, MMMM d, yyyy')} at {displaySlot.formatted_time_slot}
                 </p>
                 <button
                   type="button"
                   onClick={() => setSelectedAlternativeSlot(null)}
                   className="mt-2 text-xs text-azure-dragon hover:text-azure-dragon/80 underline"
                 >
-                  Change selection
+                  {t(APPOINTMENT.CHANGE_SELECTION)}
                 </button>
               </div>
             )}
@@ -669,7 +679,7 @@ export const BookAppointmentPage = () => {
             {/* Service Selection */}
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                Service (Optional)
+                {t(APPOINTMENT.SERVICE_OPTIONAL)}
               </label>
               <Controller
                 name="service_id"
@@ -679,7 +689,7 @@ export const BookAppointmentPage = () => {
                     {...field}
                     className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
                   >
-                    <option value="">Select a service (optional)</option>
+                    <option value="">{t(APPOINTMENT.SELECT_SERVICE)}</option>
                     {availableServices.map((service) => (
                       <option key={service.service_id} value={service.service_id}>
                         {service.name} {service.price ? `- ${service.price}` : ''}
@@ -695,8 +705,8 @@ export const BookAppointmentPage = () => {
 
             {/* Reason */}
             <Input
-              label="Reason for Visit (Optional)"
-              placeholder="e.g., Regular checkup, Consultation"
+              label={t(APPOINTMENT.REASON_LABEL)}
+              placeholder={t(APPOINTMENT.REASON_PLACEHOLDER)}
               {...register('reason')}
               error={errors.reason?.message}
             />
@@ -704,7 +714,7 @@ export const BookAppointmentPage = () => {
             {/* Notes */}
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                Notes (Optional)
+                {t(APPOINTMENT.NOTES_LABEL)}
               </label>
               <Controller
                 name="notes"
@@ -713,7 +723,7 @@ export const BookAppointmentPage = () => {
                   <textarea
                     {...field}
                     rows={4}
-                    placeholder="Any additional information or special requests..."
+                    placeholder={t(APPOINTMENT.NOTES_PLACEHOLDER)}
                     className="flex w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
                   />
                 )}
@@ -730,17 +740,17 @@ export const BookAppointmentPage = () => {
         <div className="flex gap-4">
           <Link to="/" className="flex-1">
             <Button type="button" variant="outline" className="w-full">
-              Cancel
+              {t(APPOINTMENT.CANCEL)}
             </Button>
           </Link>
           <Button type="submit" variant="primary" className="flex-1" disabled={createMutation.isPending}>
             {createMutation.isPending ? (
               <>
                 <Loading size="sm" className="mr-2" />
-                Booking...
+                {t(APPOINTMENT.BOOKING)}
               </>
             ) : (
-              'Book Appointment'
+              t(APPOINTMENT.BOOK_APPOINTMENT)
             )}
           </Button>
         </div>

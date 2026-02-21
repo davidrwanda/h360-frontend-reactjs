@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
 import { MdSchedule, MdBusiness, MdPerson, MdPlayArrow } from 'react-icons/md';
+import { useTranslation, TIMETABLE } from '@/i18n';
 
 /**
  * Timetable hub page – clinic and doctor schedules, slot generation.
@@ -10,6 +11,7 @@ import { MdSchedule, MdBusiness, MdPerson, MdPlayArrow } from 'react-icons/md';
 export const TimetablePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const getClinicIdFromStorage = (): string | undefined => {
     try {
@@ -32,9 +34,9 @@ export const TimetablePage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">No Clinic Assigned</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(TIMETABLE.NO_CLINIC_ASSIGNED)}</h2>
           <p className="text-sm text-carbon/60">
-            You are not assigned to any clinic. Please contact your administrator.
+            {t(TIMETABLE.CONTACT_ADMIN)}
           </p>
         </div>
       </div>
@@ -45,10 +47,10 @@ export const TimetablePage = () => {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Timetable
+          {t(TIMETABLE.TIMETABLE)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Manage clinic and doctor schedules, and generate appointment slots.
+          {t(TIMETABLE.MANAGE_SCHEDULES)}
         </p>
       </div>
 
@@ -56,7 +58,7 @@ export const TimetablePage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdSchedule className="h-5 w-5 text-azure-dragon" />
-            Timetable Configuration
+            {t(TIMETABLE.TIMETABLE_CONFIGURATION)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -69,8 +71,8 @@ export const TimetablePage = () => {
             >
               <MdBusiness className="h-5 w-5 mr-3 text-azure-dragon flex-shrink-0" />
               <div className="text-left">
-                <div className="font-medium text-carbon">Clinic Timetable</div>
-                <div className="text-xs text-carbon/60 mt-0.5">Configure clinic operating hours by day</div>
+                <div className="font-medium text-carbon">{t(TIMETABLE.CLINIC_TIMETABLE)}</div>
+                <div className="text-xs text-carbon/60 mt-0.5">{t(TIMETABLE.CLINIC_TIMETABLE_DESC)}</div>
               </div>
             </Button>
             <Button
@@ -81,8 +83,8 @@ export const TimetablePage = () => {
             >
               <MdPerson className="h-5 w-5 mr-3 text-azure-dragon flex-shrink-0" />
               <div className="text-left">
-                <div className="font-medium text-carbon">Doctor Timetable</div>
-                <div className="text-xs text-carbon/60 mt-0.5">Manage doctor availability Monday–Sunday</div>
+                <div className="font-medium text-carbon">{t(TIMETABLE.DOCTOR_TIMETABLE)}</div>
+                <div className="text-xs text-carbon/60 mt-0.5">{t(TIMETABLE.DOCTOR_TIMETABLE_DESC)}</div>
               </div>
             </Button>
             <Button
@@ -93,8 +95,8 @@ export const TimetablePage = () => {
             >
               <MdPlayArrow className="h-5 w-5 mr-3 text-azure-dragon flex-shrink-0" />
               <div className="text-left">
-                <div className="font-medium text-carbon">Slot Generation</div>
-                <div className="text-xs text-carbon/60 mt-0.5">Generate or regenerate appointment slots</div>
+                <div className="font-medium text-carbon">{t(TIMETABLE.SLOT_GENERATION)}</div>
+                <div className="text-xs text-carbon/60 mt-0.5">{t(TIMETABLE.SLOT_GENERATION_DESC)}</div>
               </div>
             </Button>
           </div>

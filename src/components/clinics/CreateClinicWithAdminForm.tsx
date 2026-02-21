@@ -14,7 +14,6 @@ import { MdBusiness, MdAdd } from 'react-icons/md';
 
 interface CreateClinicFormData {
   clinic_name: string;
-  clinic_code: string;
   clinic_address?: string;
   clinic_city?: string;
   clinic_state?: string;
@@ -66,7 +65,6 @@ export const CreateClinicWithAdminForm = ({
 
   const createClinicSchema = useMemo(() => z.object({
     clinic_name: z.string().min(1, t(CLINIC.CLINIC_NAME_REQUIRED)),
-    clinic_code: z.string().min(1, t(CLINIC.CLINIC_CODE_REQUIRED)).max(20),
     clinic_address: z.string().min(1, t(CLINIC.ADDRESS_REQUIRED)).optional().or(z.literal('')),
     clinic_city: z.string().min(1, t(CLINIC.CITY_REQUIRED)).optional().or(z.literal('')),
     clinic_state: z.string().optional(),
@@ -108,7 +106,6 @@ export const CreateClinicWithAdminForm = ({
     try {
       await createMutation.mutateAsync({
         name: data.clinic_name,
-        clinic_code: data.clinic_code,
         address: data.clinic_address,
         city: data.clinic_city,
         state: data.clinic_state,
@@ -176,21 +173,15 @@ export const CreateClinicWithAdminForm = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                label={t(CLINIC.CLINIC_NAME)}
-                placeholder={t(CLINIC.ENTER_CLINIC_NAME)}
-                error={errors.clinic_name?.message}
-                required
-                {...register('clinic_name')}
-              />
-
-              <Input
-                label={t(CLINIC.CLINIC_CODE)}
-                placeholder={t(CLINIC.CLINIC_CODE_PLACEHOLDER)}
-                error={errors.clinic_code?.message}
-                required
-                {...register('clinic_code')}
-              />
+              <div className="md:col-span-2">
+                <Input
+                  label={t(CLINIC.CLINIC_NAME)}
+                  placeholder={t(CLINIC.ENTER_CLINIC_NAME)}
+                  error={errors.clinic_name?.message}
+                  required
+                  {...register('clinic_name')}
+                />
+              </div>
 
               {/* Clinic Types Multi-Select */}
               <div className="md:col-span-2">

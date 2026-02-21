@@ -52,6 +52,15 @@ export const LANDING = {
   CREATE_ACCOUNT: 'landing.createAccount',
   ALREADY_HAVE_ACCOUNT: 'landing.alreadyHaveAccount',
 
+  // Clinic slots display
+  ADDRESS_NOT_AVAILABLE: 'landing.addressNotAvailable',
+  MORE_SLOTS: 'landing.moreSlots',
+  NO_SLOTS: 'landing.noSlots',
+  SHOW_LESS: 'landing.showLess',
+  SEE_MORE_SCHEDULES: 'landing.seeMoreSchedules',
+  NO_SLOT_CONTACT: 'landing.noSlotContact',
+  CONTACT_CLINIC: 'landing.contactClinic',
+
   // Footer
   FOOTER_DESC: 'landing.footerDesc',
   QUICK_LINKS: 'landing.quickLinks',

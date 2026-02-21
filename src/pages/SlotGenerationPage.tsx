@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,35 +24,27 @@ import {
   MdRefresh,
 } from 'react-icons/md';
 import { format, addMonths } from 'date-fns';
+import { useTranslation, TIMETABLE } from '@/i18n';
 
-const generateSlotsSchema = z.object({
-  clinic_id: z.string().min(1, 'Clinic is required'),
-  doctor_id: z.string().optional(),
-  service_id: z.string().optional(),
-  is_clinic_level: z.boolean().default(false),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
-  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
-  slot_duration_minutes: z.number().min(5).max(120).optional(),
-  max_concurrent_appointments: z.number().min(1).optional(),
-  // Custom time range (if no timetable exists)
-  days_of_week: z.array(z.number().min(1).max(7)).optional(),
-  day_start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-  day_end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-}).refine((data) => {
-  const startDate = new Date(data.start_date);
-  const endDate = new Date(data.end_date);
-  return endDate >= startDate;
-}, {
-  message: 'End date must be after start date',
-  path: ['end_date'],
-});
-
-type GenerateSlotsFormData = z.infer<typeof generateSlotsSchema>;
+interface GenerateSlotsFormData {
+  clinic_id: string;
+  doctor_id?: string;
+  service_id?: string;
+  is_clinic_level: boolean;
+  start_date: string;
+  end_date: string;
+  slot_duration_minutes?: number;
+  max_concurrent_appointments?: number;
+  days_of_week?: number[];
+  day_start_time?: string;
+  day_end_time?: string;
+}
 
 export const SlotGenerationPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
 
   // Get clinic_id from storage
   const getClinicIdFromStorage = (): string | undefined => {
@@ -85,6 +77,28 @@ export const SlotGenerationPage = () => {
   const regenerateMutation = useRegenerateFutureSlots();
 
   const [slotType, setSlotType] = useState<'clinic' | 'doctor'>('clinic');
+
+  const generateSlotsSchema = useMemo(() => z.object({
+    clinic_id: z.string().min(1, t(TIMETABLE.CLINIC_ID_REQUIRED)),
+    doctor_id: z.string().optional(),
+    service_id: z.string().optional(),
+    is_clinic_level: z.boolean().default(false),
+    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t(TIMETABLE.INVALID_DATE)),
+    end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t(TIMETABLE.INVALID_DATE)),
+    slot_duration_minutes: z.number().min(5).max(120).optional(),
+    max_concurrent_appointments: z.number().min(1).optional(),
+    // Custom time range (if no timetable exists)
+    days_of_week: z.array(z.number().min(1).max(7)).optional(),
+    day_start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+    day_end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+  }).refine((data) => {
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    return endDate >= startDate;
+  }, {
+    message: t(TIMETABLE.END_AFTER_START),
+    path: ['end_date'],
+  }), [t]);
 
   const form = useForm<GenerateSlotsFormData>({
     resolver: zodResolver(generateSlotsSchema),
@@ -119,14 +133,14 @@ export const SlotGenerationPage = () => {
         `Successfully generated ${result.created} slots${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}!`
       );
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to generate slots');
+      showError(error instanceof Error ? error.message : t(TIMETABLE.GENERATE_FAILED));
     }
   };
 
   const handleRegenerate = async () => {
     const formData = form.getValues();
     if (!formData.clinic_id) {
-      showError('Clinic ID is required');
+      showError(t(TIMETABLE.CLINIC_ID_REQUIRED));
       return;
     }
 
@@ -141,7 +155,7 @@ export const SlotGenerationPage = () => {
         `Successfully regenerated ${result.regenerated} slots${result.deleted > 0 ? ` (${result.deleted} deleted)` : ''}!`
       );
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to regenerate slots');
+      showError(error instanceof Error ? error.message : t(TIMETABLE.REGENERATE_FAILED));
     }
   };
 
@@ -149,9 +163,9 @@ export const SlotGenerationPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">No Clinic Assigned</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(TIMETABLE.NO_CLINIC_ASSIGNED)}</h2>
           <p className="text-sm text-carbon/60">
-            You are not assigned to any clinic. Please contact your administrator.
+            {t(TIMETABLE.CONTACT_ADMIN)}
           </p>
         </div>
       </div>
@@ -164,13 +178,13 @@ export const SlotGenerationPage = () => {
   }));
 
   const daysOfWeekOptions = [
-    { value: 1, label: 'Monday' },
-    { value: 2, label: 'Tuesday' },
-    { value: 3, label: 'Wednesday' },
-    { value: 4, label: 'Thursday' },
-    { value: 5, label: 'Friday' },
-    { value: 6, label: 'Saturday' },
-    { value: 7, label: 'Sunday' },
+    { value: 1, label: t(TIMETABLE.MONDAY) },
+    { value: 2, label: t(TIMETABLE.TUESDAY) },
+    { value: 3, label: t(TIMETABLE.WEDNESDAY) },
+    { value: 4, label: t(TIMETABLE.THURSDAY) },
+    { value: 5, label: t(TIMETABLE.FRIDAY) },
+    { value: 6, label: t(TIMETABLE.SATURDAY) },
+    { value: 7, label: t(TIMETABLE.SUNDAY) },
   ];
 
   return (
@@ -188,10 +202,10 @@ export const SlotGenerationPage = () => {
           </Button>
           <div>
             <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-              Slot Generation
+              {t(TIMETABLE.SLOT_GENERATION_TITLE)}
             </h1>
             <p className="text-sm text-carbon/60">
-              Manually generate appointment slots for your clinic or doctors
+              {t(TIMETABLE.SLOT_GENERATION_PAGE_DESC)}
             </p>
           </div>
         </div>
@@ -202,7 +216,7 @@ export const SlotGenerationPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdSchedule className="h-5 w-5 text-azure-dragon" />
-            Slot Type
+            {t(TIMETABLE.SLOT_TYPE)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -219,7 +233,7 @@ export const SlotGenerationPage = () => {
                 }}
                 className="text-azure-dragon focus:ring-azure-dragon"
               />
-              <span className="text-sm text-carbon">Clinic-level slots</span>
+              <span className="text-sm text-carbon">{t(TIMETABLE.CLINIC_LEVEL_SLOTS)}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -232,7 +246,7 @@ export const SlotGenerationPage = () => {
                 }}
                 className="text-azure-dragon focus:ring-azure-dragon"
               />
-              <span className="text-sm text-carbon">Doctor-level slots</span>
+              <span className="text-sm text-carbon">{t(TIMETABLE.DOCTOR_LEVEL_SLOTS)}</span>
             </label>
           </div>
         </CardContent>
@@ -241,7 +255,7 @@ export const SlotGenerationPage = () => {
       {/* Generation Form */}
       <Card variant="elevated">
         <CardHeader>
-          <CardTitle>Generate Slots</CardTitle>
+          <CardTitle>{t(TIMETABLE.GENERATE_SLOTS)}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -250,10 +264,10 @@ export const SlotGenerationPage = () => {
               control={form.control}
               render={({ field }) => (
                 <Input
-                  label="Clinic ID"
+                  label={t(TIMETABLE.CLINIC_ID)}
                   value={field.value}
                   disabled
-                  helperText="Automatically set to your clinic"
+                  helperText={t(TIMETABLE.AUTO_SET_CLINIC)}
                 />
               )}
             />
@@ -264,9 +278,9 @@ export const SlotGenerationPage = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Select
-                    label="Doctor"
+                    label={t(TIMETABLE.DOCTOR)}
                     options={[
-                      { value: '', label: 'Select a doctor...' },
+                      { value: '', label: `${t(TIMETABLE.SELECT_DOCTOR)}...` },
                       ...doctorOptions,
                     ]}
                     error={fieldState.error?.message}
@@ -283,7 +297,7 @@ export const SlotGenerationPage = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Input
-                    label="Start Date"
+                    label={t(TIMETABLE.START_DATE)}
                     type="date"
                     error={fieldState.error?.message}
                     required
@@ -296,7 +310,7 @@ export const SlotGenerationPage = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Input
-                    label="End Date"
+                    label={t(TIMETABLE.END_DATE)}
                     type="date"
                     error={fieldState.error?.message}
                     required
@@ -312,12 +326,12 @@ export const SlotGenerationPage = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Input
-                    label="Slot Duration (minutes)"
+                    label={t(TIMETABLE.SLOT_DURATION)}
                     type="number"
                     min={5}
                     max={120}
                     error={fieldState.error?.message}
-                    helperText="Default: 15 minutes"
+                    helperText={t(TIMETABLE.SLOT_DURATION_DEFAULT)}
                     {...field}
                     onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                   />
@@ -328,11 +342,11 @@ export const SlotGenerationPage = () => {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Input
-                    label="Max Concurrent Appointments"
+                    label={t(TIMETABLE.MAX_CONCURRENT)}
                     type="number"
                     min={1}
                     error={fieldState.error?.message}
-                    helperText="Default: 1"
+                    helperText={t(TIMETABLE.MAX_CONCURRENT_DEFAULT)}
                     {...field}
                     onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                   />
@@ -342,7 +356,7 @@ export const SlotGenerationPage = () => {
 
             <div className="rounded-lg border border-carbon/10 p-4 bg-carbon/5">
               <p className="text-xs font-medium text-carbon/80 mb-2">
-                Custom Time Range (Optional - only used if no timetable exists)
+                {t(TIMETABLE.CUSTOM_TIME_RANGE)}
               </p>
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
@@ -377,7 +391,7 @@ export const SlotGenerationPage = () => {
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Input
-                        label="Day Start Time"
+                        label={t(TIMETABLE.DAY_START_TIME)}
                         type="time"
                         error={fieldState.error?.message}
                         {...field}
@@ -389,7 +403,7 @@ export const SlotGenerationPage = () => {
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Input
-                        label="Day End Time"
+                        label={t(TIMETABLE.DAY_END_TIME)}
                         type="time"
                         error={fieldState.error?.message}
                         {...field}
@@ -408,7 +422,7 @@ export const SlotGenerationPage = () => {
                 disabled={regenerateMutation.isPending}
               >
                 <MdRefresh className="h-4 w-4 mr-2" />
-                Regenerate Future Slots
+                {t(TIMETABLE.REGENERATE_FUTURE)}
               </Button>
               <Button
                 type="submit"
@@ -416,7 +430,7 @@ export const SlotGenerationPage = () => {
                 disabled={generateMutation.isPending}
               >
                 <MdPlayArrow className="h-4 w-4 mr-2" />
-                Generate Slots
+                {t(TIMETABLE.GENERATE_SLOTS)}
               </Button>
             </div>
           </form>
@@ -426,25 +440,21 @@ export const SlotGenerationPage = () => {
       {/* Info Card */}
       <Card variant="elevated" className="mt-6">
         <CardHeader>
-          <CardTitle>Information</CardTitle>
+          <CardTitle>{t(TIMETABLE.INFORMATION)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm text-carbon/60">
             <p>
-              • Slots are automatically generated daily by the system at 02:00 UTC for the next 30
-              days.
+              {t(TIMETABLE.INFO_AUTO_GENERATE)}
             </p>
             <p>
-              • Use this page to manually generate slots for specific date ranges or after
-              changing timetables.
+              {t(TIMETABLE.INFO_MANUAL)}
             </p>
             <p>
-              • If timetables exist for the clinic/doctor, they will be used. Otherwise, custom
-              time ranges will be applied.
+              {t(TIMETABLE.INFO_TIMETABLE_USED)}
             </p>
             <p>
-              • "Regenerate Future Slots" deletes all future unbooked slots and regenerates them
-              based on current timetables.
+              {t(TIMETABLE.INFO_REGENERATE)}
             </p>
           </div>
         </CardContent>

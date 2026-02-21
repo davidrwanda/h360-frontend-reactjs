@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { CreateDoctorForm } from '@/components/doctors/CreateDoctorForm';
+import { useTranslation, DOCTOR } from '@/i18n';
 import { Button } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
 const CreateDoctorPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -20,13 +22,13 @@ const CreateDoctorPage = () => {
             className="mb-4"
           >
             <MdArrowBack className="h-4 w-4 mr-2" />
-            Back to Doctors
+            {t(DOCTOR.BACK_TO_DOCTORS)}
           </Button>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Create Doctor
+            {t(DOCTOR.CREATE_DOCTOR)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Add a new doctor to the clinic. If an email is provided, a user account will be automatically created.
+            {t(DOCTOR.CREATE_DESCRIPTION)}
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,10 +8,11 @@ import { useClinicTypes } from '@/hooks/useClinicTypes';
 import { useAuth } from '@/hooks/useAuth';
 import { useToastStore } from '@/store/toastStore';
 import { useTranslation, CLINIC } from '@/i18n';
-import { Input, Select, Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
+import { Input, Select, MultiSelect, Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
 import { timezones, currencies, languages, DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_TIMEZONE } from '@/config/clinicOptions';
 import { OperatingHoursEditor } from '@/components/clinics/OperatingHoursEditor';
 import { AddressInput } from '@/components/clinics/AddressInput';
+import { AddClinicTypeModal } from '@/components/clinics/AddClinicTypeModal';
 import {
   MdArrowBack,
   MdBusiness,
@@ -21,147 +22,46 @@ import {
   MdSettings,
   MdInfo,
   MdAttachMoney,
+  MdAdd,
 } from 'react-icons/md';
 import type { OperatingHours } from '@/api/clinics';
 
-// Custom URL validation that accepts domains without protocol
-const urlOrDomainSchema = z
-  .string()
-  .optional()
-  .or(z.literal(''))
-  .refine(
-    (val) => {
-      if (!val || val === '') return true;
-      try {
-        new URL(val);
-        return true;
-      } catch {
-        const domainPattern = /^(www\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
-        return domainPattern.test(val);
-      }
-    },
-    { message: 'Invalid URL or domain' }
-  );
-
-const operatingHoursSchema: z.ZodType<OperatingHours> = z.object({
-  monday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  tuesday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  wednesday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  thursday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  friday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  saturday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-  sunday: z
-    .object({
-      open: z.string().optional(),
-      close: z.string().optional(),
-      closed: z.boolean().optional(),
-    })
-    .optional(),
-});
-
-const clinicSchema = z.object({
-  // Basic Information
-  name: z.string().min(1, 'Clinic name is required').max(100),
-  clinic_code: z.string().min(1, 'Clinic code is required').max(20),
-  description: z.string().optional().or(z.literal('')),
-
-  // Location Information
-  address: z.string().min(1, 'Address is required').or(z.literal('')),
-  city: z.string().max(100).min(1, 'City is required').or(z.literal('')),
-  state: z.string().max(50).optional().or(z.literal('')),
-  postal_code: z.string().max(20).optional().or(z.literal('')),
-  country: z.string().max(50).optional().or(z.literal('')),
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
-
-  // Contact Information
-  phone: z.string().min(1, 'Phone number is required').max(20).or(z.literal('')),
-  fax: z.string().max(20).optional().or(z.literal('')),
-  email: z.string().email('Invalid email').max(150).min(1, 'Email is required').or(z.literal('')),
-  website: urlOrDomainSchema,
-
-  // Operational Information
-  timezone: z.string().max(50).optional().or(z.literal('')),
-  currency: z.string().max(10).optional().or(z.literal('')),
-  language: z.string().max(10).optional().or(z.literal('')),
-  operating_hours: operatingHoursSchema
-    .refine(
-      (hours) => {
-        if (!hours) return false;
-        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-        return days.some((day) => {
-          const dayHours = hours[day];
-          return dayHours && !dayHours.closed && dayHours.open && dayHours.close;
-        });
-      },
-      { message: 'At least one day with operating hours must be configured' }
-    )
-    .optional(),
-
-  // Settings & Configuration
-  appointment_slot_duration: z.number().min(5).max(120).optional().nullable(),
-  max_daily_appointments: z.number().min(1).optional().nullable(),
-  allow_online_booking: z.boolean().optional(),
-  send_sms_reminders: z.boolean().optional(),
-  send_email_reminders: z.boolean().optional(),
-  reminder_hours_before: z.number().min(1).max(168).optional().nullable(),
-
-  // Status & Management
-  is_active: z.boolean(),
-  established_date: z.string().optional().or(z.literal('')),
-  license_number: z.string().max(50).optional().or(z.literal('')),
-  license_expiry_date: z.string().optional().or(z.literal('')),
-
-  // Additional Information
-  notes: z.string().optional().or(z.literal('')),
-  logo_url: urlOrDomainSchema,
-  image_url: urlOrDomainSchema,
-
-  // Financial Information
-  tax_id: z.string().max(100).optional().or(z.literal('')),
-  registration_number: z.string().max(100).optional().or(z.literal('')),
-
-  // Clinic Types
-  type_ids: z.array(z.string()).min(1, 'At least one clinic type is required').optional(),
-});
-
-type ClinicFormData = z.infer<typeof clinicSchema>;
+interface ClinicFormData {
+  name: string;
+  clinic_code: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  phone?: string;
+  fax?: string;
+  email?: string;
+  website?: string;
+  timezone?: string;
+  currency?: string;
+  language?: string;
+  operating_hours?: OperatingHours;
+  appointment_slot_duration?: number | null;
+  max_daily_appointments?: number | null;
+  allow_online_booking?: boolean;
+  send_sms_reminders?: boolean;
+  send_email_reminders?: boolean;
+  reminder_hours_before?: number | null;
+  is_active: boolean;
+  established_date?: string;
+  license_number?: string;
+  license_expiry_date?: string;
+  notes?: string;
+  logo_url?: string;
+  image_url?: string;
+  tax_id?: string;
+  registration_number?: string;
+  type_ids?: string[];
+}
 
 export const EditClinicPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -171,11 +71,11 @@ export const EditClinicPage = () => {
   const { data: clinic, isLoading } = useClinic(id);
   const updateMutation = useUpdateClinic();
   const { data: clinicTypes, isLoading: isLoadingTypes } = useClinicTypes({ include_inactive: false });
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
 
   // Get clinic_id from storage (fallback to user object)
   const getClinicIdFromStorage = (): string | undefined => {
     try {
-      // Try to get from localStorage directly (Zustand persist)
       const authStorage = localStorage.getItem('h360-auth-storage');
       if (authStorage) {
         const parsed = JSON.parse(authStorage);
@@ -186,23 +86,100 @@ export const EditClinicPage = () => {
     } catch (error) {
       console.warn('Failed to get clinic_id from localStorage:', error);
     }
-
-    // Fallback to user object from auth hook
     return user?.clinic_id || user?.employee?.clinic_id;
   };
 
-  // Check if clinic manager is trying to edit their own clinic
   const normalizedRole = role?.toUpperCase();
   const isClinicManager = normalizedRole === 'MANAGER';
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
   const userClinicId = getClinicIdFromStorage();
-  
-  // Clinic managers can only edit their own clinic
+
   useEffect(() => {
     if (clinic && isClinicManager && !isSystemAdmin && userClinicId !== clinic.clinic_id) {
       navigate('/clinic-info', { replace: true });
     }
   }, [clinic, isClinicManager, isSystemAdmin, userClinicId, navigate]);
+
+  const urlOrDomainSchema = useMemo(() => z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (val) => {
+        if (!val || val === '') return true;
+        try { new URL(val); return true; } catch {
+          const domainPattern = /^(www\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+          return domainPattern.test(val);
+        }
+      },
+      { message: t(CLINIC.INVALID_URL) }
+    ), [t]);
+
+  const daySchema = useMemo(() => z.object({
+    open: z.string().optional(),
+    close: z.string().optional(),
+    closed: z.boolean().optional(),
+  }).optional(), []);
+
+  const baseFields = useMemo(() => ({
+    name: z.string().min(1, t(CLINIC.CLINIC_NAME_REQUIRED)).max(100),
+    clinic_code: z.string().min(1, t(CLINIC.CLINIC_CODE_REQUIRED)).max(20),
+    address: z.string().min(1, t(CLINIC.ADDRESS_REQUIRED)).or(z.literal('')),
+    city: z.string().max(100).min(1, t(CLINIC.CITY_REQUIRED)).or(z.literal('')),
+    state: z.string().max(50).optional().or(z.literal('')),
+    postal_code: z.string().max(20).optional().or(z.literal('')),
+    country: z.string().max(50).optional().or(z.literal('')),
+    phone: z.string().min(1, t(CLINIC.PHONE_REQUIRED)).max(20).or(z.literal('')),
+    email: z.string().email(t(CLINIC.INVALID_EMAIL)).max(150).min(1, t(CLINIC.EMAIL_REQUIRED)).or(z.literal('')),
+    website: urlOrDomainSchema,
+    timezone: z.string().max(50).optional().or(z.literal('')),
+    currency: z.string().max(10).optional().or(z.literal('')),
+    language: z.string().max(10).optional().or(z.literal('')),
+    type_ids: z.array(z.string()).min(1, t(CLINIC.CLINIC_TYPE_REQUIRED)).optional(),
+  }), [t, urlOrDomainSchema]);
+
+  const clinicSchema = useMemo(() => {
+    if (isSystemAdmin) {
+      return z.object(baseFields).passthrough();
+    }
+
+    return z.object({
+      ...baseFields,
+      description: z.string().optional().or(z.literal('')),
+      latitude: z.number().optional().nullable(),
+      longitude: z.number().optional().nullable(),
+      fax: z.string().max(20).optional().or(z.literal('')),
+      operating_hours: z.object({
+        monday: daySchema, tuesday: daySchema, wednesday: daySchema, thursday: daySchema,
+        friday: daySchema, saturday: daySchema, sunday: daySchema,
+      }).refine(
+        (hours) => {
+          if (!hours) return false;
+          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+          return days.some((day) => {
+            const dayHours = hours[day];
+            return dayHours && !dayHours.closed && dayHours.open && dayHours.close;
+          });
+        },
+        { message: t(CLINIC.AT_LEAST_ONE_DAY) }
+      ).optional(),
+      appointment_slot_duration: z.number().min(5).max(120).optional().nullable(),
+      max_daily_appointments: z.number().min(1).optional().nullable(),
+      allow_online_booking: z.boolean().optional(),
+      send_sms_reminders: z.boolean().optional(),
+      send_email_reminders: z.boolean().optional(),
+      reminder_hours_before: z.number().min(1).max(168).optional().nullable(),
+      is_active: z.boolean(),
+      established_date: z.string().optional().or(z.literal('')),
+      license_number: z.string().max(50).optional().or(z.literal('')),
+      license_expiry_date: z.string().optional().or(z.literal('')),
+      notes: z.string().optional().or(z.literal('')),
+      logo_url: urlOrDomainSchema,
+      image_url: urlOrDomainSchema,
+      tax_id: z.string().max(100).optional().or(z.literal('')),
+      registration_number: z.string().max(100).optional().or(z.literal('')),
+    });
+  }, [t, baseFields, urlOrDomainSchema, daySchema, isSystemAdmin]);
 
   const {
     register,
@@ -352,16 +329,18 @@ export const EditClinicPage = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <Input
                 label={t(CLINIC.CLINIC_NAME)}
-                placeholder="Enter clinic name"
+                placeholder={t(CLINIC.ENTER_CLINIC_NAME)}
                 error={errors.name?.message}
                 required
                 {...register('name')}
               />
               <Input
                 label={t(CLINIC.CLINIC_CODE)}
-                placeholder="e.g., CLINIC001"
+                placeholder={t(CLINIC.CLINIC_CODE_PLACEHOLDER)}
                 error={errors.clinic_code?.message}
                 required
+                disabled
+                className="bg-carbon/5 cursor-not-allowed"
                 {...register('clinic_code')}
               />
               {!isSystemAdmin && (
@@ -410,51 +389,45 @@ export const EditClinicPage = () => {
                     <Select label={t(CLINIC.LANGUAGE)} error={errors.language?.message} options={languages} {...register('language')} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                      {t(CLINIC.CLINIC_TYPES)} <span className="text-smudged-lips ml-0.5">*</span>
-                    </label>
-                    {isLoadingTypes ? (
-                      <div className="flex items-center gap-2 py-2">
-                        <Loading size="sm" />
-                        <span className="text-xs text-carbon/60">{t(CLINIC.LOADING_CLINIC_TYPES)}</span>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
-                        <Controller
-                          name="type_ids"
-                          control={control}
-                          render={({ field }) => (
-                            <>
-                              {clinicTypes?.map((type) => (
-                                <label
-                                  key={type.clinic_type_id}
-                                  className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    value={type.clinic_type_id}
-                                    checked={field.value?.includes(type.clinic_type_id) || false}
-                                    onChange={(e) => {
-                                      const currentValue = field.value || [];
-                                      if (e.target.checked) {
-                                        field.onChange([...currentValue, type.clinic_type_id]);
-                                      } else {
-                                        field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
-                                      }
-                                    }}
-                                    className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
-                                  />
-                                  <span className="text-xs text-carbon">{type.name}</span>
-                                </label>
-                              ))}
-                            </>
-                          )}
-                        />
-                      </div>
-                    )}
-                    {errors.type_ids && (
-                      <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.type_ids.message}</p>
-                    )}
+                    <Controller
+                      name="type_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-2">
+                          <MultiSelect
+                            label={t(CLINIC.CLINIC_TYPES)}
+                            placeholder={t(CLINIC.SELECT_CLINIC_TYPES)}
+                            required
+                            isLoading={isLoadingTypes}
+                            loadingText={t(CLINIC.LOADING_CLINIC_TYPES)}
+                            options={(clinicTypes || []).map((type) => ({
+                              value: type.clinic_type_id,
+                              label: type.name,
+                              color: type.color,
+                            }))}
+                            value={field.value || []}
+                            onChange={field.onChange}
+                            error={errors.type_ids?.message}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowAddTypeModal(true)}
+                            className="inline-flex items-center gap-1.5 text-xs font-ui text-azure-dragon hover:text-azure-dragon/80 transition-colors"
+                          >
+                            <MdAdd className="h-4 w-4" />
+                            {t(CLINIC.ADD_NEW_TYPE)}
+                          </button>
+                          <AddClinicTypeModal
+                            isOpen={showAddTypeModal}
+                            onClose={() => setShowAddTypeModal(false)}
+                            onCreated={(newTypeId) => {
+                              const currentIds = field.value || [];
+                              field.onChange([...currentIds, newTypeId]);
+                            }}
+                          />
+                        </div>
+                      )}
+                    />
                   </div>
                 </>
               )}
@@ -623,53 +596,45 @@ export const EditClinicPage = () => {
 
               {/* Clinic Types Multi-Select */}
               <div>
-                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  {t(CLINIC.CLINIC_TYPES)} <span className="text-smudged-lips ml-0.5">*</span>
-                </label>
-                {isLoadingTypes ? (
-                  <div className="flex items-center gap-2 py-2">
-                    <Loading size="sm" />
-                    <span className="text-xs text-carbon/60">{t(CLINIC.LOADING_CLINIC_TYPES)}</span>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-carbon/15 rounded-md bg-white">
-                    <Controller
-                      name="type_ids"
-                      control={control}
-                      render={({ field }) => (
-                        <>
-                          {clinicTypes?.map((type) => (
-                            <label
-                              key={type.clinic_type_id}
-                              className="flex items-center gap-2 cursor-pointer hover:bg-carbon/5 p-2 rounded transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                value={type.clinic_type_id}
-                                checked={field.value?.includes(type.clinic_type_id) || false}
-                                onChange={(e) => {
-                                  const currentValue = field.value || [];
-                                  if (e.target.checked) {
-                                    field.onChange([...currentValue, type.clinic_type_id]);
-                                  } else {
-                                    field.onChange(currentValue.filter((id) => id !== type.clinic_type_id));
-                                  }
-                                }}
-                                className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon/30"
-                              />
-                              <span className="text-xs text-carbon">{type.name}</span>
-                            </label>
-                          ))}
-                        </>
-                      )}
-                    />
-                  </div>
-                )}
-                {errors.type_ids && (
-                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">
-                    {errors.type_ids.message}
-                  </p>
-                )}
+                <Controller
+                  name="type_ids"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-2">
+                      <MultiSelect
+                        label={t(CLINIC.CLINIC_TYPES)}
+                        placeholder={t(CLINIC.SELECT_CLINIC_TYPES)}
+                        required
+                        isLoading={isLoadingTypes}
+                        loadingText={t(CLINIC.LOADING_CLINIC_TYPES)}
+                        options={(clinicTypes || []).map((type) => ({
+                          value: type.clinic_type_id,
+                          label: type.name,
+                          color: type.color,
+                        }))}
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        error={errors.type_ids?.message}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAddTypeModal(true)}
+                        className="inline-flex items-center gap-1.5 text-xs font-ui text-azure-dragon hover:text-azure-dragon/80 transition-colors"
+                      >
+                        <MdAdd className="h-4 w-4" />
+                        {t(CLINIC.ADD_NEW_TYPE)}
+                      </button>
+                      <AddClinicTypeModal
+                        isOpen={showAddTypeModal}
+                        onClose={() => setShowAddTypeModal(false)}
+                        onCreated={(newTypeId) => {
+                          const currentIds = field.value || [];
+                          field.onChange([...currentIds, newTypeId]);
+                        }}
+                      />
+                    </div>
+                  )}
+                />
               </div>
 
               <div>

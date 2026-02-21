@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
+import { COMMON } from '@/i18n';
 import { MenuOverviewPage } from '@/pages/MenuOverviewPage';
 import { CreateClinicPage } from '@/pages/CreateClinicPage';
 import { ClinicsPage } from '@/pages/ClinicsPage';
@@ -245,7 +246,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <PlaceholderPage title="Appointments" />
+          <PlaceholderPage titleKey={COMMON.APPOINTMENTS} />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -255,7 +256,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <PlaceholderPage title="Queue Management" />
+          <PlaceholderPage titleKey={COMMON.QUEUE_MANAGEMENT} />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -355,7 +356,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <PlaceholderPage title="Notifications" />
+          <PlaceholderPage titleKey={COMMON.NOTIFICATIONS} />
         </MainLayout>
       </ProtectedRoute>
     ),

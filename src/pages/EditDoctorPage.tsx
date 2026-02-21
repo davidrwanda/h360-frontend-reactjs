@@ -4,10 +4,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDoctor } from '@/hooks/useDoctors';
 import { EditDoctorForm } from '@/components/doctors/EditDoctorForm';
 import { EditDoctorClinicForm } from '@/components/doctors/EditDoctorClinicForm';
+import { useTranslation, DOCTOR } from '@/i18n';
 import { Button, Card, CardContent, Loading } from '@/components/ui';
 import { MdArrowBack, MdBusiness } from 'react-icons/md';
 
 const EditDoctorPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, role } = useAuth();
@@ -46,7 +48,7 @@ const EditDoctorPage = () => {
         <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <p className="text-sm text-smudged-lips">
-              Failed to load doctor. Please try again.
+              {t(DOCTOR.FAILED_TO_LOAD)}
             </p>
             <Button
               variant="outline"
@@ -54,7 +56,7 @@ const EditDoctorPage = () => {
               onClick={() => navigate('/doctors')}
               className="mt-4"
             >
-              Back to Doctors
+              {t(DOCTOR.BACK_TO_DOCTORS)}
             </Button>
           </CardContent>
         </Card>
@@ -81,13 +83,13 @@ const EditDoctorPage = () => {
           className="mb-4"
         >
           <MdArrowBack className="h-4 w-4 mr-2" />
-          Back to Doctors
+          {t(DOCTOR.BACK_TO_DOCTORS)}
         </Button>
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-          Edit Doctor
+          {t(DOCTOR.EDIT_DOCTOR)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Update doctor information and preferences.
+          {t(DOCTOR.UPDATE_DOCTOR_INFO)}
         </p>
       </div>
 
@@ -110,10 +112,10 @@ const EditDoctorPage = () => {
           <div className="mb-4">
             <h2 className="text-lg font-heading font-semibold text-azure-dragon mb-1 flex items-center gap-2">
               <MdBusiness className="h-5 w-5" />
-              Clinic Relationships
+              {t(DOCTOR.CLINIC_RELATIONSHIPS)}
             </h2>
             <p className="text-sm text-carbon/60">
-              Edit clinic-specific settings for this doctor.
+              {t(DOCTOR.EDIT_CLINIC_DESC)}
             </p>
           </div>
 
@@ -141,7 +143,7 @@ const EditDoctorPage = () => {
                             <span className="text-sm font-medium text-carbon">
                               {relationship.clinic_name}
                               {relationship.clinic_id === doctor.clinic_id && (
-                                <span className="text-xs text-azure-dragon ml-2">(Primary)</span>
+                                <span className="text-xs text-azure-dragon ml-2">({t(DOCTOR.PRIMARY)})</span>
                               )}
                             </span>
                           </div>
@@ -150,31 +152,31 @@ const EditDoctorPage = () => {
                             size="sm"
                             onClick={() => setEditingClinicId(relationship.clinic_id)}
                           >
-                            Edit Clinic Settings
+                            {t(DOCTOR.EDIT_CLINIC_SETTINGS)}
                           </Button>
                         </div>
                         <div className="grid gap-2 md:grid-cols-2 text-xs text-carbon/70 ml-6">
                           {relationship.max_daily_patients && (
                             <div>
-                              <span className="font-medium">Max Daily Patients: </span>
+                              <span className="font-medium">{t(DOCTOR.MAX_DAILY_PATIENTS)}: </span>
                               {relationship.max_daily_patients}
                             </div>
                           )}
                           {relationship.appointment_duration_minutes && (
                             <div>
-                              <span className="font-medium">Appointment Duration: </span>
-                              {relationship.appointment_duration_minutes} minutes
+                              <span className="font-medium">{t(DOCTOR.APPOINTMENT_DURATION)}: </span>
+                              {t(DOCTOR.DURATION_MINUTES, { minutes: relationship.appointment_duration_minutes })}
                             </div>
                           )}
                           {relationship.consultation_fee && (
                             <div>
-                              <span className="font-medium">Consultation Fee: </span>
+                              <span className="font-medium">{t(DOCTOR.CONSULTATION_FEE)}: </span>
                               {relationship.consultation_fee}
                             </div>
                           )}
                           <div>
-                            <span className="font-medium">Accepts New Patients: </span>
-                            {relationship.accepts_new_patients ? 'Yes' : 'No'}
+                            <span className="font-medium">{t(DOCTOR.ACCEPTS_NEW_PATIENTS)}: </span>
+                            {relationship.accepts_new_patients ? t(DOCTOR.YES) : t(DOCTOR.NO)}
                           </div>
                         </div>
                       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,26 +6,25 @@ import { useCreatePatient } from '@/hooks/usePatients';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from '@/components/ui';
 import { MdPerson, MdAccountCircle } from 'react-icons/md';
+import { useTranslation, PATIENT } from '@/i18n';
 
-const createPatientSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  date_of_birth: z.string().optional(),
-  gender: z.enum(['M', 'F', 'Other'], { required_error: 'Gender is required' }),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postal_code: z.string().optional(),
-  country: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  emergency_contact_relationship: z.string().optional(),
-  create_account: z.boolean().optional(),
-});
-
-type CreatePatientFormData = z.infer<typeof createPatientSchema>;
+interface CreatePatientFormData {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  gender: 'M' | 'F' | 'Other';
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  create_account?: boolean;
+}
 
 interface CreatePatientFormProps {
   clinicId: string;
@@ -40,9 +39,28 @@ export const CreatePatientForm = ({
   onSuccess,
   onCancel,
 }: CreatePatientFormProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const createMutation = useCreatePatient();
   const { success: showSuccess, error: showError } = useToastStore();
+
+  const createPatientSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(PATIENT.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(PATIENT.LAST_NAME_REQUIRED)),
+    email: z.string().email(t(PATIENT.INVALID_EMAIL)).optional().or(z.literal('')),
+    phone: z.string().optional(),
+    date_of_birth: z.string().optional(),
+    gender: z.enum(['M', 'F', 'Other'], { required_error: t(PATIENT.GENDER_REQUIRED) }),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postal_code: z.string().optional(),
+    country: z.string().optional(),
+    emergency_contact_name: z.string().optional(),
+    emergency_contact_phone: z.string().optional(),
+    emergency_contact_relationship: z.string().optional(),
+    create_account: z.boolean().optional(),
+  }), [t]);
 
   const {
     register,
@@ -81,12 +99,12 @@ export const CreatePatientForm = ({
       });
 
       reset();
-      showSuccess('Patient created successfully!');
+      showSuccess(t(PATIENT.CREATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create patient. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(PATIENT.CREATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -98,10 +116,10 @@ export const CreatePatientForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Patient Information
+            {t(PATIENT.PATIENT_INFORMATION)}
             {clinicName && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
-                for {clinicName}
+                {t(PATIENT.FOR_CLINIC, { clinicName })}
               </span>
             )}
           </CardTitle>
@@ -116,42 +134,42 @@ export const CreatePatientForm = ({
           <div className="space-y-4">
             {/* Basic Information */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Basic Information</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.BASIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="First Name"
-                  placeholder="Enter first name"
+                  label={t(PATIENT.FIRST_NAME)}
+                  placeholder={t(PATIENT.FIRST_NAME_PLACEHOLDER)}
                   error={errors.first_name?.message}
                   required
                   {...register('first_name')}
                 />
 
                 <Input
-                  label="Last Name"
-                  placeholder="Enter last name"
+                  label={t(PATIENT.LAST_NAME)}
+                  placeholder={t(PATIENT.LAST_NAME_PLACEHOLDER)}
                   error={errors.last_name?.message}
                   required
                   {...register('last_name')}
                 />
 
                 <Input
-                  label="Email"
+                  label={t(PATIENT.EMAIL)}
                   type="email"
-                  placeholder="Enter email address"
+                  placeholder={t(PATIENT.EMAIL_PLACEHOLDER)}
                   error={errors.email?.message}
                   {...register('email')}
                 />
 
                 <Input
-                  label="Phone"
+                  label={t(PATIENT.PHONE)}
                   type="tel"
-                  placeholder="Enter phone number"
+                  placeholder={t(PATIENT.PHONE_PLACEHOLDER)}
                   error={errors.phone?.message}
                   {...register('phone')}
                 />
 
                 <Input
-                  label="Date of Birth"
+                  label={t(PATIENT.DATE_OF_BIRTH)}
                   type="date"
                   error={errors.date_of_birth?.message}
                   {...register('date_of_birth')}
@@ -162,14 +180,14 @@ export const CreatePatientForm = ({
                   control={control}
                   render={({ field }) => (
                     <Select
-                      label="Gender"
+                      label={t(PATIENT.GENDER)}
                       error={errors.gender?.message}
                       required
                       options={[
-                        { value: '', label: 'Select gender' },
-                        { value: 'M', label: 'Male' },
-                        { value: 'F', label: 'Female' },
-                        { value: 'Other', label: 'Other' },
+                        { value: '', label: t(PATIENT.SELECT_GENDER) },
+                        { value: 'M', label: t(PATIENT.MALE) },
+                        { value: 'F', label: t(PATIENT.FEMALE) },
+                        { value: 'Other', label: t(PATIENT.OTHER_GENDER) },
                       ]}
                       {...field}
                     />
@@ -180,39 +198,39 @@ export const CreatePatientForm = ({
 
             {/* Address Information */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Address Information</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.ADDRESS_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="Address"
-                  placeholder="Enter street address"
+                  label={t(PATIENT.ADDRESS)}
+                  placeholder={t(PATIENT.ADDRESS_PLACEHOLDER)}
                   error={errors.address?.message}
                   {...register('address')}
                 />
 
                 <Input
-                  label="City"
-                  placeholder="Enter city"
+                  label={t(PATIENT.CITY)}
+                  placeholder={t(PATIENT.CITY_PLACEHOLDER)}
                   error={errors.city?.message}
                   {...register('city')}
                 />
 
                 <Input
-                  label="State"
-                  placeholder="Enter state"
+                  label={t(PATIENT.STATE)}
+                  placeholder={t(PATIENT.STATE_PLACEHOLDER)}
                   error={errors.state?.message}
                   {...register('state')}
                 />
 
                 <Input
-                  label="Postal Code"
-                  placeholder="Enter postal code"
+                  label={t(PATIENT.POSTAL_CODE)}
+                  placeholder={t(PATIENT.POSTAL_CODE_PLACEHOLDER)}
                   error={errors.postal_code?.message}
                   {...register('postal_code')}
                 />
 
                 <Input
-                  label="Country"
-                  placeholder="Enter country"
+                  label={t(PATIENT.COUNTRY)}
+                  placeholder={t(PATIENT.COUNTRY_PLACEHOLDER)}
                   error={errors.country?.message}
                   {...register('country')}
                 />
@@ -221,26 +239,26 @@ export const CreatePatientForm = ({
 
             {/* Emergency Contact */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Emergency Contact</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.EMERGENCY_CONTACT)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="Emergency Contact Name"
-                  placeholder="Enter emergency contact name"
+                  label={t(PATIENT.EMERGENCY_CONTACT_NAME)}
+                  placeholder={t(PATIENT.EMERGENCY_CONTACT_NAME_PLACEHOLDER)}
                   error={errors.emergency_contact_name?.message}
                   {...register('emergency_contact_name')}
                 />
 
                 <Input
-                  label="Emergency Contact Phone"
+                  label={t(PATIENT.EMERGENCY_CONTACT_PHONE)}
                   type="tel"
-                  placeholder="Enter emergency contact phone"
+                  placeholder={t(PATIENT.EMERGENCY_CONTACT_PHONE_PLACEHOLDER)}
                   error={errors.emergency_contact_phone?.message}
                   {...register('emergency_contact_phone')}
                 />
 
                 <Input
-                  label="Relationship"
-                  placeholder="e.g., Spouse, Parent, etc."
+                  label={t(PATIENT.RELATIONSHIP)}
+                  placeholder={t(PATIENT.RELATIONSHIP_PLACEHOLDER)}
                   error={errors.emergency_contact_relationship?.message}
                   {...register('emergency_contact_relationship')}
                 />
@@ -250,7 +268,7 @@ export const CreatePatientForm = ({
             {/* Account Creation */}
             {formData.email && (
               <div>
-                <h3 className="text-sm font-medium text-carbon mb-3">Account Options</h3>
+                <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.ACCOUNT_OPTIONS)}</h3>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -260,11 +278,11 @@ export const CreatePatientForm = ({
                   />
                   <label htmlFor="create_account" className="text-sm text-carbon/70 flex items-center gap-2">
                     <MdAccountCircle className="h-4 w-4 text-azure-dragon" />
-                    Create account for this patient (password will be sent via email)
+                    {t(PATIENT.CREATE_ACCOUNT_CHECKBOX)}
                   </label>
                 </div>
                 <p className="text-xs text-carbon/50 mt-1 ml-6">
-                  An account will be created with the email address as username. A secure password will be generated and sent via email.
+                  {t(PATIENT.CREATE_ACCOUNT_NOTE)}
                 </p>
               </div>
             )}
@@ -277,7 +295,7 @@ export const CreatePatientForm = ({
                 size="md"
                 disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Patient'}
+                {createMutation.isPending ? t(PATIENT.CREATING) : t(PATIENT.CREATE_PATIENT)}
               </Button>
               {onCancel && (
                 <Button
@@ -287,7 +305,7 @@ export const CreatePatientForm = ({
                   onClick={onCancel}
                   disabled={createMutation.isPending}
                 >
-                  Cancel
+                  {t(PATIENT.CANCEL)}
                 </Button>
               )}
             </div>

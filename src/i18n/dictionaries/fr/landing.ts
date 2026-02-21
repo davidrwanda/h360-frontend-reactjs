@@ -52,6 +52,15 @@ export const landingFr: Record<string, string> = {
   'landing.createAccount': 'Créer un compte',
   'landing.alreadyHaveAccount': 'Vous avez déjà un compte ? Connexion',
 
+  // Clinic slots display
+  'landing.addressNotAvailable': 'Adresse non disponible',
+  'landing.moreSlots': '+{{count}} de plus',
+  'landing.noSlots': 'Aucun créneau',
+  'landing.showLess': 'Voir moins',
+  'landing.seeMoreSchedules': 'Voir plus de créneaux',
+  'landing.noSlotContact': 'Si vous ne trouvez pas de créneau qui vous convient, veuillez contacter la clinique au :',
+  'landing.contactClinic': 'Contacter la clinique',
+
   // Footer
   'landing.footerDesc': 'Votre plateforme de gestion de santé de confiance. Connecter les patients avec des prestataires de santé de qualité.',
   'landing.quickLinks': 'Liens rapides',

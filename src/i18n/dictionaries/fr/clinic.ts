@@ -159,8 +159,10 @@ export const clinicFr: Record<string, string> = {
   // Modals
   'clinic.deactivateClinic': 'Désactiver la clinique',
   'clinic.deactivateClinicMsg': 'Êtes-vous sûr de vouloir désactiver cette clinique ? La clinique sera marquée comme inactive et ne sera plus disponible pour les nouveaux rendez-vous.',
+  'clinic.deactivateClinicNote': 'Cette action peut être annulée plus tard en réactivant la clinique.',
   'clinic.activateClinic': 'Activer la clinique',
   'clinic.activateClinicMsg': 'Êtes-vous sûr de vouloir activer cette clinique ? La clinique sera disponible pour les rendez-vous et les opérations.',
+  'clinic.activateClinicNote': 'La clinique deviendra active et disponible pour les rendez-vous.',
 
   // Messages
   'clinic.clinicCreated': 'Clinique créée avec succès !',

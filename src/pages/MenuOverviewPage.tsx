@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { getFilteredNavigation } from '@/config/navigation';
-import { useTranslation } from '@/i18n';
+import { useTranslation, COMMON } from '@/i18n';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 
 export const MenuOverviewPage = () => {
@@ -10,31 +10,31 @@ export const MenuOverviewPage = () => {
 
   const menuSections = [
     {
-      title: 'Main',
+      title: t(COMMON.SECTION_MAIN),
       items: navigationItems.filter((item) =>
         ['dashboard'].includes(item.id)
       ),
     },
     {
-      title: 'People & Services',
+      title: t(COMMON.SECTION_PEOPLE_SERVICES),
       items: navigationItems.filter((item) =>
         ['patients', 'doctors', 'services'].includes(item.id)
       ),
     },
     {
-      title: 'Operations',
+      title: t(COMMON.SECTION_OPERATIONS),
       items: navigationItems.filter((item) =>
         ['appointments', 'queue'].includes(item.id)
       ),
     },
     {
-      title: 'Administration',
+      title: t(COMMON.SECTION_ADMINISTRATION),
       items: navigationItems.filter((item) =>
         ['clinics', 'users'].includes(item.id)
       ),
     },
     {
-      title: 'System',
+      title: t(COMMON.SECTION_SYSTEM),
       items: navigationItems.filter((item) =>
         ['notifications', 'activity-logs', 'settings'].includes(item.id)
       ),
@@ -45,15 +45,15 @@ export const MenuOverviewPage = () => {
     <div className="mx-auto max-w-7xl">
       <div className="mb-6">
         <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-2">
-          Navigation Menu Overview
+          {t(COMMON.NAV_MENU_OVERVIEW)}
         </h1>
         <p className="text-sm text-carbon/60">
-          Complete menu structure for your role: <span className="font-medium capitalize">
+          {t(COMMON.MENU_STRUCTURE_FOR_ROLE)} <span className="font-medium capitalize">
             {role || user?.user_type || 'N/A'}
           </span>
           {user?.permissions && (
             <span className="ml-2 text-xs text-carbon/50">
-              ({user.permissions === 'ALL' ? 'Full Access' : user.permissions})
+              ({user.permissions === 'ALL' ? t(COMMON.FULL_ACCESS) : user.permissions})
             </span>
           )}
         </p>
@@ -87,7 +87,7 @@ export const MenuOverviewPage = () => {
 
       <Card variant="elevated" className="mt-6">
         <CardHeader>
-          <CardTitle className="text-base">All Menu Items</CardTitle>
+          <CardTitle className="text-base">{t(COMMON.ALL_MENU_ITEMS)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">

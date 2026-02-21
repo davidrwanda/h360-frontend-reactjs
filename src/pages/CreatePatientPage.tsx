@@ -4,18 +4,20 @@ import { CreatePatientForm } from '@/components/patients';
 import { Loading, Button } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation, PATIENT } from '@/i18n';
 
 export const CreatePatientPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
-  
+  const { t } = useTranslation();
+
   // Get clinic_id from URL params or user's clinic_id for clinic managers
   const normalizedRole = role?.toUpperCase();
   const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
   const clinicIdFromUrl = searchParams.get('clinic_id');
   const clinicId = clinicIdFromUrl || (isClinicManager ? user?.clinic_id : undefined);
-  
+
   const { data: clinic, isLoading } = useClinic(clinicId || undefined);
 
   const handleSuccess = () => {
@@ -38,12 +40,12 @@ export const CreatePatientPage = () => {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Invalid Clinic</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(PATIENT.INVALID_CLINIC)}</h1>
           <p className="text-body text-carbon/70 mb-4">
-            Clinic ID is missing. Please select a clinic first.
+            {t(PATIENT.CLINIC_ID_MISSING)}
           </p>
           <Button variant="outline" onClick={() => navigate('/patients')}>
-            Back to Patients
+            {t(PATIENT.BACK_TO_PATIENTS)}
           </Button>
         </div>
       </div>
@@ -63,12 +65,12 @@ export const CreatePatientPage = () => {
         </Button>
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Create Patient
+            {t(PATIENT.CREATE_PATIENT)}
           </h1>
           <p className="text-sm text-carbon/60">
             {clinic
-              ? `Add a new patient for ${clinic.name}`
-              : 'Add a new patient'}
+              ? t(PATIENT.ADD_PATIENT_FOR, { clinicName: clinic.name })
+              : t(PATIENT.ADD_NEW_PATIENT)}
           </p>
         </div>
       </div>

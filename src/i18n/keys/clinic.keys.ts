@@ -159,8 +159,10 @@ export const CLINIC = {
   // === Modals ===
   DEACTIVATE_CLINIC: 'clinic.deactivateClinic',
   DEACTIVATE_CLINIC_MSG: 'clinic.deactivateClinicMsg',
+  DEACTIVATE_CLINIC_NOTE: 'clinic.deactivateClinicNote',
   ACTIVATE_CLINIC: 'clinic.activateClinic',
   ACTIVATE_CLINIC_MSG: 'clinic.activateClinicMsg',
+  ACTIVATE_CLINIC_NOTE: 'clinic.activateClinicNote',
 
   // === Success/Error Messages ===
   CLINIC_CREATED: 'clinic.clinicCreated',

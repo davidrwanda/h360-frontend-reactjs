@@ -1,5 +1,6 @@
 import { ActivityLog } from '@/api/activityLogs';
 import { cn } from '@/utils/cn';
+import { useTranslation, ACTIVITY_LOG } from '@/i18n';
 import { MdHistory, MdPerson, MdBusiness, MdInfo } from 'react-icons/md';
 import { format } from 'date-fns';
 
@@ -46,6 +47,8 @@ export const ActivityLogsTable = ({
   isLoading = false,
   onViewDetails,
 }: ActivityLogsTableProps) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -60,7 +63,7 @@ export const ActivityLogsTable = ({
     return (
       <div className="text-center py-12">
         <MdHistory className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
-        <p className="text-sm text-carbon/60">No activity logs found</p>
+        <p className="text-sm text-carbon/60">{t(ACTIVITY_LOG.NO_LOGS_FOUND)}</p>
       </div>
     );
   }
@@ -70,13 +73,13 @@ export const ActivityLogsTable = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-carbon/10">
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Timestamp</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">User</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Action</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Entity</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Clinic</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Description</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.TIMESTAMP)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.USER)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.ACTION)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.ENTITY)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.CLINIC)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.DESCRIPTION)}</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(ACTIVITY_LOG.ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -95,7 +98,7 @@ export const ActivityLogsTable = ({
                   <MdPerson className="h-4 w-4 text-azure-dragon" />
                   <div>
                     <div className="text-sm font-medium text-carbon">
-                      {log.user_name || log.employee_name || (log.is_system_user ? 'System' : 'Unknown')}
+                      {log.user_name || log.employee_name || (log.is_system_user ? t(ACTIVITY_LOG.SYSTEM) : t(ACTIVITY_LOG.UNKNOWN))}
                     </div>
                     {log.employee_email && (
                       <div className="text-xs text-carbon/60">{log.employee_email}</div>

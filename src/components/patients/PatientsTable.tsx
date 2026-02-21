@@ -1,5 +1,6 @@
 import { Patient } from '@/api/patients';
 import { Button } from '@/components/ui';
+import { useTranslation, PATIENT } from '@/i18n';
 import { MdEdit, MdDelete, MdPerson, MdVisibility, MdCheckCircle } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 
@@ -20,6 +21,8 @@ export const PatientsTable = ({
   onDelete,
   onActivate,
 }: PatientsTableProps) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -34,7 +37,7 @@ export const PatientsTable = ({
     return (
       <div className="text-center py-12">
         <MdPerson className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
-        <p className="text-sm text-carbon/60">No patients found</p>
+        <p className="text-sm text-carbon/60">{t(PATIENT.NO_PATIENTS_FOUND)}</p>
       </div>
     );
   }
@@ -55,9 +58,9 @@ export const PatientsTable = ({
   const formatGender = (gender?: string) => {
     if (!gender) return '—';
     const genderMap: Record<string, string> = {
-      M: 'Male',
-      F: 'Female',
-      Other: 'Other',
+      M: t(PATIENT.MALE),
+      F: t(PATIENT.FEMALE),
+      Other: t(PATIENT.OTHER_GENDER),
     };
     return genderMap[gender] || gender;
   };
@@ -67,14 +70,14 @@ export const PatientsTable = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-carbon/10">
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Patient Number</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Name</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Email</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Phone</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Date of Birth</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Gender</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Status</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.PATIENT_NUMBER)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.NAME)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.EMAIL)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.PHONE)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.DATE_OF_BIRTH)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.GENDER)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.STATUS)}</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(PATIENT.ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -117,7 +120,7 @@ export const PatientsTable = ({
                       : 'bg-carbon/10 text-carbon/60'
                   )}
                 >
-                  {patient.is_active !== false ? 'Active' : 'Inactive'}
+                  {patient.is_active !== false ? t(PATIENT.ACTIVE) : t(PATIENT.INACTIVE)}
                 </span>
               </td>
               <td className="py-3 px-4">
@@ -130,7 +133,7 @@ export const PatientsTable = ({
                           size="sm"
                           onClick={() => onView(patient)}
                           className="h-8 w-8 p-0"
-                          title="View details"
+                          title={t(PATIENT.VIEW_DETAILS)}
                         >
                           <MdVisibility className="h-4 w-4" />
                         </Button>
@@ -141,7 +144,7 @@ export const PatientsTable = ({
                           size="sm"
                           onClick={() => onEdit(patient)}
                           className="h-8 w-8 p-0"
-                          title="Edit patient"
+                          title={t(PATIENT.EDIT_PATIENT)}
                         >
                           <MdEdit className="h-4 w-4" />
                         </Button>
@@ -152,7 +155,7 @@ export const PatientsTable = ({
                           size="sm"
                           onClick={() => onDelete(patient)}
                           className="h-8 w-8 p-0 text-smudged-lips hover:text-smudged-lips"
-                          title="Deactivate patient"
+                          title={t(PATIENT.DEACTIVATE_PATIENT)}
                         >
                           <MdDelete className="h-4 w-4" />
                         </Button>
@@ -166,7 +169,7 @@ export const PatientsTable = ({
                           size="sm"
                           onClick={() => onView(patient)}
                           className="h-8 w-8 p-0"
-                          title="View details"
+                          title={t(PATIENT.VIEW_DETAILS)}
                         >
                           <MdVisibility className="h-4 w-4" />
                         </Button>
@@ -177,7 +180,7 @@ export const PatientsTable = ({
                           size="sm"
                           onClick={() => onActivate(patient)}
                           className="h-8 w-8 p-0 text-azure-dragon hover:text-azure-dragon"
-                          title="Activate patient"
+                          title={t(PATIENT.ACTIVATE_PATIENT)}
                         >
                           <MdCheckCircle className="h-4 w-4" />
                         </Button>

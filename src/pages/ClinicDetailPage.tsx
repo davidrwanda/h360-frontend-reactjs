@@ -143,6 +143,8 @@ export const ClinicDetailPage = () => {
           message={t(CLINIC.DEACTIVATE_CLINIC_MSG)}
           itemName={clinic.name}
           isLoading={deactivateMutation.isPending}
+          cancelLabel={t(CLINIC.CANCEL)}
+          note={t(CLINIC.DEACTIVATE_CLINIC_NOTE)}
           variant="deactivate"
         />
       )}
@@ -158,7 +160,9 @@ export const ClinicDetailPage = () => {
           itemName={clinic.name}
           isLoading={activateMutation.isPending}
           actionLabel={t(CLINIC.ACTIVATE)}
-          variant="delete"
+          cancelLabel={t(CLINIC.CANCEL)}
+          note={t(CLINIC.ACTIVATE_CLINIC_NOTE)}
+          variant="activate"
         />
       )}
 

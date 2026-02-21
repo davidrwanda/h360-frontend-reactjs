@@ -1,0 +1,103 @@
+export const SERVICE = {
+  // Page header
+  SERVICES_MANAGEMENT: 'service.services_management',
+  MANAGE_CLINIC_SERVICES: 'service.manage_clinic_services',
+  CREATE_SERVICE: 'service.create_service',
+  CREATE_NEW_SERVICE: 'service.create_new_service',
+  ADD_SERVICE_DESC: 'service.add_service_desc',
+  EDIT_SERVICE: 'service.edit_service',
+  UPDATE_SERVICE_INFO: 'service.update_service_info',
+  SERVICE_DETAILS: 'service.service_details',
+
+  // Filters
+  FILTERS: 'service.filters',
+  SHOW_ADVANCED: 'service.show_advanced',
+  HIDE_ADVANCED: 'service.hide_advanced',
+  SEARCH: 'service.search',
+  SEARCH_PLACEHOLDER: 'service.search_placeholder',
+  STATUS: 'service.status',
+  ALL_STATUS: 'service.all_status',
+  ACTIVE: 'service.active',
+  INACTIVE: 'service.inactive',
+  CATEGORY: 'service.category',
+  CATEGORY_PLACEHOLDER: 'service.category_placeholder',
+  REQUIRES_APPOINTMENT: 'service.requires_appointment',
+  ALL: 'service.all',
+  YES: 'service.yes',
+  NO: 'service.no',
+  CLEAR_FILTERS: 'service.clear_filters',
+
+  // Table
+  SERVICE_CODE: 'service.service_code',
+  NAME: 'service.name',
+  PRICE: 'service.price',
+  DURATION: 'service.duration',
+  DURATION_MIN: 'service.duration_min',
+  ACTIONS: 'service.actions',
+  NO_SERVICES_FOUND: 'service.no_services_found',
+  FAILED_TO_LOAD: 'service.failed_to_load',
+  ACTIVATE_SERVICE_TOOLTIP: 'service.activate_service_tooltip',
+
+  // Pagination
+  PAGE_OF: 'service.page_of',
+  PREVIOUS: 'service.previous',
+  NEXT: 'service.next',
+
+  // Deactivate/Activate modals
+  DEACTIVATE_TITLE: 'service.deactivate_title',
+  DEACTIVATE_MESSAGE: 'service.deactivate_message',
+  DEACTIVATE: 'service.deactivate',
+  ACTIVATE_TITLE: 'service.activate_title',
+  ACTIVATE_MESSAGE: 'service.activate_message',
+  ACTIVATE: 'service.activate',
+
+  // Detail page
+  SERVICE_INFORMATION: 'service.service_information',
+  SERVICE_NOT_FOUND: 'service.service_not_found',
+  SERVICE_NOT_FOUND_DESC: 'service.service_not_found_desc',
+  BACK: 'service.back',
+  CLINIC: 'service.clinic',
+  MAX_DAILY_CAPACITY: 'service.max_daily_capacity',
+  APPOINTMENT_TYPE: 'service.appointment_type',
+  REQUIRES_APPOINTMENT_LABEL: 'service.requires_appointment_label',
+  WALK_IN_AVAILABLE: 'service.walk_in_available',
+  DESCRIPTION: 'service.description',
+  ASSIGNED_DOCTORS: 'service.assigned_doctors',
+  UNKNOWN_DOCTOR: 'service.unknown_doctor',
+  CUSTOM_PRICE: 'service.custom_price',
+  CUSTOM_DURATION: 'service.custom_duration',
+
+  // Create/Edit form
+  SERVICE_NAME: 'service.service_name',
+  SERVICE_NAME_PLACEHOLDER: 'service.service_name_placeholder',
+  SERVICE_NAME_REQUIRED: 'service.service_name_required',
+  SERVICE_CODE_LABEL: 'service.service_code_label',
+  SERVICE_CODE_PLACEHOLDER: 'service.service_code_placeholder',
+  SERVICE_CODE_REQUIRED: 'service.service_code_required',
+  DESCRIPTION_PLACEHOLDER: 'service.description_placeholder',
+  CATEGORY_SELECT_PLACEHOLDER: 'service.category_select_placeholder',
+  PRICE_PLACEHOLDER: 'service.price_placeholder',
+  PRICE_REQUIRED: 'service.price_required',
+  DURATION_LABEL: 'service.duration_label',
+  DURATION_MIN_ERROR: 'service.duration_min_error',
+  MAX_DAILY_CAPACITY_LABEL: 'service.max_daily_capacity_label',
+  WALK_IN_ALLOWED: 'service.walk_in_allowed',
+  CLINIC_REQUIRED: 'service.clinic_required',
+
+  // Form actions
+  CREATING: 'service.creating',
+  CREATED_SUCCESS: 'service.created_success',
+  CREATE_FAILED: 'service.create_failed',
+  UPDATING: 'service.updating',
+  UPDATE_SERVICE: 'service.update_service',
+  UPDATED_SUCCESS: 'service.updated_success',
+  UPDATE_FAILED: 'service.update_failed',
+  CANCEL: 'service.cancel',
+
+  // Access control
+  ACCESS_DENIED: 'service.access_denied',
+  ACCESS_DENIED_CREATE: 'service.access_denied_create',
+  ACCESS_DENIED_EDIT: 'service.access_denied_edit',
+  CLINIC_REQUIRED_PAGE: 'service.clinic_required_page',
+  CLINIC_REQUIRED_DESC: 'service.clinic_required_desc',
+} as const;

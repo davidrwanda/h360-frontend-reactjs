@@ -1,5 +1,6 @@
 import { useServiceCategories } from '@/hooks/useServiceCategories';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation, SERVICE } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 export interface ServiceCategoryInputProps {
@@ -19,7 +20,7 @@ export const ServiceCategoryInput = ({
   value = '',
   onChange,
   onBlur,
-  placeholder = 'Select or type a category',
+  placeholder,
   error,
   label,
   required,
@@ -28,12 +29,13 @@ export const ServiceCategoryInput = ({
   id,
 }: ServiceCategoryInputProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const inputId = id || `category-${Math.random().toString(36).substr(2, 9)}`;
   const listId = `category-list-${inputId}`;
-  
+
   // Get clinic_id from user (check both direct and nested locations)
   const clinicId = user?.clinic_id || user?.employee?.clinic_id;
-  
+
   // Fetch service categories
   const { data: categories = [], isLoading } = useServiceCategories({
     clinic_id: clinicId,
@@ -65,7 +67,7 @@ export const ServiceCategoryInput = ({
           value={value}
           onChange={handleChange}
           onBlur={onBlur}
-          placeholder={placeholder}
+          placeholder={placeholder || t(SERVICE.CATEGORY_SELECT_PLACEHOLDER)}
           disabled={disabled || isLoading}
           className={cn(
             'flex h-10 w-full rounded-md border bg-white px-3.5 py-2.5 text-sm',

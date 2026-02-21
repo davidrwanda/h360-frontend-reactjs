@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUpdateService } from '@/hooks/useServices';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, SERVICE } from '@/i18n';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { ServiceCategoryInput } from './ServiceCategoryInput';
 import { MdMedicalServices } from 'react-icons/md';
 import type { Service } from '@/api/services';
 
-const editServiceSchema = z.object({
-  name: z.string().min(1, 'Service name is required'),
-  service_code: z.string().min(1, 'Service code is required'),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  price: z.string().min(1, 'Price is required'),
-  duration_minutes: z.number().min(1, 'Duration must be at least 1 minute'),
-  requires_appointment: z.boolean(),
-  is_walk_in_allowed: z.boolean(),
-  max_daily_capacity: z.number().min(1).optional(),
-});
-
-type EditServiceFormData = z.infer<typeof editServiceSchema>;
+interface EditServiceFormData {
+  name: string;
+  service_code: string;
+  description?: string;
+  category?: string;
+  price: string;
+  duration_minutes: number;
+  requires_appointment: boolean;
+  is_walk_in_allowed: boolean;
+  max_daily_capacity?: number;
+}
 
 interface EditServiceFormProps {
   service: Service;
@@ -34,9 +33,22 @@ export const EditServiceForm = ({
   onSuccess,
   onCancel,
 }: EditServiceFormProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateService();
   const { success: showSuccess, error: showError } = useToastStore();
+
+  const editServiceSchema = useMemo(() => z.object({
+    name: z.string().min(1, t(SERVICE.SERVICE_NAME_REQUIRED)),
+    service_code: z.string().min(1, t(SERVICE.SERVICE_CODE_REQUIRED)),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    price: z.string().min(1, t(SERVICE.PRICE_REQUIRED)),
+    duration_minutes: z.number().min(1, t(SERVICE.DURATION_MIN_ERROR)),
+    requires_appointment: z.boolean(),
+    is_walk_in_allowed: z.boolean(),
+    max_daily_capacity: z.number().min(1).optional(),
+  }), [t]);
 
   const {
     register,
@@ -83,12 +95,12 @@ export const EditServiceForm = ({
         },
       });
 
-      showSuccess('Service updated successfully!');
+      showSuccess(t(SERVICE.UPDATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update service. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(SERVICE.UPDATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -100,7 +112,7 @@ export const EditServiceForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdMedicalServices className="h-5 w-5 text-azure-dragon" />
-            Edit Service
+            {t(SERVICE.EDIT_SERVICE)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -112,16 +124,16 @@ export const EditServiceForm = ({
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
-              label="Service Name"
-              placeholder="e.g., General Consultation"
+              label={t(SERVICE.SERVICE_NAME)}
+              placeholder={t(SERVICE.SERVICE_NAME_PLACEHOLDER)}
               error={errors.name?.message}
               required
               {...register('name')}
             />
 
             <Input
-              label="Service Code"
-              placeholder="e.g., SRV001"
+              label={t(SERVICE.SERVICE_CODE_LABEL)}
+              placeholder={t(SERVICE.SERVICE_CODE_PLACEHOLDER)}
               error={errors.service_code?.message}
               required
               {...register('service_code')}
@@ -129,8 +141,8 @@ export const EditServiceForm = ({
 
             <div className="md:col-span-2">
               <Input
-                label="Description"
-                placeholder="Service description"
+                label={t(SERVICE.DESCRIPTION)}
+                placeholder={t(SERVICE.DESCRIPTION_PLACEHOLDER)}
                 error={errors.description?.message}
                 {...register('description')}
               />
@@ -141,8 +153,8 @@ export const EditServiceForm = ({
               control={control}
               render={({ field }) => (
                 <ServiceCategoryInput
-                  label="Category"
-                  placeholder="Select or type a category"
+                  label={t(SERVICE.CATEGORY)}
+                  placeholder={t(SERVICE.CATEGORY_SELECT_PLACEHOLDER)}
                   value={field.value || ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -152,15 +164,15 @@ export const EditServiceForm = ({
             />
 
             <Input
-              label="Price"
-              placeholder="e.g., $150.00"
+              label={t(SERVICE.PRICE)}
+              placeholder={t(SERVICE.PRICE_PLACEHOLDER)}
               error={errors.price?.message}
               required
               {...register('price')}
             />
 
             <Input
-              label="Duration (minutes)"
+              label={t(SERVICE.DURATION_LABEL)}
               type="number"
               placeholder="30"
               error={errors.duration_minutes?.message}
@@ -169,7 +181,7 @@ export const EditServiceForm = ({
             />
 
             <Input
-              label="Max Daily Capacity"
+              label={t(SERVICE.MAX_DAILY_CAPACITY_LABEL)}
               type="number"
               placeholder="20"
               error={errors.max_daily_capacity?.message}
@@ -185,7 +197,7 @@ export const EditServiceForm = ({
                   {...register('requires_appointment')}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-sm text-carbon">Requires Appointment</span>
+                <span className="text-sm text-carbon">{t(SERVICE.REQUIRES_APPOINTMENT)}</span>
               </label>
             </div>
 
@@ -196,7 +208,7 @@ export const EditServiceForm = ({
                   {...register('is_walk_in_allowed')}
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
-                <span className="text-sm text-carbon">Walk-in Allowed</span>
+                <span className="text-sm text-carbon">{t(SERVICE.WALK_IN_ALLOWED)}</span>
               </label>
             </div>
           </div>
@@ -208,7 +220,7 @@ export const EditServiceForm = ({
               size="md"
               disabled={updateMutation.isPending}
             >
-              {updateMutation.isPending ? 'Updating...' : 'Update Service'}
+              {updateMutation.isPending ? t(SERVICE.UPDATING) : t(SERVICE.UPDATE_SERVICE)}
             </Button>
             {onCancel && (
               <Button
@@ -217,7 +229,7 @@ export const EditServiceForm = ({
                 size="md"
                 onClick={onCancel}
               >
-                Cancel
+                {t(SERVICE.CANCEL)}
               </Button>
             )}
           </div>

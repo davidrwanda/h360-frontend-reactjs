@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { format, addDays, startOfWeek, parseISO, addWeeks, subWeeks, isBefore, startOfDay, isAfter } from 'date-fns';
 import { useSlots } from '@/hooks/useSlots';
 import { Loading } from '@/components/ui';
+import { useTranslation, LANDING } from '@/i18n';
 import type { Clinic } from '@/api/clinics';
 import type { AppointmentSlot } from '@/api/slots';
 import { MdChevronLeft, MdChevronRight, MdExpandMore, MdLocalHospital } from 'react-icons/md';
@@ -17,6 +18,7 @@ export const ClinicSlotsDisplay = ({
   serviceId,
   onSlotSelect,
 }: ClinicSlotsDisplayProps) => {
+  const { t } = useTranslation();
   const today = useMemo(() => startOfDay(new Date()), []);
   const twoWeeksFromToday = useMemo(() => addDays(today, 14), [today]);
   
@@ -126,7 +128,7 @@ export const ClinicSlotsDisplay = ({
       clinic.postal_code,
       clinic.country,
     ].filter(Boolean);
-    return parts.join(', ') || 'Address not available';
+    return parts.join(', ') || t(LANDING.ADDRESS_NOT_AVAILABLE);
   };
 
   return (
@@ -230,12 +232,12 @@ export const ClinicSlotsDisplay = ({
                           onClick={() => setShowAllSlots(true)}
                           className="w-full text-xs text-carbon/60 hover:text-azure-dragon py-1"
                         >
-                          +{daySlots.length - 5} more
+                          {t(LANDING.MORE_SLOTS, { count: String(daySlots.length - 5) })}
                         </button>
                       )}
                     </>
                   ) : (
-                    <div className="text-xs text-carbon/40 text-center py-2">No slots</div>
+                    <div className="text-xs text-carbon/40 text-center py-2">{t(LANDING.NO_SLOTS)}</div>
                   )}
                 </div>
               );
@@ -250,7 +252,7 @@ export const ClinicSlotsDisplay = ({
               onClick={() => setShowAllSlots(!showAllSlots)}
               className="flex items-center justify-center gap-2 text-sm text-azure-dragon hover:text-azure-dragon/80 mx-auto"
             >
-              {showAllSlots ? 'Show less' : 'See more schedules'}
+              {showAllSlots ? t(LANDING.SHOW_LESS) : t(LANDING.SEE_MORE_SCHEDULES)}
               <MdExpandMore
                 className={`h-4 w-4 transition-transform ${showAllSlots ? 'rotate-180' : ''}`}
               />
@@ -262,13 +264,13 @@ export const ClinicSlotsDisplay = ({
         {slots.length === 0 && !isLoading && (
           <div className="mt-4 pt-4 border-t border-carbon/10">
             <p className="text-xs text-carbon/60 text-center">
-              If you do not find a time slot that suits you, please contact your veterinarian at:{' '}
+              {t(LANDING.NO_SLOT_CONTACT)}{' '}
               {clinic.phone ? (
                 <a href={`tel:${clinic.phone}`} className="text-azure-dragon hover:underline">
                   {clinic.phone}
                 </a>
               ) : (
-                <span>Contact clinic</span>
+                <span>{t(LANDING.CONTACT_CLINIC)}</span>
               )}
             </p>
           </div>

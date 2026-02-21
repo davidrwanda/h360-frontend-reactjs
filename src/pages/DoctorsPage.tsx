@@ -6,8 +6,10 @@ import { DoctorsTable } from '@/components/doctors/DoctorsTable';
 import { Button, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal, Select, Input } from '@/components/ui';
 import { MdAdd, MdSearch, MdFilterList, MdClear } from 'react-icons/md';
 import type { Doctor } from '@/api/doctors';
+import { useTranslation, DOCTOR } from '@/i18n';
 
 export const DoctorsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, role } = useAuth();
   
@@ -114,10 +116,10 @@ export const DoctorsPage = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Doctors Management
+            {t(DOCTOR.DOCTORS_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Manage clinic doctors and their information
+            {t(DOCTOR.MANAGE_CLINIC_DOCTORS)}
           </p>
         </div>
         {canEdit && (
@@ -128,7 +130,7 @@ export const DoctorsPage = () => {
               onClick={() => navigate('/doctors/create')}
             >
               <MdAdd className="h-4 w-4 mr-2" />
-              Create Doctor
+              {t(DOCTOR.CREATE_DOCTOR)}
             </Button>
           </div>
         )}
@@ -140,14 +142,14 @@ export const DoctorsPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdFilterList className="h-5 w-5" />
-              Filters
+              {t(DOCTOR.FILTERS)}
             </CardTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+              {showAdvancedFilters ? t(DOCTOR.HIDE_ADVANCED) : t(DOCTOR.SHOW_ADVANCED)}
             </Button>
           </div>
         </CardHeader>
@@ -156,9 +158,9 @@ export const DoctorsPage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
               <Input
-                label="Search"
+                label={t(DOCTOR.SEARCH)}
                 type="text"
-                placeholder="Search doctors..."
+                placeholder={t(DOCTOR.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -169,16 +171,16 @@ export const DoctorsPage = () => {
             </div>
 
             <Select
-              label="Status"
+              label={t(DOCTOR.STATUS)}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
+                { value: 'all', label: t(DOCTOR.ALL_STATUS) },
+                { value: 'active', label: t(DOCTOR.ACTIVE) },
+                { value: 'inactive', label: t(DOCTOR.INACTIVE) },
               ]}
             />
           </div>
@@ -187,9 +189,9 @@ export const DoctorsPage = () => {
           {showAdvancedFilters && (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-4 border-t border-carbon/10 mt-4">
               <Input
-                label="Specialty"
+                label={t(DOCTOR.SPECIALTY)}
                 type="text"
-                placeholder="Filter by specialty"
+                placeholder={t(DOCTOR.SPECIALTY_FILTER_PLACEHOLDER)}
                 value={specialtyFilter}
                 onChange={(e) => {
                   setSpecialtyFilter(e.target.value);
@@ -198,16 +200,16 @@ export const DoctorsPage = () => {
               />
 
               <Select
-                label="Accepts New Patients"
+                label={t(DOCTOR.ACCEPTS_NEW_PATIENTS)}
                 value={acceptsNewPatientsFilter}
                 onChange={(e) => {
                   setAcceptsNewPatientsFilter(e.target.value);
                   setPage(1);
                 }}
                 options={[
-                  { value: '', label: 'All' },
-                  { value: 'true', label: 'Yes' },
-                  { value: 'false', label: 'No' },
+                  { value: '', label: t(DOCTOR.ALL) },
+                  { value: 'true', label: t(DOCTOR.YES) },
+                  { value: 'false', label: t(DOCTOR.NO) },
                 ]}
               />
             </div>
@@ -222,7 +224,7 @@ export const DoctorsPage = () => {
                 className="text-sm"
               >
                 <MdClear className="h-4 w-4 mr-1" />
-                Clear Filters
+                {t(DOCTOR.CLEAR_FILTERS)}
               </Button>
             </div>
           )}
@@ -235,7 +237,7 @@ export const DoctorsPage = () => {
           {error ? (
             <div className="p-6 text-center">
               <p className="text-sm text-smudged-lips">
-                Failed to load doctors. Please try again.
+                {t(DOCTOR.FAILED_TO_LOAD)}
               </p>
             </div>
           ) : (
@@ -254,7 +256,7 @@ export const DoctorsPage = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-carbon/10 px-4 py-3">
                   <p className="text-sm text-carbon/60">
-                    Page {page} of {totalPages} ({data?.total || 0} total)
+                    {t(DOCTOR.PAGE_OF, { page, totalPages })} ({data?.total || 0} total)
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -263,7 +265,7 @@ export const DoctorsPage = () => {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      Previous
+                      {t(DOCTOR.PREVIOUS)}
                     </Button>
                     <Button
                       variant="outline"
@@ -271,7 +273,7 @@ export const DoctorsPage = () => {
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
                     >
-                      Next
+                      {t(DOCTOR.NEXT)}
                     </Button>
                   </div>
                 </div>
@@ -287,9 +289,9 @@ export const DoctorsPage = () => {
           isOpen={!!doctorToDelete}
           onClose={() => setDoctorToDelete(null)}
           onConfirm={handleDeleteConfirm}
-          title="Deactivate Doctor-Clinic Relationship"
-          message={`Are you sure you want to deactivate "${doctorToDelete.full_name}"'s relationship with this clinic? This will only deactivate their association with this specific clinic, not the doctor globally.`}
-          confirmText="Deactivate"
+          title={t(DOCTOR.DEACTIVATE_TITLE)}
+          message={t(DOCTOR.DEACTIVATE_MESSAGE, { name: doctorToDelete.full_name })}
+          confirmText={t(DOCTOR.DEACTIVATE)}
           isLoading={deactivateMutation.isPending}
         />
       )}
@@ -300,10 +302,10 @@ export const DoctorsPage = () => {
           isOpen={!!doctorToActivate}
           onClose={() => setDoctorToActivate(null)}
           onConfirm={handleActivateConfirm}
-          title="Activate Doctor"
-          message={`Are you sure you want to activate "${doctorToActivate.full_name}"? This doctor will become available for appointments.`}
-          confirmText="Activate"
-          actionLabel="Activate"
+          title={t(DOCTOR.ACTIVATE_TITLE)}
+          message={t(DOCTOR.ACTIVATE_MESSAGE, { name: doctorToActivate.full_name })}
+          confirmText={t(DOCTOR.ACTIVATE)}
+          actionLabel={t(DOCTOR.ACTIVATE)}
           isLoading={activateMutation.isPending}
         />
       )}

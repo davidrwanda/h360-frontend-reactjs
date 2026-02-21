@@ -159,8 +159,10 @@ export const clinicRw: Record<string, string> = {
   // Modals
   'clinic.deactivateClinic': 'Guhagarika ikigo',
   'clinic.deactivateClinicMsg': 'Uzi neza ko ushaka guhagarika iki kigo? Ikigo kizagaragara nk\'ikidakora kandi ntikizaboneka ku gahunda nshya.',
+  'clinic.deactivateClinicNote': 'Iki gikorwa gishobora gusubirwamo nyuma yo kongera gukoresha ikigo.',
   'clinic.activateClinic': 'Gukoresha ikigo',
   'clinic.activateClinicMsg': 'Uzi neza ko ushaka gukoresha iki kigo? Ikigo kizaboneka ku gahunda n\'ibikorwa.',
+  'clinic.activateClinicNote': 'Ikigo kizaba gikoreshwa kandi kiboneke ku gahunda.',
 
   // Messages
   'clinic.clinicCreated': 'Ikigo cyakozwe neza!',

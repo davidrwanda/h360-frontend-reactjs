@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useService, useServiceDoctors } from '@/hooks/useServices';
+import { useTranslation, SERVICE } from '@/i18n';
 import { Card, CardHeader, CardTitle, CardContent, Button, Loading } from '@/components/ui';
 import { MdEdit, MdArrowBack, MdMedicalServices, MdPerson, MdAccessTime, MdBusiness } from 'react-icons/md';
 
@@ -8,6 +9,7 @@ export const ServiceDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { role } = useAuth();
+  const { t } = useTranslation();
   const { data: service, isLoading } = useService(id || '', !!id);
   const { data: doctors } = useServiceDoctors(id || '', !!id);
 
@@ -26,9 +28,9 @@ export const ServiceDetailPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Service Not Found</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(SERVICE.SERVICE_NOT_FOUND)}</h1>
           <p className="text-body text-carbon/70">
-            The service you're looking for doesn't exist.
+            {t(SERVICE.SERVICE_NOT_FOUND_DESC)}
           </p>
         </div>
       </div>
@@ -46,14 +48,14 @@ export const ServiceDetailPage = () => {
             onClick={() => navigate('/services')}
           >
             <MdArrowBack className="h-4 w-4 mr-2" />
-            Back
+            {t(SERVICE.BACK)}
           </Button>
           <div>
             <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
               {service.name}
             </h1>
             <p className="text-sm text-carbon/60">
-              Service Details
+              {t(SERVICE.SERVICE_DETAILS)}
             </p>
           </div>
         </div>
@@ -64,7 +66,7 @@ export const ServiceDetailPage = () => {
             onClick={() => navigate(`/services/${service.service_id}/edit`)}
           >
             <MdEdit className="h-4 w-4 mr-2" />
-            Edit Service
+            {t(SERVICE.EDIT_SERVICE)}
           </Button>
         )}
       </div>
@@ -75,7 +77,7 @@ export const ServiceDetailPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdMedicalServices className="h-5 w-5 text-azure-dragon" />
-              Service Information
+              {t(SERVICE.SERVICE_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -83,7 +85,7 @@ export const ServiceDetailPage = () => {
               <div className="flex items-start gap-3">
                 <MdMedicalServices className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Service Code</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.SERVICE_CODE)}</p>
                   <p className="text-sm text-carbon font-ui font-medium">{service.service_code}</p>
                 </div>
               </div>
@@ -91,7 +93,7 @@ export const ServiceDetailPage = () => {
               <div className="flex items-start gap-3">
                 <MdBusiness className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Clinic</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.CLINIC)}</p>
                   <p className="text-sm text-carbon font-ui">{service.clinic_name || 'N/A'}</p>
                 </div>
               </div>
@@ -100,7 +102,7 @@ export const ServiceDetailPage = () => {
                 <div className="flex items-start gap-3">
                   <MdMedicalServices className="h-5 w-5 text-carbon/40 mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-carbon/60 mb-1">Category</p>
+                    <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.CATEGORY)}</p>
                     <p className="text-sm text-carbon font-ui">{service.category}</p>
                   </div>
                 </div>
@@ -109,7 +111,7 @@ export const ServiceDetailPage = () => {
               <div className="flex items-start gap-3">
                 <MdMedicalServices className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Price</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.PRICE)}</p>
                   <p className="text-sm text-carbon font-ui font-medium">{service.price}</p>
                 </div>
               </div>
@@ -117,15 +119,15 @@ export const ServiceDetailPage = () => {
               <div className="flex items-start gap-3">
                 <MdAccessTime className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Duration</p>
-                  <p className="text-sm text-carbon font-ui">{service.duration_minutes} minutes</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.DURATION)}</p>
+                  <p className="text-sm text-carbon font-ui">{t(SERVICE.DURATION_MIN, { minutes: String(service.duration_minutes) })}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <MdMedicalServices className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Status</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.STATUS)}</p>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       service.is_active
@@ -133,7 +135,7 @@ export const ServiceDetailPage = () => {
                         : 'bg-carbon/10 text-carbon/60'
                     }`}
                   >
-                    {service.is_active ? 'Active' : 'Inactive'}
+                    {service.is_active ? t(SERVICE.ACTIVE) : t(SERVICE.INACTIVE)}
                   </span>
                 </div>
               </div>
@@ -142,7 +144,7 @@ export const ServiceDetailPage = () => {
                 <div className="flex items-start gap-3">
                   <MdPerson className="h-5 w-5 text-carbon/40 mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-carbon/60 mb-1">Max Daily Capacity</p>
+                    <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.MAX_DAILY_CAPACITY)}</p>
                     <p className="text-sm text-carbon font-ui">{service.max_daily_capacity}</p>
                   </div>
                 </div>
@@ -151,9 +153,9 @@ export const ServiceDetailPage = () => {
               <div className="flex items-start gap-3">
                 <MdMedicalServices className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Appointment Type</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(SERVICE.APPOINTMENT_TYPE)}</p>
                   <p className="text-sm text-carbon font-ui">
-                    {service.requires_appointment ? 'Requires Appointment' : 'Walk-in Available'}
+                    {service.requires_appointment ? t(SERVICE.REQUIRES_APPOINTMENT_LABEL) : t(SERVICE.WALK_IN_AVAILABLE)}
                   </p>
                 </div>
               </div>
@@ -161,7 +163,7 @@ export const ServiceDetailPage = () => {
 
             {service.description && (
               <div className="mt-4 pt-4 border-t border-carbon/10">
-                <p className="text-xs font-medium text-carbon/60 mb-2">Description</p>
+                <p className="text-xs font-medium text-carbon/60 mb-2">{t(SERVICE.DESCRIPTION)}</p>
                 <p className="text-sm text-carbon font-ui">{service.description}</p>
               </div>
             )}
@@ -174,7 +176,7 @@ export const ServiceDetailPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MdPerson className="h-5 w-5 text-azure-dragon" />
-                Assigned Doctors
+                {t(SERVICE.ASSIGNED_DOCTORS)}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -186,16 +188,16 @@ export const ServiceDetailPage = () => {
                   >
                     <div>
                       <p className="text-sm font-medium text-carbon">
-                        {assignment.doctor_name || 'Unknown Doctor'}
+                        {assignment.doctor_name || t(SERVICE.UNKNOWN_DOCTOR)}
                       </p>
                       {assignment.custom_price && (
                         <p className="text-xs text-carbon/60 mt-1">
-                          Custom Price: {assignment.custom_price}
+                          {t(SERVICE.CUSTOM_PRICE)}: {assignment.custom_price}
                         </p>
                       )}
                       {assignment.custom_duration_minutes && (
                         <p className="text-xs text-carbon/60">
-                          Custom Duration: {assignment.custom_duration_minutes} minutes
+                          {t(SERVICE.CUSTOM_DURATION)}: {t(SERVICE.DURATION_MIN, { minutes: String(assignment.custom_duration_minutes) })}
                         </p>
                       )}
                       {assignment.notes && (

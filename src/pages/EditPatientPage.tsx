@@ -3,8 +3,10 @@ import { usePatient } from '@/hooks/usePatients';
 import { EditPatientForm } from '@/components/patients';
 import { Loading, Button } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
+import { useTranslation, PATIENT } from '@/i18n';
 
 export const EditPatientPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: patientId } = useParams<{ id: string }>();
   const { data: patient, isLoading } = usePatient(patientId);
@@ -29,12 +31,12 @@ export const EditPatientPage = () => {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Invalid Patient</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(PATIENT.INVALID_PATIENT)}</h1>
           <p className="text-body text-carbon/70 mb-4">
-            Patient ID is missing from the URL.
+            {t(PATIENT.PATIENT_ID_MISSING)}
           </p>
           <Button variant="outline" onClick={() => navigate('/patients')}>
-            Back to Patients
+            {t(PATIENT.BACK_TO_PATIENTS)}
           </Button>
         </div>
       </div>
@@ -45,12 +47,12 @@ export const EditPatientPage = () => {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">Patient Not Found</h1>
+          <h1 className="text-h2 text-smudged-lips mb-4">{t(PATIENT.PATIENT_NOT_FOUND)}</h1>
           <p className="text-body text-carbon/70 mb-4">
-            The patient you're looking for doesn't exist.
+            {t(PATIENT.PATIENT_NOT_EXISTS)}
           </p>
           <Button variant="outline" onClick={() => navigate('/patients')}>
-            Back to Patients
+            {t(PATIENT.BACK_TO_PATIENTS)}
           </Button>
         </div>
       </div>
@@ -70,10 +72,10 @@ export const EditPatientPage = () => {
         </Button>
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Edit Patient
+            {t(PATIENT.EDIT_PATIENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Update patient information
+            {t(PATIENT.UPDATE_INFO)}
           </p>
         </div>
       </div>

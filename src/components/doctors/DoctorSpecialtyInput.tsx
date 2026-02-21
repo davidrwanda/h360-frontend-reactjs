@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useDoctorSpecialties } from '@/hooks/useDoctorSpecialties';
+import { useTranslation, DOCTOR } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 export interface DoctorSpecialtyInputProps {
@@ -22,7 +23,7 @@ export const DoctorSpecialtyInput = ({
   value = [],
   onChange,
   onBlur,
-  placeholder = 'Select specialties…',
+  placeholder,
   error,
   label,
   required,
@@ -31,6 +32,8 @@ export const DoctorSpecialtyInput = ({
   id,
   clinicId,
 }: DoctorSpecialtyInputProps) => {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t(DOCTOR.SPECIALTIES_PLACEHOLDER);
   const inputId = id || `specialty-${Math.random().toString(36).substr(2, 9)}`;
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
@@ -83,8 +86,8 @@ export const DoctorSpecialtyInput = ({
     selectedNames.length > 0
       ? selectedNames.length === 1
         ? selectedNames[0]
-        : `${selectedNames.length} selected`
-      : placeholder;
+        : t(DOCTOR.SELECTED_COUNT, { count: selectedNames.length })
+      : resolvedPlaceholder;
 
   return (
     <div ref={containerRef} className={cn('w-full relative', className)}>
@@ -106,7 +109,7 @@ export const DoctorSpecialtyInput = ({
         disabled={disabled || isLoading}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={label || 'Specialties'}
+        aria-label={label || t(DOCTOR.SPECIALTIES)}
         className={cn(
           'flex h-10 w-full items-center justify-between rounded-md border bg-white px-3.5 py-2.5 text-sm text-left font-ui transition-all duration-150',
           'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0',
@@ -133,7 +136,7 @@ export const DoctorSpecialtyInput = ({
         <div
           role="listbox"
           aria-multiselectable
-          aria-label="Specialties"
+          aria-label={t(DOCTOR.SPECIALTIES)}
           className={cn(
             'absolute z-50 mt-1 w-full rounded-md border border-carbon/15 bg-white shadow-lg',
             'max-h-64 overflow-hidden flex flex-col'
@@ -143,7 +146,7 @@ export const DoctorSpecialtyInput = ({
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Type to filter…"
+            placeholder={t(DOCTOR.TYPE_TO_FILTER)}
             className={cn(
               'flex h-9 shrink-0 border-b border-carbon/10 mx-2 mt-2 px-2 py-1.5 text-sm',
               'font-ui text-carbon placeholder:text-carbon/40',
@@ -178,7 +181,7 @@ export const DoctorSpecialtyInput = ({
               </div>
             ) : (
               <p className="text-xs text-carbon/50 py-2 px-2">
-                {isLoading ? 'Loading…' : filter.trim() ? 'No matches.' : 'No specialties.'}
+                {isLoading ? t(DOCTOR.LOADING) : filter.trim() ? t(DOCTOR.NO_MATCHES) : t(DOCTOR.NO_SPECIALTIES)}
               </p>
             )}
           </div>

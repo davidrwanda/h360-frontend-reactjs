@@ -8,8 +8,10 @@ import { MdArrowBack, MdEdit, MdLocalHospital, MdEmail, MdPhone, MdBusiness, MdB
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { useTranslation, DOCTOR } from '@/i18n';
 
 const DoctorDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, role } = useAuth();
@@ -59,7 +61,7 @@ const DoctorDetailPage = () => {
         <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <p className="text-sm text-smudged-lips">
-              Failed to load doctor. Please try again.
+              {t(DOCTOR.FAILED_TO_LOAD)}
             </p>
             <Button
               variant="outline"
@@ -67,7 +69,7 @@ const DoctorDetailPage = () => {
               onClick={() => navigate('/doctors')}
               className="mt-4"
             >
-              Back to Doctors
+              {t(DOCTOR.BACK_TO_DOCTORS)}
             </Button>
           </CardContent>
         </Card>
@@ -85,15 +87,15 @@ const DoctorDetailPage = () => {
           className="mb-4"
         >
           <MdArrowBack className="h-4 w-4 mr-2" />
-          Back to Doctors
+          {t(DOCTOR.BACK_TO_DOCTORS)}
         </Button>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-              Doctor Details
+              {t(DOCTOR.DOCTOR_DETAILS)}
             </h1>
             <p className="text-sm text-carbon/60">
-              View doctor information and profile
+              {t(DOCTOR.VIEW_DOCTOR_INFO)}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -104,7 +106,7 @@ const DoctorDetailPage = () => {
                 onClick={() => navigate(`/doctors/${doctor.doctor_id}/timetable`)}
               >
                 <MdSchedule className="h-4 w-4 mr-2" />
-                Timetable
+                {t(DOCTOR.TIMETABLE)}
               </Button>
             )}
             {canEdit && (
@@ -114,7 +116,7 @@ const DoctorDetailPage = () => {
                 onClick={() => navigate(`/doctors/${doctor.doctor_id}/edit`)}
               >
                 <MdEdit className="h-4 w-4 mr-2" />
-                Edit My Profile
+                {t(DOCTOR.EDIT_MY_PROFILE)}
               </Button>
             )}
           </div>
@@ -125,13 +127,13 @@ const DoctorDetailPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdLocalHospital className="h-5 w-5 text-azure-dragon" />
-            Basic Information
+            {t(DOCTOR.BASIC_INFORMATION)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-xs font-medium text-carbon/60 mb-1 block">Full Name</label>
+              <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.FULL_NAME)}</label>
               <p className="text-sm text-carbon flex items-center gap-2">
                 <MdPerson className="h-4 w-4" />
                 {doctor.full_name}
@@ -140,7 +142,7 @@ const DoctorDetailPage = () => {
 
             {doctor.doctor_number && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Doctor Number</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.DOCTOR_NUMBER)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdBadge className="h-4 w-4" />
                   {doctor.doctor_number}
@@ -150,7 +152,7 @@ const DoctorDetailPage = () => {
 
             {doctor.email && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Email</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.EMAIL)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdEmail className="h-4 w-4" />
                   {doctor.email}
@@ -159,7 +161,7 @@ const DoctorDetailPage = () => {
             )}
 
             <div>
-              <label className="text-xs font-medium text-carbon/60 mb-1 block">Phone</label>
+              <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.PHONE)}</label>
               <p className="text-sm text-carbon flex items-center gap-2">
                 <MdPhone className="h-4 w-4" />
                 {doctor.phone}
@@ -168,30 +170,30 @@ const DoctorDetailPage = () => {
 
             {doctor.gender && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Gender</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.GENDER)}</label>
                 <p className="text-sm text-carbon">
-                  {doctor.gender === 'M' ? 'Male' : doctor.gender === 'F' ? 'Female' : 'Other'}
+                  {doctor.gender === 'M' ? t(DOCTOR.MALE) : doctor.gender === 'F' ? t(DOCTOR.FEMALE) : t(DOCTOR.OTHER_GENDER)}
                 </p>
               </div>
             )}
 
             {doctor.age !== null && doctor.age !== undefined && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Age</label>
-                <p className="text-sm text-carbon">{doctor.age} years</p>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.AGE)}</label>
+                <p className="text-sm text-carbon">{t(DOCTOR.AGE_YEARS, { age: doctor.age })}</p>
               </div>
             )}
 
             {doctor.specialty && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Specialty</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.SPECIALTY)}</label>
                 <p className="text-sm text-carbon">{doctor.specialty}</p>
               </div>
             )}
 
             {doctor.alternate_phone && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Alternate Phone</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.ALTERNATE_PHONE)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdPhone className="h-4 w-4" />
                   {doctor.alternate_phone}
@@ -201,7 +203,7 @@ const DoctorDetailPage = () => {
 
             {doctor.date_of_birth && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Date of Birth</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.DATE_OF_BIRTH)}</label>
                 <p className="text-sm text-carbon">
                   {format(new Date(doctor.date_of_birth), 'MMM dd, yyyy')}
                 </p>
@@ -210,7 +212,7 @@ const DoctorDetailPage = () => {
 
             {doctor.license_number && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">License Number</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.LICENSE_NUMBER)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdVerified className="h-4 w-4" />
                   {doctor.license_number}
@@ -223,7 +225,7 @@ const DoctorDetailPage = () => {
                           : 'bg-bright-halo/20 text-azure-dragon'
                       )}
                     >
-                      {doctor.is_license_expired ? 'Expired' : 'Valid'}
+                      {doctor.is_license_expired ? t(DOCTOR.LICENSE_EXPIRED) : t(DOCTOR.LICENSE_VALID)}
                     </span>
                   )}
                 </p>
@@ -232,7 +234,7 @@ const DoctorDetailPage = () => {
 
             {doctor.license_expiry_date && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">License Expiry Date</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.LICENSE_EXPIRY_DATE)}</label>
                 <p className="text-sm text-carbon">
                   {format(new Date(doctor.license_expiry_date), 'MMM dd, yyyy')}
                 </p>
@@ -241,7 +243,7 @@ const DoctorDetailPage = () => {
 
             {doctor.medical_school && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Medical School</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.MEDICAL_SCHOOL)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdSchool className="h-4 w-4" />
                   {doctor.medical_school}
@@ -251,17 +253,17 @@ const DoctorDetailPage = () => {
 
             {doctor.years_of_experience !== undefined && doctor.years_of_experience !== null && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Years of Experience</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.YEARS_OF_EXPERIENCE)}</label>
                 <p className="text-sm text-carbon flex items-center gap-2">
                   <MdWork className="h-4 w-4" />
-                  {doctor.years_of_experience} years
+                  {t(DOCTOR.EXPERIENCE_YEARS, { years: doctor.years_of_experience })}
                 </p>
               </div>
             )}
 
             {doctor.qualifications && (
               <div>
-                <label className="text-xs font-medium text-carbon/60 mb-1 block">Qualifications</label>
+                <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.QUALIFICATIONS)}</label>
                 <p className="text-sm text-carbon">{doctor.qualifications}</p>
               </div>
             )}
@@ -269,7 +271,7 @@ const DoctorDetailPage = () => {
 
           {doctor.bio && (
             <div className="pt-4 border-t border-carbon/10">
-              <label className="text-xs font-medium text-carbon/60 mb-1 block">Bio</label>
+              <label className="text-xs font-medium text-carbon/60 mb-1 block">{t(DOCTOR.BIO)}</label>
               <p className="text-sm text-carbon/70">{doctor.bio}</p>
             </div>
           )}
@@ -282,7 +284,7 @@ const DoctorDetailPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdBusiness className="h-5 w-5 text-azure-dragon" />
-              Clinic Associations
+              {t(DOCTOR.CLINIC_ASSOCIATIONS)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -298,7 +300,7 @@ const DoctorDetailPage = () => {
                       <span className="text-sm font-medium text-carbon">
                         {relationship.clinic_name}
                         {relationship.clinic_id === doctor.clinic_id && (
-                          <span className="text-xs text-azure-dragon ml-2">(Primary)</span>
+                          <span className="text-xs text-azure-dragon ml-2">({t(DOCTOR.PRIMARY)})</span>
                         )}
                       </span>
                     </div>
@@ -316,28 +318,28 @@ const DoctorDetailPage = () => {
                   <div className="grid gap-2 md:grid-cols-2 text-xs text-carbon/70 ml-6">
                     {relationship.hire_date && (
                       <div>
-                        <span className="font-medium">Hire Date: </span>
+                        <span className="font-medium">{t(DOCTOR.HIRE_DATE)}: </span>
                         {format(new Date(relationship.hire_date), 'MMM dd, yyyy')}
                       </div>
                     )}
                     {relationship.max_daily_patients && (
                       <div>
-                        <span className="font-medium">Max Daily Patients: </span>
+                        <span className="font-medium">{t(DOCTOR.MAX_DAILY_PATIENTS)}: </span>
                         {relationship.max_daily_patients}
                       </div>
                     )}
                     {relationship.appointment_duration_minutes && (
                       <div>
-                        <span className="font-medium">Appointment Duration: </span>
-                        {relationship.appointment_duration_minutes} minutes
+                        <span className="font-medium">{t(DOCTOR.APPOINTMENT_DURATION)}: </span>
+                        {t(DOCTOR.DURATION_MINUTES, { minutes: relationship.appointment_duration_minutes })}
                       </div>
                     )}
                     <div>
-                      <span className="font-medium">Accepts New Patients: </span>
-                      {relationship.accepts_new_patients ? 'Yes' : 'No'}
+                      <span className="font-medium">{t(DOCTOR.ACCEPTS_NEW_PATIENTS)}: </span>
+                      {relationship.accepts_new_patients ? t(DOCTOR.YES) : t(DOCTOR.NO)}
                     </div>
                     <div>
-                      <span className="font-medium">Status: </span>
+                      <span className="font-medium">{t(DOCTOR.STATUS)}: </span>
                       <span
                         className={cn(
                           'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ml-1',
@@ -346,18 +348,18 @@ const DoctorDetailPage = () => {
                             : 'bg-carbon/10 text-carbon/60'
                         )}
                       >
-                        {relationship.is_active ? 'Active' : 'Inactive'}
+                        {relationship.is_active ? t(DOCTOR.ACTIVE) : t(DOCTOR.INACTIVE)}
                       </span>
                     </div>
                     {relationship.consultation_fee && (
                       <div>
-                        <span className="font-medium">Consultation Fee: </span>
+                        <span className="font-medium">{t(DOCTOR.CONSULTATION_FEE)}: </span>
                         {relationship.consultation_fee}
                       </div>
                     )}
                     {relationship.notes && (
                       <div className="md:col-span-2">
-                        <span className="font-medium">Notes: </span>
+                        <span className="font-medium">{t(DOCTOR.NOTES)}: </span>
                         <span className="text-carbon/60">{relationship.notes}</span>
                       </div>
                     )}
@@ -375,7 +377,7 @@ const DoctorDetailPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdMedicalServices className="h-5 w-5 text-azure-dragon" />
-              Assigned Services
+              {t(DOCTOR.ASSIGNED_SERVICES)}
             </CardTitle>
             {canManageServices && doctor && (
               <AssignServiceForm
@@ -410,17 +412,17 @@ const DoctorDetailPage = () => {
                     <div className="grid gap-2 md:grid-cols-3 text-xs text-carbon/70 ml-6">
                       <div className="flex items-center gap-1">
                         <MdAttachMoney className="h-3 w-3" />
-                        <span className="font-medium">Price: </span>
+                        <span className="font-medium">{t(DOCTOR.PRICE)}: </span>
                         {service.price}
                       </div>
                       <div className="flex items-center gap-1">
                         <MdAccessTime className="h-3 w-3" />
-                        <span className="font-medium">Duration: </span>
-                        {service.duration_minutes} minutes
+                        <span className="font-medium">{t(DOCTOR.DURATION)}: </span>
+                        {t(DOCTOR.DURATION_MINUTES, { minutes: service.duration_minutes })}
                       </div>
                       {service.category && (
                         <div>
-                          <span className="font-medium">Category: </span>
+                          <span className="font-medium">{t(DOCTOR.CATEGORY)}: </span>
                           {service.category}
                         </div>
                       )}
@@ -447,9 +449,9 @@ const DoctorDetailPage = () => {
           ) : (
             <div className="text-center py-8 text-sm text-carbon/60">
               <MdMedicalServices className="h-8 w-8 mx-auto mb-2 text-carbon/30" />
-              <p>No services assigned to this doctor.</p>
+              <p>{t(DOCTOR.NO_SERVICES_ASSIGNED)}</p>
               {canManageServices && (
-                <p className="text-xs mt-1">Click "Assign Service" to add one.</p>
+                <p className="text-xs mt-1">{t(DOCTOR.CLICK_ASSIGN_SERVICE)}</p>
               )}
             </div>
           )}
@@ -460,9 +462,9 @@ const DoctorDetailPage = () => {
         isOpen={!!serviceToRemove}
         onClose={() => setServiceToRemove(null)}
         onConfirm={handleRemoveService}
-        title="Remove Service Assignment"
-        message={`Are you sure you want to remove "${serviceToRemove?.serviceName}" from this doctor?`}
-        confirmText="Remove"
+        title={t(DOCTOR.REMOVE_SERVICE_TITLE)}
+        message={t(DOCTOR.REMOVE_SERVICE_MESSAGE, { serviceName: serviceToRemove?.serviceName ?? '' })}
+        confirmText={t(DOCTOR.REMOVE)}
         isLoading={removeServiceMutation.isPending}
       />
     </div>

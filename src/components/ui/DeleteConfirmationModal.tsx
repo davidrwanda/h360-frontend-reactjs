@@ -1,6 +1,8 @@
 import { Modal } from './Modal';
 import { Button } from './Button';
-import { MdWarning, MdDelete } from 'react-icons/md';
+import { MdWarning, MdDelete, MdCheckCircle } from 'react-icons/md';
+import { cn } from '@/utils/cn';
+import { useTranslation, COMMON } from '@/i18n';
 
 export interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -9,10 +11,13 @@ export interface DeleteConfirmationModalProps {
   title: string;
   message: string;
   itemName?: string;
+  itemLabel?: string;
   isLoading?: boolean;
   actionLabel?: string;
-  confirmText?: string; // Custom text for confirm button
-  variant?: 'delete' | 'deactivate';
+  confirmText?: string;
+  cancelLabel?: string;
+  note?: string;
+  variant?: 'delete' | 'deactivate' | 'activate';
 }
 
 export const DeleteConfirmationModal = ({
@@ -22,73 +27,70 @@ export const DeleteConfirmationModal = ({
   title,
   message,
   itemName,
+  itemLabel,
   isLoading = false,
   actionLabel,
   confirmText,
+  cancelLabel,
+  note,
   variant = 'delete',
 }: DeleteConfirmationModalProps) => {
-  const handleConfirm = () => {
-    onConfirm();
-  };
-
-  const defaultActionLabel = variant === 'deactivate' ? 'Deactivate' : 'Delete';
-  const buttonText = confirmText || actionLabel || defaultActionLabel;
+  const { t } = useTranslation();
+  const isActivate = variant === 'activate';
+  const resolvedItemLabel = itemLabel || t(COMMON.ITEM);
+  const resolvedCancelLabel = cancelLabel || t(COMMON.CANCEL);
+  const buttonText = confirmText || actionLabel || (
+    variant === 'deactivate' ? t(COMMON.DEACTIVATE) : variant === 'activate' ? t(COMMON.ACTIVATE) : t(COMMON.DELETE)
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
       <div className="space-y-4">
-        {/* Warning Icon */}
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-smudged-lips/10">
-              <MdWarning className="h-6 w-6 text-smudged-lips" />
+            <div className={cn(
+              'flex h-12 w-12 items-center justify-center rounded-full',
+              isActivate ? 'bg-bright-halo/20' : 'bg-smudged-lips/10'
+            )}>
+              {isActivate ? (
+                <MdCheckCircle className="h-6 w-6 text-azure-dragon" />
+              ) : (
+                <MdWarning className="h-6 w-6 text-smudged-lips" />
+              )}
             </div>
           </div>
           <div className="flex-1">
             <p className="text-sm text-carbon/80 leading-relaxed">{message}</p>
             {itemName && (
               <p className="mt-2 text-sm font-medium text-carbon">
-                <span className="text-carbon/60">Item:</span> {itemName}
+                <span className="text-carbon/60">{resolvedItemLabel}:</span> {itemName}
               </p>
             )}
           </div>
         </div>
 
-        {/* Warning Note */}
-        {variant === 'deactivate' && (
-          <div className="rounded-md bg-bright-halo/10 border border-bright-halo/20 px-3.5 py-2.5">
-            <p className="text-xs text-carbon/70">
-              This action can be reversed later by reactivating the clinic.
-            </p>
-          </div>
-        )}
-        {variant === 'delete' && actionLabel === 'Activate' && (
-          <div className="rounded-md bg-bright-halo/10 border border-bright-halo/20 px-3.5 py-2.5">
-            <p className="text-xs text-carbon/70">
-              The clinic will become active and available for appointments.
-            </p>
-          </div>
-        )}
-        {variant === 'delete' && actionLabel !== 'Activate' && (
-          <div className="rounded-md bg-bright-halo/10 border border-bright-halo/20 px-3.5 py-2.5">
-            <p className="text-xs text-carbon/70">
-              This action cannot be undone. Please make sure you want to proceed.
-            </p>
+        {note && (
+          <div className={cn(
+            'rounded-md px-3.5 py-2.5 border',
+            isActivate
+              ? 'bg-bright-halo/10 border-bright-halo/20'
+              : 'bg-bright-halo/10 border-bright-halo/20'
+          )}>
+            <p className="text-xs text-carbon/70">{note}</p>
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {resolvedCancelLabel}
           </Button>
           <Button
-            variant="danger"
-            onClick={handleConfirm}
+            variant={isActivate ? 'primary' : 'danger'}
+            onClick={onConfirm}
             isLoading={isLoading}
             disabled={isLoading}
           >
-            <MdDelete className="h-4 w-4 mr-2" />
+            {!isActivate && <MdDelete className="h-4 w-4 mr-2" />}
             {buttonText}
           </Button>
         </div>

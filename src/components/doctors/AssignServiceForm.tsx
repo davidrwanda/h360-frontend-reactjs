@@ -1,22 +1,21 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAssignDoctorToService } from '@/hooks/useServices';
 import { useServices } from '@/hooks/useServices';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, DOCTOR } from '@/i18n';
 import { Button, Input, Select, Modal } from '@/components/ui';
 import { MdAdd } from 'react-icons/md';
 import { useAuth } from '@/hooks/useAuth';
 
-const assignServiceSchema = z.object({
-  service_id: z.string().min(1, 'Service is required'),
-  custom_price: z.string().optional(),
-  custom_duration_minutes: z.number().min(1, 'Duration must be at least 1 minute').optional(),
-  notes: z.string().optional(),
-});
-
-type AssignServiceFormData = z.infer<typeof assignServiceSchema>;
+interface AssignServiceFormData {
+  service_id: string;
+  custom_price?: string;
+  custom_duration_minutes?: number;
+  notes?: string;
+}
 
 interface AssignServiceFormProps {
   doctorId: string;
@@ -29,10 +28,18 @@ export const AssignServiceForm = ({
   onSuccess,
   onCancel,
 }: AssignServiceFormProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const assignMutation = useAssignDoctorToService();
   const { success: showSuccess, error: showError } = useToastStore();
+
+  const assignServiceSchema = useMemo(() => z.object({
+    service_id: z.string().min(1, t(DOCTOR.SELECT_SERVICE)),
+    custom_price: z.string().optional(),
+    custom_duration_minutes: z.number().min(1, t(DOCTOR.DURATION_MIN_ERROR)).optional(),
+    notes: z.string().optional(),
+  }), [t]);
 
   // Get clinic_id from user context
   const clinicId = user?.clinic_id || user?.employee?.clinic_id;
@@ -67,12 +74,12 @@ export const AssignServiceForm = ({
 
       reset();
       setIsOpen(false);
-      showSuccess('Doctor assigned to service successfully!');
+      showSuccess(t(DOCTOR.ASSIGN_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to assign doctor to service. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(DOCTOR.ASSIGN_FAILED);
       showError(errorMessage);
     }
   };
@@ -86,7 +93,7 @@ export const AssignServiceForm = ({
         className="flex items-center gap-2"
       >
         <MdAdd className="h-4 w-4" />
-        Assign Service
+        {t(DOCTOR.ASSIGN_SERVICE)}
       </Button>
 
       <Modal
@@ -96,15 +103,15 @@ export const AssignServiceForm = ({
           reset();
           if (onCancel) onCancel();
         }}
-        title="Assign Service to Doctor"
+        title={t(DOCTOR.ASSIGN_SERVICE_TITLE)}
       >
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <Select
-              label="Service"
+              label={t(DOCTOR.SERVICE)}
               required
               options={[
-                { value: '', label: 'Select a service' },
+                { value: '', label: t(DOCTOR.SELECT_SERVICE) },
                 ...(servicesData?.data || []).map((service) => ({
                   value: service.service_id,
                   label: `${service.name} (${service.service_code})`,
@@ -115,14 +122,14 @@ export const AssignServiceForm = ({
             />
 
             <Input
-              label="Custom Price (Optional)"
-              placeholder="e.g., $175.00"
+              label={t(DOCTOR.CUSTOM_PRICE)}
+              placeholder={t(DOCTOR.CUSTOM_PRICE_PLACEHOLDER)}
               error={errors.custom_price?.message}
               {...register('custom_price')}
             />
 
             <Input
-              label="Custom Duration (minutes, Optional)"
+              label={t(DOCTOR.CUSTOM_DURATION)}
               type="number"
               placeholder="45"
               error={errors.custom_duration_minutes?.message}
@@ -130,8 +137,8 @@ export const AssignServiceForm = ({
             />
 
             <Input
-              label="Notes (Optional)"
-              placeholder="Specialist consultation"
+              label={t(DOCTOR.NOTES_OPTIONAL)}
+              placeholder={t(DOCTOR.NOTES_PLACEHOLDER)}
               error={errors.notes?.message}
               {...register('notes')}
             />
@@ -144,7 +151,7 @@ export const AssignServiceForm = ({
                 disabled={assignMutation.isPending}
                 className="flex-1"
               >
-                {assignMutation.isPending ? 'Assigning...' : 'Assign Service'}
+                {assignMutation.isPending ? t(DOCTOR.ASSIGNING) : t(DOCTOR.ASSIGN_SERVICE)}
               </Button>
               <Button
                 type="button"
@@ -156,7 +163,7 @@ export const AssignServiceForm = ({
                   if (onCancel) onCancel();
                 }}
               >
-                Cancel
+                {t(DOCTOR.CANCEL)}
               </Button>
             </div>
           </div>

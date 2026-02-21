@@ -4,6 +4,7 @@ import { Modal, Loading } from '@/components/ui';
 import { useSlots } from '@/hooks/useSlots';
 import { cn } from '@/utils/cn';
 import type { AppointmentSlot } from '@/api/slots';
+import { useTranslation, TIMETABLE } from '@/i18n';
 
 interface UserCalendarViewModalProps {
   isOpen: boolean;
@@ -20,11 +21,12 @@ export const UserCalendarViewModal = ({
   doctorId,
   title = 'User Calendar View',
 }: UserCalendarViewModalProps) => {
+  const { t } = useTranslation();
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [isAllExpanded, setIsAllExpanded] = useState(false);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
-  
+
   // Reset to today when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -59,8 +61,8 @@ export const UserCalendarViewModal = ({
   }, {} as Record<string, AppointmentSlot[]>);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  
+  const dayNames = [t(TIMETABLE.MON), t(TIMETABLE.TUE), t(TIMETABLE.WED), t(TIMETABLE.THU), t(TIMETABLE.FRI), t(TIMETABLE.SAT), t(TIMETABLE.SUN)];
+
   // Calculate which days have more than 5 slots
   const daysWithMoreSlots = weekDays
     .map(d => format(d, 'yyyy-MM-dd'))
@@ -81,10 +83,10 @@ export const UserCalendarViewModal = ({
 
   const getStatusLabel = (slot: AppointmentSlot) => {
     const status = slot.status?.toLowerCase();
-    if (status === 'booked') return 'Booked';
-    if (status === 'cancelled') return 'Cancelled';
-    if (slot.is_at_capacity) return 'Full';
-    return 'Available';
+    if (status === 'booked') return t(TIMETABLE.BOOKED);
+    if (status === 'cancelled') return t(TIMETABLE.CANCELLED);
+    if (slot.is_at_capacity) return t(TIMETABLE.FULL);
+    return t(TIMETABLE.AVAILABLE);
   };
 
   return (
@@ -97,7 +99,7 @@ export const UserCalendarViewModal = ({
               onClick={() => setSelectedDate(addDays(selectedDate, -7))}
               className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
             >
-              ← Previous Week
+              {`\u2190 ${t(TIMETABLE.PREVIOUS_WEEK)}`}
             </button>
             <div className="text-sm font-medium text-carbon whitespace-nowrap">
               {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
@@ -106,7 +108,7 @@ export const UserCalendarViewModal = ({
               onClick={() => setSelectedDate(addDays(selectedDate, 7))}
               className="px-3 py-1.5 text-sm text-carbon/70 hover:text-carbon hover:bg-carbon/5 rounded-md transition-colors"
             >
-              Next Week →
+              {`${t(TIMETABLE.NEXT_WEEK)} \u2192`}
             </button>
           </div>
           <button
@@ -118,7 +120,7 @@ export const UserCalendarViewModal = ({
                 : 'text-carbon/70 hover:text-carbon hover:bg-carbon/5 border-carbon/20'
             )}
           >
-            {showAvailableOnly ? '✓ Show Available Only' : 'Show All Slots'}
+            {showAvailableOnly ? `\u2713 ${t(TIMETABLE.SHOW_AVAILABLE_ONLY)}` : t(TIMETABLE.SHOW_ALL_SLOTS)}
           </button>
         </div>
 
@@ -158,7 +160,7 @@ export const UserCalendarViewModal = ({
                   </div>
                   <div className="space-y-1.5 flex-1 overflow-y-auto min-h-0">
                     {daySlots.length === 0 ? (
-                      <div className="text-xs text-carbon/40 text-center py-4">No slots</div>
+                      <div className="text-xs text-carbon/40 text-center py-4">{t(TIMETABLE.NO_SLOTS)}</div>
                     ) : (
                       <>
                         {daySlots
@@ -207,7 +209,7 @@ export const UserCalendarViewModal = ({
                   : 'text-azure-dragon hover:text-azure-dragon/80 hover:bg-azure-dragon/5 border-azure-dragon/20'
               )}
             >
-              {isAllExpanded ? 'Show less' : 'Show more'}
+              {isAllExpanded ? t(TIMETABLE.SHOW_LESS) : t(TIMETABLE.SHOW_MORE)}
             </button>
           </div>
         )}
@@ -216,26 +218,26 @@ export const UserCalendarViewModal = ({
         <div className="flex items-center gap-4 pt-4 border-t border-carbon/10 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border bg-bright-halo/10 border-bright-halo/30" />
-            <span className="text-carbon/70">Available</span>
+            <span className="text-carbon/70">{t(TIMETABLE.AVAILABLE)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border bg-smudged-lips/10 border-smudged-lips/30" />
-            <span className="text-carbon/70">Booked</span>
+            <span className="text-carbon/70">{t(TIMETABLE.BOOKED)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border bg-carbon/5 border-carbon/20" />
-            <span className="text-carbon/70">Full/Cancelled</span>
+            <span className="text-carbon/70">{t(TIMETABLE.FULL_CANCELLED)}</span>
           </div>
         </div>
 
         {/* Summary */}
         {slotsData && (
           <div className="text-xs text-carbon/60 pt-2 border-t border-carbon/10">
-            Showing {slots.length} slot{slots.length !== 1 ? 's' : ''} from {format(weekStart, 'MMM d')} to{' '}
+            {t(TIMETABLE.SHOWING_SLOTS, { count: slots.length })} from {format(weekStart, 'MMM d')} to{' '}
             {format(weekEnd, 'MMM d')}
             {slotsData.last_available_slot_date && (
               <span className="ml-2">
-                • Last available slot: {format(parseISO(slotsData.last_available_slot_date), 'MMM d, yyyy')}
+                {`\u2022 ${t(TIMETABLE.LAST_AVAILABLE_SLOT)}: ${format(parseISO(slotsData.last_available_slot_date), 'MMM d, yyyy')}`}
               </span>
             )}
           </div>

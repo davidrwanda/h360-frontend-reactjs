@@ -52,6 +52,15 @@ export const landingEn: Record<string, string> = {
   'landing.createAccount': 'Create Account',
   'landing.alreadyHaveAccount': 'Already have an account? Login',
 
+  // Clinic slots display
+  'landing.addressNotAvailable': 'Address not available',
+  'landing.moreSlots': '+{{count}} more',
+  'landing.noSlots': 'No slots',
+  'landing.showLess': 'Show less',
+  'landing.seeMoreSchedules': 'See more schedules',
+  'landing.noSlotContact': 'If you do not find a time slot that suits you, please contact the clinic at:',
+  'landing.contactClinic': 'Contact clinic',
+
   // Footer
   'landing.footerDesc': 'Your trusted healthcare management platform. Connecting patients with quality healthcare providers.',
   'landing.quickLinks': 'Quick Links',

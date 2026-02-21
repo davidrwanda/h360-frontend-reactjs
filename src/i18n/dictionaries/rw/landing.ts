@@ -52,6 +52,15 @@ export const landingRw: Record<string, string> = {
   'landing.createAccount': 'Fungura konti',
   'landing.alreadyHaveAccount': 'Usanzwe ufite konti? Injira',
 
+  // Clinic slots display
+  'landing.addressNotAvailable': 'Aderesi ntiboneka',
+  'landing.moreSlots': '+{{count}} bindi',
+  'landing.noSlots': 'Nta myanya',
+  'landing.showLess': 'Erekana bike',
+  'landing.seeMoreSchedules': 'Reba gahunda nyinshi',
+  'landing.noSlotContact': "Niba utabonye umwanya w'igihe ukwiye, nyamuneka vugana n'ivuriro kuri:",
+  'landing.contactClinic': 'Vugana n\'ivuriro',
+
   // Footer
   'landing.footerDesc': "Urubuga rwawe rwizewe rwo gucunga ubuzima. Guhuza abarwayi n'abatanga ubuvuzi bwiza.",
   'landing.quickLinks': 'Aho ugera vuba',

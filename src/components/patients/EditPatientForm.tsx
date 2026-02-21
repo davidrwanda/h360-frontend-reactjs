@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,25 +7,24 @@ import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
 import type { Patient } from '@/api/patients';
+import { useTranslation, PATIENT } from '@/i18n';
 
-const editPatientSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  date_of_birth: z.string().optional(),
-  gender: z.enum(['M', 'F', 'Other'], { required_error: 'Gender is required' }),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postal_code: z.string().optional(),
-  country: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  emergency_contact_relationship: z.string().optional(),
-});
-
-type EditPatientFormData = z.infer<typeof editPatientSchema>;
+interface EditPatientFormData {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  gender: 'M' | 'F' | 'Other';
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+}
 
 interface EditPatientFormProps {
   patientId: string;
@@ -40,9 +39,27 @@ export const EditPatientForm = ({
   onSuccess,
   onCancel,
 }: EditPatientFormProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdatePatient();
   const { success: showSuccess, error: showError } = useToastStore();
+
+  const editPatientSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(PATIENT.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(PATIENT.LAST_NAME_REQUIRED)),
+    email: z.string().email(t(PATIENT.INVALID_EMAIL)).optional().or(z.literal('')),
+    phone: z.string().optional(),
+    date_of_birth: z.string().optional(),
+    gender: z.enum(['M', 'F', 'Other'], { required_error: t(PATIENT.GENDER_REQUIRED) }),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postal_code: z.string().optional(),
+    country: z.string().optional(),
+    emergency_contact_name: z.string().optional(),
+    emergency_contact_phone: z.string().optional(),
+    emergency_contact_relationship: z.string().optional(),
+  }), [t]);
 
   const {
     register,
@@ -100,12 +117,12 @@ export const EditPatientForm = ({
         },
       });
 
-      showSuccess('Patient updated successfully!');
+      showSuccess(t(PATIENT.UPDATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update patient. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(PATIENT.UPDATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -117,7 +134,7 @@ export const EditPatientForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Edit Patient
+            {t(PATIENT.EDIT_PATIENT)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -130,42 +147,42 @@ export const EditPatientForm = ({
           <div className="space-y-4">
             {/* Basic Information */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Basic Information</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.BASIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="First Name"
-                  placeholder="Enter first name"
+                  label={t(PATIENT.FIRST_NAME)}
+                  placeholder={t(PATIENT.FIRST_NAME_PLACEHOLDER)}
                   error={errors.first_name?.message}
                   required
                   {...register('first_name')}
                 />
 
                 <Input
-                  label="Last Name"
-                  placeholder="Enter last name"
+                  label={t(PATIENT.LAST_NAME)}
+                  placeholder={t(PATIENT.LAST_NAME_PLACEHOLDER)}
                   error={errors.last_name?.message}
                   required
                   {...register('last_name')}
                 />
 
                 <Input
-                  label="Email"
+                  label={t(PATIENT.EMAIL)}
                   type="email"
-                  placeholder="Enter email address"
+                  placeholder={t(PATIENT.EMAIL_PLACEHOLDER)}
                   error={errors.email?.message}
                   {...register('email')}
                 />
 
                 <Input
-                  label="Phone"
+                  label={t(PATIENT.PHONE)}
                   type="tel"
-                  placeholder="Enter phone number"
+                  placeholder={t(PATIENT.PHONE_PLACEHOLDER)}
                   error={errors.phone?.message}
                   {...register('phone')}
                 />
 
                 <Input
-                  label="Date of Birth"
+                  label={t(PATIENT.DATE_OF_BIRTH)}
                   type="date"
                   error={errors.date_of_birth?.message}
                   {...register('date_of_birth')}
@@ -176,14 +193,14 @@ export const EditPatientForm = ({
                   control={control}
                   render={({ field }) => (
                     <Select
-                      label="Gender"
+                      label={t(PATIENT.GENDER)}
                       error={errors.gender?.message}
                       required
                       options={[
-                        { value: '', label: 'Select gender' },
-                        { value: 'M', label: 'Male' },
-                        { value: 'F', label: 'Female' },
-                        { value: 'Other', label: 'Other' },
+                        { value: '', label: t(PATIENT.SELECT_GENDER) },
+                        { value: 'M', label: t(PATIENT.MALE) },
+                        { value: 'F', label: t(PATIENT.FEMALE) },
+                        { value: 'Other', label: t(PATIENT.OTHER_GENDER) },
                       ]}
                       {...field}
                     />
@@ -194,39 +211,39 @@ export const EditPatientForm = ({
 
             {/* Address Information */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Address Information</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.ADDRESS_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="Address"
-                  placeholder="Enter street address"
+                  label={t(PATIENT.ADDRESS)}
+                  placeholder={t(PATIENT.ADDRESS_PLACEHOLDER)}
                   error={errors.address?.message}
                   {...register('address')}
                 />
 
                 <Input
-                  label="City"
-                  placeholder="Enter city"
+                  label={t(PATIENT.CITY)}
+                  placeholder={t(PATIENT.CITY_PLACEHOLDER)}
                   error={errors.city?.message}
                   {...register('city')}
                 />
 
                 <Input
-                  label="State"
-                  placeholder="Enter state"
+                  label={t(PATIENT.STATE)}
+                  placeholder={t(PATIENT.STATE_PLACEHOLDER)}
                   error={errors.state?.message}
                   {...register('state')}
                 />
 
                 <Input
-                  label="Postal Code"
-                  placeholder="Enter postal code"
+                  label={t(PATIENT.POSTAL_CODE)}
+                  placeholder={t(PATIENT.POSTAL_CODE_PLACEHOLDER)}
                   error={errors.postal_code?.message}
                   {...register('postal_code')}
                 />
 
                 <Input
-                  label="Country"
-                  placeholder="Enter country"
+                  label={t(PATIENT.COUNTRY)}
+                  placeholder={t(PATIENT.COUNTRY_PLACEHOLDER)}
                   error={errors.country?.message}
                   {...register('country')}
                 />
@@ -235,26 +252,26 @@ export const EditPatientForm = ({
 
             {/* Emergency Contact */}
             <div>
-              <h3 className="text-sm font-medium text-carbon mb-3">Emergency Contact</h3>
+              <h3 className="text-sm font-medium text-carbon mb-3">{t(PATIENT.EMERGENCY_CONTACT)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="Emergency Contact Name"
-                  placeholder="Enter emergency contact name"
+                  label={t(PATIENT.EMERGENCY_CONTACT_NAME)}
+                  placeholder={t(PATIENT.EMERGENCY_CONTACT_NAME_PLACEHOLDER)}
                   error={errors.emergency_contact_name?.message}
                   {...register('emergency_contact_name')}
                 />
 
                 <Input
-                  label="Emergency Contact Phone"
+                  label={t(PATIENT.EMERGENCY_CONTACT_PHONE)}
                   type="tel"
-                  placeholder="Enter emergency contact phone"
+                  placeholder={t(PATIENT.EMERGENCY_CONTACT_PHONE_PLACEHOLDER)}
                   error={errors.emergency_contact_phone?.message}
                   {...register('emergency_contact_phone')}
                 />
 
                 <Input
-                  label="Relationship"
-                  placeholder="e.g., Spouse, Parent, etc."
+                  label={t(PATIENT.RELATIONSHIP)}
+                  placeholder={t(PATIENT.RELATIONSHIP_PLACEHOLDER)}
                   error={errors.emergency_contact_relationship?.message}
                   {...register('emergency_contact_relationship')}
                 />
@@ -269,7 +286,7 @@ export const EditPatientForm = ({
                 size="md"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update Patient'}
+                {updateMutation.isPending ? t(PATIENT.UPDATING) : t(PATIENT.UPDATE_PATIENT)}
               </Button>
               {onCancel && (
                 <Button
@@ -279,7 +296,7 @@ export const EditPatientForm = ({
                   onClick={onCancel}
                   disabled={updateMutation.isPending}
                 >
-                  Cancel
+                  {t(PATIENT.CANCEL)}
                 </Button>
               )}
             </div>

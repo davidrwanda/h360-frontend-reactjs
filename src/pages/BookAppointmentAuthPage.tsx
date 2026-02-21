@@ -9,20 +9,18 @@ import { format, parseISO } from 'date-fns';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Loading, Modal } from '@/components/ui';
 import { PublicHeader, PublicFooter } from '@/components/layout';
 import { MdArrowBack, MdPerson, MdLogin, MdCalendarToday, MdAccessTime, MdLocalHospital, MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { useTranslation, APPOINTMENT } from '@/i18n';
 
-const guestInfoSchema = z.object({
-  guest_name: z.string().min(1, 'Full name is required'),
-  guest_phone: z.string().min(1, 'Phone number is required'),
-  guest_email: z.string().email('Invalid email').optional().or(z.literal('')),
-});
+interface GuestInfoFormData {
+  guest_name: string;
+  guest_phone: string;
+  guest_email?: string;
+}
 
-const loginSchema = z.object({
-  username: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type GuestInfoFormData = z.infer<typeof guestInfoSchema>;
-type LoginFormData = z.infer<typeof loginSchema>;
+interface LoginFormData {
+  username: string;
+  password: string;
+}
 
 export const BookAppointmentAuthPage = () => {
   const navigate = useNavigate();
@@ -32,6 +30,18 @@ export const BookAppointmentAuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const loginMutation = useLogin({ skipNavigation: true });
+  const { t } = useTranslation();
+
+  const guestInfoSchema = useMemo(() => z.object({
+    guest_name: z.string().min(1, t(APPOINTMENT.FULL_NAME_REQUIRED)),
+    guest_phone: z.string().min(1, t(APPOINTMENT.PHONE_REQUIRED)),
+    guest_email: z.string().email(t(APPOINTMENT.INVALID_EMAIL)).optional().or(z.literal('')),
+  }), [t]);
+
+  const loginSchema = useMemo(() => z.object({
+    username: z.string().min(1, t(APPOINTMENT.USERNAME_REQUIRED)),
+    password: z.string().min(1, t(APPOINTMENT.PASSWORD_REQUIRED)),
+  }), [t]);
 
   // Get slot and clinic info from URL params
   const slotId = searchParams.get('slot_id');
@@ -98,9 +108,9 @@ export const BookAppointmentAuthPage = () => {
       }, 200);
     } catch (err) {
       if (err instanceof Error) {
-        setLoginError(err.message || 'Login failed. Please check your credentials.');
+        setLoginError(err.message || t(APPOINTMENT.LOGIN_FAILED));
       } else {
-        setLoginError('An unexpected error occurred. Please try again.');
+        setLoginError(t(APPOINTMENT.UNEXPECTED_ERROR));
       }
     }
   };
@@ -127,10 +137,10 @@ export const BookAppointmentAuthPage = () => {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <Card variant="elevated">
           <CardContent className="py-12 text-center">
-            <h2 className="text-lg font-medium text-smudged-lips mb-4">Slot Not Found</h2>
-            <p className="text-carbon/60 mb-6">The selected slot is no longer available or invalid.</p>
+            <h2 className="text-lg font-medium text-smudged-lips mb-4">{t(APPOINTMENT.SLOT_NOT_FOUND)}</h2>
+            <p className="text-carbon/60 mb-6">{t(APPOINTMENT.SLOT_NOT_FOUND_DESC)}</p>
             <Link to="/">
-              <Button variant="primary">Back to Home</Button>
+              <Button variant="primary">{t(APPOINTMENT.BACK_TO_HOME)}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -153,11 +163,11 @@ export const BookAppointmentAuthPage = () => {
             className="inline-flex items-center gap-2 text-sm text-carbon/60 hover:text-carbon transition-colors mb-4"
           >
             <MdArrowBack className="h-4 w-4" />
-            Back to Search
+            {t(APPOINTMENT.BACK_TO_SEARCH)}
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-2">Complete Your Booking</h1>
+          <h1 className="text-2xl font-heading font-semibold text-azure-dragon mb-2">{t(APPOINTMENT.COMPLETE_YOUR_BOOKING)}</h1>
           <p className="text-sm text-carbon/60">
-            Please login to track your appointment or continue as guest to complete your booking
+            {t(APPOINTMENT.LOGIN_OR_GUEST_DESC)}
           </p>
         </div>
 
@@ -166,7 +176,7 @@ export const BookAppointmentAuthPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdCalendarToday className="h-5 w-5 text-azure-dragon" />
-            Selected Appointment Time
+            {t(APPOINTMENT.SELECTED_APPOINTMENT_TIME)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -174,21 +184,21 @@ export const BookAppointmentAuthPage = () => {
             <div className="flex items-center gap-3">
               <MdCalendarToday className="h-5 w-5 text-azure-dragon/60" />
               <div>
-                <p className="text-xs text-carbon/60 mb-1">Date</p>
+                <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.DATE)}</p>
                 <p className="text-sm font-medium text-carbon">{formattedDate}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <MdAccessTime className="h-5 w-5 text-azure-dragon/60" />
               <div>
-                <p className="text-xs text-carbon/60 mb-1">Time</p>
+                <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.TIME)}</p>
                 <p className="text-sm font-medium text-carbon">{formattedTime}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <MdLocalHospital className="h-5 w-5 text-azure-dragon/60" />
               <div>
-                <p className="text-xs text-carbon/60 mb-1">Clinic</p>
+                <p className="text-xs text-carbon/60 mb-1">{t(APPOINTMENT.CLINIC)}</p>
                 <p className="text-sm font-medium text-carbon">{selectedSlot.clinic_name}</p>
               </div>
             </div>
@@ -203,16 +213,15 @@ export const BookAppointmentAuthPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdLogin className="h-5 w-5 text-azure-dragon" />
-              Login to Track Appointment
+              {t(APPOINTMENT.LOGIN_TO_TRACK)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-carbon/60 mb-4">
-              Login to your account to track your appointment, view appointment history, and manage your health
-              records.
+              {t(APPOINTMENT.LOGIN_TO_TRACK_DESC)}
             </p>
             <Button variant="primary" className="w-full" onClick={handleLogin}>
-              Login
+              {t(APPOINTMENT.LOGIN)}
             </Button>
           </CardContent>
         </Card>
@@ -222,23 +231,23 @@ export const BookAppointmentAuthPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPerson className="h-5 w-5 text-azure-dragon" />
-              Continue as Guest
+              {t(APPOINTMENT.CONTINUE_AS_GUEST)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(handleContinueAsGuest)} className="space-y-4">
               <p className="text-sm text-carbon/60 mb-4">
-                Continue without logging in. You can register later to track your appointments.
+                {t(APPOINTMENT.GUEST_DESC)}
               </p>
               <Input
-                label="Full Name"
+                label={t(APPOINTMENT.FULL_NAME)}
                 placeholder="John Doe"
                 {...register('guest_name')}
                 error={errors.guest_name?.message}
                 required
               />
               <Input
-                label="Phone Number"
+                label={t(APPOINTMENT.PHONE_NUMBER)}
                 type="tel"
                 placeholder="+1234567890"
                 {...register('guest_phone')}
@@ -246,14 +255,14 @@ export const BookAppointmentAuthPage = () => {
                 required
               />
               <Input
-                label="Email (Optional)"
+                label={t(APPOINTMENT.EMAIL_OPTIONAL)}
                 type="email"
                 placeholder="john.doe@example.com"
                 {...register('guest_email')}
                 error={errors.guest_email?.message}
               />
               <Button type="submit" variant="outline" className="w-full">
-                Continue as Guest
+                {t(APPOINTMENT.CONTINUE_AS_GUEST)}
               </Button>
             </form>
           </CardContent>
@@ -265,7 +274,7 @@ export const BookAppointmentAuthPage = () => {
         <Modal
           isOpen={showLoginModal}
           onClose={() => setShowLoginModal(false)}
-          title="Login to Continue"
+          title={t(APPOINTMENT.LOGIN_TO_CONTINUE)}
           size="sm"
         >
           <form onSubmit={handleLoginSubmit(handleLoginSubmitForm)} className="space-y-4">
@@ -277,9 +286,9 @@ export const BookAppointmentAuthPage = () => {
 
             <div>
               <Input
-                label="Username or Email"
+                label={t(APPOINTMENT.USERNAME_OR_EMAIL)}
                 type="text"
-                placeholder="Enter your username or email"
+                placeholder={t(APPOINTMENT.USERNAME_PLACEHOLDER)}
                 error={loginErrors.username?.message}
                 autoComplete="username"
                 {...registerLogin('username')}
@@ -288,12 +297,12 @@ export const BookAppointmentAuthPage = () => {
 
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                Password
+                {t(APPOINTMENT.PASSWORD)}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t(APPOINTMENT.PASSWORD_PLACEHOLDER)}
                   autoComplete="current-password"
                   className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 pr-10 py-2.5 text-sm font-ui text-carbon transition-all duration-150 placeholder:text-carbon/35 placeholder:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0 focus-visible:border-azure-dragon/60"
                   {...registerLogin('password')}
@@ -325,7 +334,7 @@ export const BookAppointmentAuthPage = () => {
               isLoading={loginMutation.isPending}
               disabled={loginMutation.isPending}
             >
-              Sign In
+              {t(APPOINTMENT.SIGN_IN)}
             </Button>
           </form>
         </Modal>

@@ -4,6 +4,7 @@ import { usePatient, useRemovePatientFromClinic, useCreatePatientAccount } from 
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, Button, Loading, DeleteConfirmationModal, Modal } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, PATIENT } from '@/i18n';
 import {
   MdEdit,
   MdArrowBack,
@@ -19,6 +20,7 @@ import {
 import { format } from 'date-fns';
 
 export const PatientDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data: patient, isLoading, error } = usePatient(id);
   const { user, role } = useAuth();
@@ -35,7 +37,7 @@ export const PatientDetailPage = () => {
   const isReceptionist = normalizedRole === 'RECEPTIONIST';
   const canRemoveFromClinic = isSystemAdmin || isManager || isReceptionist;
   const canCreateAccount = isSystemAdmin || isManager || isReceptionist;
-  
+
   // Determine clinic_id for account creation
   // For clinic managers, use their clinic_id
   // For system admins, use patient's primary clinic_id or first clinic
@@ -61,25 +63,25 @@ export const PatientDetailPage = () => {
         id: clinicToRemove.patientId,
         clinicId: clinicToRemove.clinicId,
       });
-      showSuccess(`Patient removed from ${clinicToRemove.clinicName} successfully`);
+      showSuccess(t(PATIENT.REMOVED_SUCCESS, { clinicName: clinicToRemove.clinicName }));
       setClinicToRemove(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to remove patient from clinic';
+      const errorMessage = err instanceof Error ? err.message : t(PATIENT.REMOVE_FAILED);
       showError(errorMessage);
     }
   };
 
   const handleCreateAccount = async () => {
     if (!patient || !patient.patient_id) return;
-    
+
     const clinicId = getClinicIdForAccount();
     if (!clinicId) {
-      showError('Cannot create account: Patient is not associated with any clinic');
+      showError(t(PATIENT.NO_CLINIC_ERROR));
       return;
     }
 
     if (!patient.email) {
-      showError('Cannot create account: Patient must have an email address');
+      showError(t(PATIENT.NO_EMAIL_ERROR));
       return;
     }
 
@@ -91,12 +93,12 @@ export const PatientDetailPage = () => {
           send_email: true,
         },
       });
-      
+
       setGeneratedPassword(result.password);
       setShowCreateAccountModal(true);
-      showSuccess('Account created successfully! Password has been sent via email.');
+      showSuccess(t(PATIENT.ACCOUNT_CREATED_SUCCESS));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+      const errorMessage = err instanceof Error ? err.message : t(PATIENT.ACCOUNT_CREATE_FAILED);
       showError(errorMessage);
     }
   };
@@ -113,12 +115,12 @@ export const PatientDetailPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">Patient Not Found</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(PATIENT.PATIENT_NOT_FOUND)}</h2>
           <p className="text-sm text-carbon/60 mb-4">
-            The patient you're looking for doesn't exist or has been removed.
+            {t(PATIENT.PATIENT_NOT_FOUND_DESC)}
           </p>
           <Link to="/patients">
-            <Button variant="outline">Back to Patients</Button>
+            <Button variant="outline">{t(PATIENT.BACK_TO_PATIENTS)}</Button>
           </Link>
         </div>
       </div>
@@ -137,9 +139,9 @@ export const PatientDetailPage = () => {
   const formatGender = (gender?: string) => {
     if (!gender) return '—';
     const genderMap: Record<string, string> = {
-      M: 'Male',
-      F: 'Female',
-      Other: 'Other',
+      M: t(PATIENT.MALE),
+      F: t(PATIENT.FEMALE),
+      Other: t(PATIENT.OTHER_GENDER),
     };
     return genderMap[gender] || gender;
   };
@@ -158,7 +160,7 @@ export const PatientDetailPage = () => {
             <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
               {patient.full_name || `${patient.first_name} ${patient.last_name}`}
             </h1>
-            <p className="text-sm text-carbon/60">Patient Details</p>
+            <p className="text-sm text-carbon/60">{t(PATIENT.PATIENT_DETAILS)}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -166,7 +168,7 @@ export const PatientDetailPage = () => {
             <Link to={`/patients/${patient.patient_id}/edit`}>
               <Button variant="outline" size="md">
                 <MdEdit className="h-4 w-4 mr-2" />
-                Edit
+                {t(PATIENT.EDIT)}
               </Button>
             </Link>
           )}
@@ -182,7 +184,7 @@ export const PatientDetailPage = () => {
               : 'bg-carbon/10 text-carbon/60'
           }`}
         >
-          {patient.is_active !== false ? 'Active' : 'Inactive'}
+          {patient.is_active !== false ? t(PATIENT.ACTIVE) : t(PATIENT.INACTIVE)}
         </span>
       </div>
 
@@ -193,35 +195,35 @@ export const PatientDetailPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPerson className="h-5 w-5 text-azure-dragon" />
-              Basic Information
+              {t(PATIENT.BASIC_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-carbon/60">Patient Number</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.PATIENT_NUMBER)}</label>
                 <p className="text-sm text-carbon font-medium mt-1">
                   {patient.patient_number || '—'}
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-carbon/60">Full Name</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.FULL_NAME)}</label>
                 <p className="text-sm text-carbon font-medium mt-1">
                   {patient.full_name || `${patient.first_name} ${patient.last_name}`}
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-carbon/60">Date of Birth</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.DATE_OF_BIRTH)}</label>
                 <p className="text-sm text-carbon mt-1">{formatDate(patient.date_of_birth)}</p>
               </div>
               {patient.age !== undefined && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Age</label>
-                  <p className="text-sm text-carbon mt-1">{patient.age} years</p>
+                  <label className="text-xs font-medium text-carbon/60">{t(PATIENT.AGE)}</label>
+                  <p className="text-sm text-carbon mt-1">{t(PATIENT.AGE_YEARS, { age: String(patient.age) })}</p>
                 </div>
               )}
               <div>
-                <label className="text-xs font-medium text-carbon/60">Gender</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.GENDER)}</label>
                 <p className="text-sm text-carbon mt-1">{formatGender(patient.gender)}</p>
               </div>
             </div>
@@ -233,34 +235,34 @@ export const PatientDetailPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPhone className="h-5 w-5 text-azure-dragon" />
-              Contact
+              {t(PATIENT.CONTACT)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {patient.email && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Email</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(PATIENT.EMAIL)}</label>
                   <p className="text-sm text-carbon mt-1">{patient.email}</p>
                 </div>
               )}
               {patient.phone && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Phone</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(PATIENT.PHONE)}</label>
                   <p className="text-sm text-carbon mt-1">{patient.phone}</p>
                 </div>
               )}
               {patient.alternate_phone && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Alternate Phone</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(PATIENT.ALTERNATE_PHONE)}</label>
                   <p className="text-sm text-carbon mt-1">{patient.alternate_phone}</p>
                 </div>
               )}
               <div>
-                <label className="text-xs font-medium text-carbon/60">Has Account</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.HAS_ACCOUNT)}</label>
                 <div className="flex items-center justify-between mt-1">
                   <p className="text-sm text-carbon">
-                    {patient.has_account ? 'Yes' : 'No'}
+                    {patient.has_account ? t(PATIENT.YES) : t(PATIENT.NO)}
                   </p>
                   {!patient.has_account && canCreateAccount && patient.email && (
                     <Button
@@ -271,14 +273,14 @@ export const PatientDetailPage = () => {
                       className="text-xs"
                     >
                       <MdAccountCircle className="h-3 w-3 mr-1" />
-                      Create Account
+                      {t(PATIENT.CREATE_ACCOUNT)}
                     </Button>
                   )}
                 </div>
               </div>
               {patient.username && (
                 <div>
-                  <label className="text-xs font-medium text-carbon/60">Username</label>
+                  <label className="text-xs font-medium text-carbon/60">{t(PATIENT.USERNAME)}</label>
                   <p className="text-sm text-carbon mt-1">{patient.username}</p>
                 </div>
               )}
@@ -292,20 +294,20 @@ export const PatientDetailPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MdLocationOn className="h-5 w-5 text-azure-dragon" />
-                Address
+                {t(PATIENT.ADDRESS)}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {patient.address && (
                   <div>
-                    <label className="text-xs font-medium text-carbon/60">Street Address</label>
+                    <label className="text-xs font-medium text-carbon/60">{t(PATIENT.STREET_ADDRESS)}</label>
                     <p className="text-sm text-carbon mt-1">{patient.address}</p>
                   </div>
                 )}
                 {(patient.city || patient.state || patient.postal_code || patient.country) && (
                   <div>
-                    <label className="text-xs font-medium text-carbon/60">Location</label>
+                    <label className="text-xs font-medium text-carbon/60">{t(PATIENT.LOCATION)}</label>
                     <p className="text-sm text-carbon mt-1">
                       {[patient.city, patient.state, patient.postal_code, patient.country].filter(Boolean).join(', ')}
                     </p>
@@ -322,26 +324,26 @@ export const PatientDetailPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MdInfo className="h-5 w-5 text-azure-dragon" />
-                Emergency Contact
+                {t(PATIENT.EMERGENCY_CONTACT)}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {patient.emergency_contact_name && (
                   <div>
-                    <label className="text-xs font-medium text-carbon/60">Contact Name</label>
+                    <label className="text-xs font-medium text-carbon/60">{t(PATIENT.CONTACT_NAME)}</label>
                     <p className="text-sm text-carbon mt-1">{patient.emergency_contact_name}</p>
                   </div>
                 )}
                 {patient.emergency_contact_phone && (
                   <div>
-                    <label className="text-xs font-medium text-carbon/60">Contact Phone</label>
+                    <label className="text-xs font-medium text-carbon/60">{t(PATIENT.CONTACT_PHONE)}</label>
                     <p className="text-sm text-carbon mt-1">{patient.emergency_contact_phone}</p>
                   </div>
                 )}
                 {patient.emergency_contact_relationship && (
                   <div>
-                    <label className="text-xs font-medium text-carbon/60">Relationship</label>
+                    <label className="text-xs font-medium text-carbon/60">{t(PATIENT.RELATIONSHIP)}</label>
                     <p className="text-sm text-carbon mt-1">{patient.emergency_contact_relationship}</p>
                   </div>
                 )}
@@ -356,7 +358,7 @@ export const PatientDetailPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MdBusiness className="h-5 w-5 text-azure-dragon" />
-                Clinic Subscriptions
+                {t(PATIENT.CLINIC_SUBSCRIPTIONS)}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -367,7 +369,7 @@ export const PatientDetailPage = () => {
                   const canRemove = canRemoveFromClinic && (
                     isSystemAdmin || (isManager && clinic.clinic_id !== user?.clinic_id)
                   );
-                  
+
                   return (
                     <div key={clinic.clinic_id} className="border-b border-carbon/10 pb-3 last:border-0">
                       <div className="flex items-center justify-between">
@@ -388,7 +390,7 @@ export const PatientDetailPage = () => {
                             </span>
                             {clinic.subscribed_at && (
                               <span className="text-xs text-carbon/50">
-                                Subscribed: {format(new Date(clinic.subscribed_at), 'MMM d, yyyy')}
+                                {t(PATIENT.SUBSCRIBED, { date: format(new Date(clinic.subscribed_at), 'MMM d, yyyy') })}
                               </span>
                             )}
                           </div>
@@ -405,7 +407,7 @@ export const PatientDetailPage = () => {
                             className="text-smudged-lips hover:text-smudged-lips hover:bg-smudged-lips/10"
                           >
                             <MdClose className="h-4 w-4 mr-1" />
-                            Remove
+                            {t(PATIENT.REMOVE)}
                           </Button>
                         )}
                       </div>
@@ -423,9 +425,9 @@ export const PatientDetailPage = () => {
             isOpen={!!clinicToRemove}
             onClose={() => setClinicToRemove(null)}
             onConfirm={handleRemoveFromClinic}
-            title="Remove Patient from Clinic"
-            message={`Are you sure you want to remove this patient from ${clinicToRemove.clinicName}? The patient will remain active in other clinics and can still log in if they have an account.`}
-            confirmText="Remove from Clinic"
+            title={t(PATIENT.REMOVE_FROM_CLINIC_TITLE)}
+            message={t(PATIENT.REMOVE_FROM_CLINIC_MESSAGE, { clinicName: clinicToRemove.clinicName })}
+            confirmText={t(PATIENT.REMOVE_FROM_CLINIC_CONFIRM)}
             isLoading={removeFromClinicMutation.isPending}
           />
         )}
@@ -438,25 +440,23 @@ export const PatientDetailPage = () => {
               setShowCreateAccountModal(false);
               setGeneratedPassword(null);
             }}
-            title="Account Created Successfully"
+            title={t(PATIENT.ACCOUNT_CREATED_TITLE)}
             size="md"
           >
             <div className="space-y-4">
               <div className="rounded-md bg-bright-halo/10 border border-bright-halo/20 px-4 py-3">
                 <p className="text-sm text-carbon/80">
-                  An account has been created for {patient.full_name || `${patient.first_name} ${patient.last_name}`}.
+                  {t(PATIENT.ACCOUNT_CREATED_DESC, { name: patient.full_name || `${patient.first_name} ${patient.last_name}` })}
                   {patient.email && (
-                    <span className="block mt-1">
-                      Login credentials have been sent to <strong>{patient.email}</strong>.
-                    </span>
+                    <span className="block mt-1" dangerouslySetInnerHTML={{ __html: t(PATIENT.CREDENTIALS_SENT, { email: `<strong>${patient.email}</strong>` }) }} />
                   )}
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-xs font-medium text-carbon/60 flex items-center gap-2">
                   <MdLock className="h-4 w-4" />
-                  Generated Password (if email fails, share this password):
+                  {t(PATIENT.GENERATED_PASSWORD)}
                 </label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 px-3 py-2 bg-carbon/5 border border-carbon/10 rounded text-sm font-mono text-carbon break-all">
@@ -467,15 +467,15 @@ export const PatientDetailPage = () => {
                     size="sm"
                     onClick={() => {
                       navigator.clipboard.writeText(generatedPassword);
-                      showSuccess('Password copied to clipboard');
+                      showSuccess(t(PATIENT.PASSWORD_COPIED));
                     }}
                     title="Copy password"
                   >
-                    Copy
+                    {t(PATIENT.COPY)}
                   </Button>
                 </div>
                 <p className="text-xs text-carbon/50">
-                  Please securely share this password with the patient if the email was not delivered.
+                  {t(PATIENT.SHARE_PASSWORD_NOTE)}
                 </p>
               </div>
 
@@ -487,7 +487,7 @@ export const PatientDetailPage = () => {
                     setGeneratedPassword(null);
                   }}
                 >
-                  Close
+                  {t(PATIENT.CLOSE)}
                 </Button>
               </div>
             </div>
@@ -497,26 +497,26 @@ export const PatientDetailPage = () => {
         {/* Metadata */}
         <Card variant="elevated" className="md:col-span-2 lg:col-span-3">
           <CardHeader>
-            <CardTitle>Metadata</CardTitle>
+            <CardTitle>{t(PATIENT.METADATA)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="text-xs font-medium text-carbon/60">Patient ID</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.PATIENT_ID)}</label>
                 <p className="text-sm text-carbon font-mono mt-1">{patient.patient_id}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-carbon/60">Registration Type</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.REGISTRATION_TYPE)}</label>
                 <p className="text-sm text-carbon mt-1 capitalize">{patient.registration_type}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-carbon/60">Created At</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.CREATED_AT)}</label>
                 <p className="text-sm text-carbon mt-1">
                   {format(new Date(patient.created_at), 'PPpp')}
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-carbon/60">Last Updated</label>
+                <label className="text-xs font-medium text-carbon/60">{t(PATIENT.LAST_UPDATED)}</label>
                 <p className="text-sm text-carbon mt-1">
                   {format(new Date(patient.updated_at), 'PPpp')}
                 </p>

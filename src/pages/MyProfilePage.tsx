@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,23 +10,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
 import { MdAccountCircle, MdEmail, MdPhone, MdCalendarToday, MdPerson, MdInfo, MdBusiness, MdBadge, MdEdit, MdClose } from 'react-icons/md';
+import { useTranslation, PROFILE } from '@/i18n';
 
-const editPatientSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  phone: z.string().optional(),
-  date_of_birth: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postal_code: z.string().optional(),
-  country: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  emergency_contact_relationship: z.string().optional(),
-});
-
-type EditPatientFormData = z.infer<typeof editPatientSchema>;
+interface EditPatientFormData {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  date_of_birth?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+}
 
 export const MyProfilePage = () => {
   const { user, role } = useAuth();
@@ -36,18 +35,34 @@ export const MyProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdatePatient();
   const { success: showSuccess, error: showError } = useToastStore();
-  
+  const { t } = useTranslation();
+
   const normalizedRole = role?.toUpperCase();
   const isDoctor = normalizedRole === 'DOCTOR';
-  
+
   // For doctors, fetch their doctor record
   const { data: doctorsData, isLoading: isLoadingDoctor } = useDoctors({
     user_id: user?.user_id,
     limit: 1,
   });
-  
+
   const doctor = doctorsData?.data?.[0];
-  
+
+  const editPatientSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(PROFILE.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(PROFILE.LAST_NAME_REQUIRED)),
+    phone: z.string().optional(),
+    date_of_birth: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postal_code: z.string().optional(),
+    country: z.string().optional(),
+    emergency_contact_name: z.string().optional(),
+    emergency_contact_phone: z.string().optional(),
+    emergency_contact_relationship: z.string().optional(),
+  }), [t]);
+
   const {
     register,
     handleSubmit,
@@ -56,10 +71,10 @@ export const MyProfilePage = () => {
   } = useForm<EditPatientFormData>({
     resolver: zodResolver(editPatientSchema),
   });
-  
+
   // Get patient data from user object (from /api/auth/me)
   const patient = user?.patient;
-  
+
   // Update form when patient data loads
   useEffect(() => {
     if (patient) {
@@ -79,14 +94,14 @@ export const MyProfilePage = () => {
       });
     }
   }, [patient, reset]);
-  
+
   // Redirect doctors to their doctor detail page
   useEffect(() => {
     if (isDoctor && doctor?.doctor_id && !isLoadingDoctor) {
       navigate(`/doctors/${doctor.doctor_id}`, { replace: true });
     }
   }, [isDoctor, doctor?.doctor_id, navigate, isLoadingDoctor]);
-  
+
   // Show loading while redirecting doctors
   if (isDoctor) {
     return (
@@ -98,7 +113,7 @@ export const MyProfilePage = () => {
 
   const onSubmit = async (data: EditPatientFormData) => {
     if (!patient?.patient_id) return;
-    
+
     setError(null);
 
     try {
@@ -119,14 +134,14 @@ export const MyProfilePage = () => {
           emergency_contact_relationship: data.emergency_contact_relationship || undefined,
         },
       });
-      
+
       // Invalidate auth query to refresh user data
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      
+
       setIsEditing(false);
-      showSuccess('Profile updated successfully!');
+      showSuccess(t(PROFILE.UPDATED_SUCCESS));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(PROFILE.UPDATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -139,10 +154,10 @@ export const MyProfilePage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 text-carbon font-heading font-semibold mb-2">
-              My Profile
+              {t(PROFILE.MY_PROFILE)}
             </h1>
             <p className="text-body text-carbon/60 font-ui">
-              View and manage your personal information
+              {t(PROFILE.VIEW_MANAGE_INFO)}
             </p>
           </div>
           {patient && !isEditing && (
@@ -152,7 +167,7 @@ export const MyProfilePage = () => {
               onClick={() => setIsEditing(true)}
             >
               <MdEdit className="h-4 w-4 mr-2" />
-              Edit Profile
+              {t(PROFILE.EDIT_PROFILE)}
             </Button>
           )}
         </div>
@@ -163,7 +178,7 @@ export const MyProfilePage = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <MdAccountCircle className="h-5 w-5 text-azure-dragon" />
-                Personal Information
+                {t(PROFILE.PERSONAL_INFORMATION)}
               </CardTitle>
               {isEditing && (
                 <Button
@@ -176,7 +191,7 @@ export const MyProfilePage = () => {
                   }}
                 >
                   <MdClose className="h-4 w-4 mr-2" />
-                  Cancel
+                  {t(PROFILE.CANCEL)}
                 </Button>
               )}
             </div>
@@ -196,69 +211,69 @@ export const MyProfilePage = () => {
                     {patient.patient_number && (
                       <div>
                         <label className="block text-xs font-medium text-carbon/60 mb-1.5">
-                          Patient Number
+                          {t(PROFILE.PATIENT_NUMBER)}
                         </label>
                         <p className="text-sm text-carbon font-ui font-medium bg-white-smoke px-3 py-2 rounded-md">
                           {patient.patient_number}
                         </p>
-                        <p className="text-xs text-carbon/50 mt-1">Cannot be changed</p>
+                        <p className="text-xs text-carbon/50 mt-1">{t(PROFILE.CANNOT_BE_CHANGED)}</p>
                       </div>
                     )}
 
                     <Input
-                      label="First Name"
+                      label={t(PROFILE.FIRST_NAME)}
                       {...register('first_name')}
                       error={errors.first_name?.message}
                       required
                     />
 
                     <Input
-                      label="Last Name"
+                      label={t(PROFILE.LAST_NAME)}
                       {...register('last_name')}
                       error={errors.last_name?.message}
                       required
                     />
 
                     <Input
-                      label="Phone"
+                      label={t(PROFILE.PHONE)}
                       type="tel"
                       {...register('phone')}
                       error={errors.phone?.message}
                     />
 
                     <Input
-                      label="Date of Birth"
+                      label={t(PROFILE.DATE_OF_BIRTH)}
                       type="date"
                       {...register('date_of_birth')}
                       error={errors.date_of_birth?.message}
                     />
 
                     <Input
-                      label="Address"
+                      label={t(PROFILE.ADDRESS)}
                       {...register('address')}
                       error={errors.address?.message}
                     />
 
                     <Input
-                      label="City"
+                      label={t(PROFILE.CITY)}
                       {...register('city')}
                       error={errors.city?.message}
                     />
 
                     <Input
-                      label="State/Province"
+                      label={t(PROFILE.STATE)}
                       {...register('state')}
                       error={errors.state?.message}
                     />
 
                     <Input
-                      label="Postal Code"
+                      label={t(PROFILE.POSTAL_CODE)}
                       {...register('postal_code')}
                       error={errors.postal_code?.message}
                     />
 
                     <Input
-                      label="Country"
+                      label={t(PROFILE.COUNTRY)}
                       {...register('country')}
                       error={errors.country?.message}
                     />
@@ -266,26 +281,26 @@ export const MyProfilePage = () => {
 
                   {/* Emergency Contact Section */}
                   <div className="pt-4 border-t border-carbon/10">
-                    <h3 className="text-sm font-medium text-carbon mb-4">Emergency Contact</h3>
+                    <h3 className="text-sm font-medium text-carbon mb-4">{t(PROFILE.EMERGENCY_CONTACT)}</h3>
                     <div className="grid gap-4 md:grid-cols-2">
                       <Input
-                        label="Emergency Contact Name"
+                        label={t(PROFILE.EMERGENCY_CONTACT_NAME)}
                         {...register('emergency_contact_name')}
                         error={errors.emergency_contact_name?.message}
                       />
 
                       <Input
-                        label="Emergency Contact Phone"
+                        label={t(PROFILE.EMERGENCY_CONTACT_PHONE)}
                         type="tel"
                         {...register('emergency_contact_phone')}
                         error={errors.emergency_contact_phone?.message}
                       />
 
                       <Input
-                        label="Relationship"
+                        label={t(PROFILE.RELATIONSHIP)}
                         {...register('emergency_contact_relationship')}
                         error={errors.emergency_contact_relationship?.message}
-                        placeholder="e.g., Spouse, Parent, Sibling"
+                        placeholder={t(PROFILE.RELATIONSHIP_PLACEHOLDER)}
                       />
                     </div>
                   </div>
@@ -297,7 +312,7 @@ export const MyProfilePage = () => {
                       size="md"
                       disabled={updateMutation.isPending}
                     >
-                      {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      {updateMutation.isPending ? t(PROFILE.SAVING) : t(PROFILE.SAVE_CHANGES)}
                     </Button>
                     <Button
                       type="button"
@@ -309,7 +324,7 @@ export const MyProfilePage = () => {
                         setError(null);
                       }}
                     >
-                      Cancel
+                      {t(PROFILE.CANCEL)}
                     </Button>
                   </div>
                 </form>
@@ -320,7 +335,7 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3">
                         <MdBadge className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div>
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Patient Number</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.PATIENT_NUMBER)}</p>
                           <p className="text-sm text-carbon font-ui font-medium">
                             {patient.patient_number}
                           </p>
@@ -331,7 +346,7 @@ export const MyProfilePage = () => {
                     <div className="flex items-start gap-3">
                       <MdPerson className="h-5 w-5 text-carbon/40 mt-0.5" />
                       <div>
-                        <p className="text-xs font-medium text-carbon/60 mb-1">Full Name</p>
+                        <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.FULL_NAME)}</p>
                         <p className="text-sm text-carbon font-ui">
                           {patient.full_name || `${patient.first_name} ${patient.last_name}`}
                         </p>
@@ -342,7 +357,7 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3">
                         <MdCalendarToday className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div>
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Date of Birth</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.DATE_OF_BIRTH)}</p>
                           <p className="text-sm text-carbon font-ui">
                             {new Date(patient.date_of_birth).toLocaleDateString('en-US', {
                               year: 'numeric',
@@ -358,8 +373,8 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3">
                         <MdPerson className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div>
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Age</p>
-                          <p className="text-sm text-carbon font-ui">{patient.age} years</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.AGE)}</p>
+                          <p className="text-sm text-carbon font-ui">{t(PROFILE.AGE_YEARS, { age: patient.age })}</p>
                         </div>
                       </div>
                     )}
@@ -368,7 +383,7 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3">
                         <MdPhone className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div>
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Phone</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.PHONE)}</p>
                           <p className="text-sm text-carbon font-ui">{patient.phone}</p>
                         </div>
                       </div>
@@ -378,7 +393,7 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3 md:col-span-2">
                         <MdInfo className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div className="flex-1">
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Address</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.ADDRESS)}</p>
                           <p className="text-sm text-carbon font-ui">
                             {patient.address}
                             {patient.city && `, ${patient.city}`}
@@ -394,7 +409,7 @@ export const MyProfilePage = () => {
                       <div className="flex items-start gap-3 md:col-span-2">
                         <MdPerson className="h-5 w-5 text-carbon/40 mt-0.5" />
                         <div>
-                          <p className="text-xs font-medium text-carbon/60 mb-1">Emergency Contact</p>
+                          <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.EMERGENCY_CONTACT)}</p>
                           <p className="text-sm text-carbon font-ui">
                             {patient.emergency_contact_name}
                             {patient.emergency_contact_phone && ` - ${patient.emergency_contact_phone}`}
@@ -408,7 +423,7 @@ export const MyProfilePage = () => {
                 {/* Clinics Section */}
                 {patient.clinics && patient.clinics.length > 0 && (
                   <div className="pt-4 border-t border-carbon/10">
-                    <p className="text-xs font-medium text-carbon/60 mb-3">Subscribed Clinics</p>
+                    <p className="text-xs font-medium text-carbon/60 mb-3">{t(PROFILE.SUBSCRIBED_CLINICS)}</p>
                     <div className="space-y-2">
                       {patient.clinics.map((clinic) => (
                         <div
@@ -438,7 +453,7 @@ export const MyProfilePage = () => {
             ) : (
               <div className="text-center py-8">
                 <p className="text-body text-carbon/60 font-ui">
-                  Profile information will be displayed here once your patient record is linked to your account.
+                  {t(PROFILE.NO_PROFILE)}
                 </p>
               </div>
             )}
@@ -450,7 +465,7 @@ export const MyProfilePage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdAccountCircle className="h-5 w-5 text-azure-dragon" />
-              Account Information
+              {t(PROFILE.ACCOUNT_INFORMATION)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -458,9 +473,9 @@ export const MyProfilePage = () => {
               <div className="flex items-start gap-3">
                 <MdEmail className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Email</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.EMAIL)}</p>
                   <p className="text-sm text-carbon font-ui">{user?.email || 'N/A'}</p>
-                  <p className="text-xs text-carbon/50 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-carbon/50 mt-1">{t(PROFILE.EMAIL_CANNOT_CHANGE)}</p>
                 </div>
               </div>
 
@@ -468,7 +483,7 @@ export const MyProfilePage = () => {
                 <div className="flex items-start gap-3">
                   <MdPerson className="h-5 w-5 text-carbon/40 mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-carbon/60 mb-1">Username</p>
+                    <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.USERNAME)}</p>
                     <p className="text-sm text-carbon font-ui">{user.username}</p>
                   </div>
                 </div>
@@ -477,10 +492,10 @@ export const MyProfilePage = () => {
               <div className="flex items-start gap-3">
                 <MdInfo className="h-5 w-5 text-carbon/40 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-carbon/60 mb-1">Account Status</p>
+                  <p className="text-xs font-medium text-carbon/60 mb-1">{t(PROFILE.ACCOUNT_STATUS)}</p>
                   <p className="text-sm text-carbon font-ui">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      {user?.is_active ? 'Active' : 'Inactive'}
+                      {user?.is_active ? t(PROFILE.ACTIVE) : t(PROFILE.INACTIVE)}
                     </span>
                   </p>
                 </div>
@@ -488,11 +503,11 @@ export const MyProfilePage = () => {
             </div>
             <div className="pt-4 border-t border-carbon/10">
               <p className="text-xs text-carbon/60">
-                To change your password, please visit{' '}
+                {t(PROFILE.CHANGE_PASSWORD_NOTE).split(t(PROFILE.SETTINGS))[0]}
                 <a href="/settings" className="text-azure-dragon hover:underline">
-                  Settings
+                  {t(PROFILE.SETTINGS)}
                 </a>
-                .
+                {t(PROFILE.CHANGE_PASSWORD_NOTE).split(t(PROFILE.SETTINGS))[1]}
               </p>
             </div>
           </CardContent>

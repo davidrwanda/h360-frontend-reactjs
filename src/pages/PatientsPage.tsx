@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClinics } from '@/hooks/useClinics';
 import { usePatients, useDeactivatePatient, useActivatePatient } from '@/hooks/usePatients';
 import { useToastStore } from '@/store/toastStore';
+import { useTranslation, PATIENT } from '@/i18n';
 import { PatientsTable } from '@/components/patients';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal, Select } from '@/components/ui';
 import { MdAdd, MdSearch, MdFilterList, MdClear, MdPerson } from 'react-icons/md';
@@ -12,18 +13,19 @@ import type { Patient } from '@/api/patients';
 export const PatientsPage = () => {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  
+  const { t } = useTranslation();
+
   // Determine if user is a clinic manager
   const normalizedRole = role?.toUpperCase();
   const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
-  
+
   // For clinic managers, automatically use their clinic_id
   // For system admins, allow clinic selection
   const [selectedClinicId, setSelectedClinicId] = useState<string>(
     isClinicManager ? (user?.clinic_id || '') : ''
   );
-  
+
   const [search, setSearch] = useState('');
   const [genderFilter, setGenderFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
@@ -97,10 +99,10 @@ export const PatientsPage = () => {
 
     try {
       await deleteMutation.mutateAsync(patientToDelete.patient_id);
-      showSuccess('Patient deactivated successfully!');
+      showSuccess(t(PATIENT.DEACTIVATED_SUCCESS));
       setPatientToDelete(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate patient';
+      const errorMessage = error instanceof Error ? error.message : t(PATIENT.DEACTIVATE_FAILED);
       console.error('Failed to deactivate patient:', error);
       showError(errorMessage);
     }
@@ -115,10 +117,10 @@ export const PatientsPage = () => {
 
     try {
       await activateMutation.mutateAsync(patientToActivate.patient_id);
-      showSuccess('Patient activated successfully!');
+      showSuccess(t(PATIENT.ACTIVATED_SUCCESS));
       setPatientToActivate(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to activate patient';
+      const errorMessage = error instanceof Error ? error.message : t(PATIENT.ACTIVATE_FAILED);
       console.error('Failed to activate patient:', error);
       showError(errorMessage);
     }
@@ -140,12 +142,12 @@ export const PatientsPage = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Patients Management
+            {t(PATIENT.PATIENTS_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
             {isClinicManager
-              ? `Manage patients for your clinic`
-              : 'Manage all patients in the system'}
+              ? t(PATIENT.MANAGE_CLINIC_PATIENTS)
+              : t(PATIENT.MANAGE_ALL_PATIENTS)}
           </p>
         </div>
         <div className="flex gap-2">
@@ -156,7 +158,7 @@ export const PatientsPage = () => {
             disabled={isSystemAdmin && !selectedClinicId && !isClinicManager}
           >
             <MdAdd className="h-4 w-4 mr-2" />
-            Create Patient
+            {t(PATIENT.CREATE_PATIENT)}
           </Button>
         </div>
       </div>
@@ -167,7 +169,7 @@ export const PatientsPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdFilterList className="h-5 w-5 text-azure-dragon" />
-              Filters
+              {t(PATIENT.FILTERS)}
             </CardTitle>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
@@ -178,7 +180,7 @@ export const PatientsPage = () => {
                   className="text-xs"
                 >
                   <MdClear className="h-4 w-4 mr-1" />
-                  Clear
+                  {t(PATIENT.CLEAR)}
                 </Button>
               )}
               <Button
@@ -187,7 +189,7 @@ export const PatientsPage = () => {
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 className="text-xs"
               >
-                {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+                {showAdvancedFilters ? t(PATIENT.HIDE_ADVANCED) : t(PATIENT.SHOW_ADVANCED)}
               </Button>
             </div>
           </div>
@@ -197,14 +199,14 @@ export const PatientsPage = () => {
             {/* Clinic filter - only for system admins */}
             {isSystemAdmin && !isClinicManager && (
               <Select
-                label="Clinic"
+                label={t(PATIENT.CLINIC)}
                 value={selectedClinicId}
                 onChange={(e) => {
                   setSelectedClinicId(e.target.value);
                   setPage(1);
                 }}
                 options={[
-                  { value: '', label: 'All Clinics' },
+                  { value: '', label: t(PATIENT.ALL_CLINICS) },
                   ...(clinicsData?.data.map((clinic) => ({
                     value: clinic.clinic_id,
                     label: clinic.name,
@@ -214,8 +216,8 @@ export const PatientsPage = () => {
             )}
             <div className="relative">
               <Input
-                label="Search"
-                placeholder="Search by name, email, phone..."
+                label={t(PATIENT.SEARCH)}
+                placeholder={t(PATIENT.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -225,30 +227,30 @@ export const PatientsPage = () => {
               <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
             </div>
             <Select
-              label="Gender"
+              label={t(PATIENT.GENDER)}
               value={genderFilter}
               onChange={(e) => {
                 setGenderFilter(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: '', label: 'All Genders' },
-                { value: 'M', label: 'Male' },
-                { value: 'F', label: 'Female' },
-                { value: 'Other', label: 'Other' },
+                { value: '', label: t(PATIENT.ALL_GENDERS) },
+                { value: 'M', label: t(PATIENT.MALE) },
+                { value: 'F', label: t(PATIENT.FEMALE) },
+                { value: 'Other', label: t(PATIENT.OTHER_GENDER) },
               ]}
             />
             <Select
-              label="Has Account"
+              label={t(PATIENT.HAS_ACCOUNT)}
               value={hasAccountFilter}
               onChange={(e) => {
                 setHasAccountFilter(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: '', label: 'All' },
-                { value: 'yes', label: 'Yes' },
-                { value: 'no', label: 'No' },
+                { value: '', label: t(PATIENT.ALL) },
+                { value: 'yes', label: t(PATIENT.YES) },
+                { value: 'no', label: t(PATIENT.NO) },
               ]}
             />
           </div>
@@ -257,16 +259,16 @@ export const PatientsPage = () => {
           {showAdvancedFilters && (
             <div className="mt-4 pt-4 border-t border-carbon/10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Select
-                label="Status"
+                label={t(PATIENT.STATUS)}
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
                 options={[
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                  { value: 'all', label: 'All' },
+                  { value: 'active', label: t(PATIENT.ACTIVE) },
+                  { value: 'inactive', label: t(PATIENT.INACTIVE) },
+                  { value: 'all', label: t(PATIENT.ALL) },
                 ]}
               />
             </div>
@@ -279,7 +281,7 @@ export const PatientsPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Patients
+            {t(PATIENT.PATIENTS)}
             {selectedClinic && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
                 ({selectedClinic.name})
@@ -291,7 +293,7 @@ export const PatientsPage = () => {
           {error && (
             <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
               <p className="text-xs text-smudged-lips">
-                {error instanceof Error ? error.message : 'Failed to load patients'}
+                {error instanceof Error ? error.message : t(PATIENT.FAILED_TO_LOAD)}
               </p>
             </div>
           )}
@@ -309,8 +311,11 @@ export const PatientsPage = () => {
           {patientsData && patientsData.totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-carbon/60">
-                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, patientsData.total)} of{' '}
-                {patientsData.total} patients
+                {t(PATIENT.SHOWING, {
+                  from: String((page - 1) * limit + 1),
+                  to: String(Math.min(page * limit, patientsData.total)),
+                  total: String(patientsData.total),
+                })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -319,7 +324,7 @@ export const PatientsPage = () => {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  Previous
+                  {t(PATIENT.PREVIOUS)}
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: patientsData.totalPages }, (_, i) => i + 1)
@@ -351,7 +356,7 @@ export const PatientsPage = () => {
                   onClick={() => setPage((p) => Math.min(patientsData.totalPages, p + 1))}
                   disabled={page === patientsData.totalPages}
                 >
-                  Next
+                  {t(PATIENT.NEXT)}
                 </Button>
               </div>
             </div>
@@ -364,13 +369,14 @@ export const PatientsPage = () => {
         isOpen={!!patientToDelete}
         onClose={() => setPatientToDelete(null)}
         onConfirm={handleDeleteConfirm}
-        title="Deactivate Patient"
+        title={t(PATIENT.DEACTIVATE_TITLE)}
         message={
           patientToDelete
-            ? `Are you sure you want to deactivate ${patientToDelete.first_name} ${patientToDelete.last_name}? This action can be undone later.`
+            ? t(PATIENT.DEACTIVATE_MESSAGE, { name: `${patientToDelete.first_name} ${patientToDelete.last_name}` })
             : ''
         }
-        confirmText="Deactivate"
+        confirmText={t(PATIENT.DEACTIVATE)}
+        variant="deactivate"
         isLoading={deleteMutation.isPending}
       />
 
@@ -379,13 +385,14 @@ export const PatientsPage = () => {
         isOpen={!!patientToActivate}
         onClose={() => setPatientToActivate(null)}
         onConfirm={handleActivateConfirm}
-        title="Activate Patient"
+        title={t(PATIENT.ACTIVATE_TITLE)}
         message={
           patientToActivate
-            ? `Are you sure you want to activate ${patientToActivate.first_name} ${patientToActivate.last_name}? This will activate the patient system-wide.`
+            ? t(PATIENT.ACTIVATE_MESSAGE, { name: `${patientToActivate.first_name} ${patientToActivate.last_name}` })
             : ''
         }
-        confirmText="Activate"
+        confirmText={t(PATIENT.ACTIVATE)}
+        variant="activate"
         isLoading={activateMutation.isPending}
       />
     </div>

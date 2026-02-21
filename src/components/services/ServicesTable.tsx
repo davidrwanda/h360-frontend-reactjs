@@ -1,5 +1,6 @@
 import { Service } from '@/api/services';
 import { Button } from '@/components/ui';
+import { useTranslation, SERVICE } from '@/i18n';
 import { MdEdit, MdDelete, MdVisibility, MdMedicalServices, MdCheckCircle } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 
@@ -22,6 +23,8 @@ export const ServicesTable = ({
   onView,
   canEdit = false,
 }: ServicesTableProps) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -36,7 +39,7 @@ export const ServicesTable = ({
     return (
       <div className="text-center py-12">
         <MdMedicalServices className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
-        <p className="text-sm text-carbon/60">No services found</p>
+        <p className="text-sm text-carbon/60">{t(SERVICE.NO_SERVICES_FOUND)}</p>
       </div>
     );
   }
@@ -46,13 +49,13 @@ export const ServicesTable = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-carbon/10">
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Service Code</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Name</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Category</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Price</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Duration</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Status</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.SERVICE_CODE)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.NAME)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.CATEGORY)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.PRICE)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.DURATION)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.STATUS)}</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(SERVICE.ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -72,14 +75,14 @@ export const ServicesTable = ({
               </td>
               <td className="py-3 px-4">
                 <span className="text-sm text-carbon/70">
-                  {service.category || <span className="text-carbon/40">—</span>}
+                  {service.category || <span className="text-carbon/40">&mdash;</span>}
                 </span>
               </td>
               <td className="py-3 px-4">
                 <span className="text-sm font-medium text-carbon">{service.price}</span>
               </td>
               <td className="py-3 px-4">
-                <span className="text-sm text-carbon/70">{service.duration_minutes} min</span>
+                <span className="text-sm text-carbon/70">{t(SERVICE.DURATION_MIN, { minutes: String(service.duration_minutes) })}</span>
               </td>
               <td className="py-3 px-4">
                 <span
@@ -90,7 +93,7 @@ export const ServicesTable = ({
                       : 'bg-carbon/10 text-carbon/60'
                   )}
                 >
-                  {service.is_active ? 'Active' : 'Inactive'}
+                  {service.is_active ? t(SERVICE.ACTIVE) : t(SERVICE.INACTIVE)}
                 </span>
               </td>
               <td className="py-3 px-4">
@@ -135,7 +138,7 @@ export const ServicesTable = ({
                         size="sm"
                         onClick={() => onActivate(service)}
                         className="h-8 w-8 p-0 text-azure-dragon hover:text-azure-dragon"
-                        title="Activate service"
+                        title={t(SERVICE.ACTIVATE_SERVICE_TOOLTIP)}
                       >
                         <MdCheckCircle className="h-4 w-4" />
                       </Button>

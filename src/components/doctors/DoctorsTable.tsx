@@ -1,5 +1,6 @@
 import { Doctor } from '@/api/doctors';
 import { Button } from '@/components/ui';
+import { useTranslation, DOCTOR } from '@/i18n';
 import { MdEdit, MdDelete, MdVisibility, MdLocalHospital, MdCheckCircle } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 
@@ -22,6 +23,8 @@ export const DoctorsTable = ({
   onView,
   canEdit = false,
 }: DoctorsTableProps) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -36,7 +39,7 @@ export const DoctorsTable = ({
     return (
       <div className="text-center py-12">
         <MdLocalHospital className="h-12 w-12 text-carbon/20 mx-auto mb-4" />
-        <p className="text-sm text-carbon/60">No doctors found</p>
+        <p className="text-sm text-carbon/60">{t(DOCTOR.NO_DOCTORS_FOUND)}</p>
       </div>
     );
   }
@@ -46,13 +49,13 @@ export const DoctorsTable = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-carbon/10">
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Doctor Number</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Name</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Specialty</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Phone</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Clinic</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">Status</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">Actions</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.DOCTOR_NUMBER)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.NAME)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.SPECIALTY)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.PHONE)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.CLINIC)}</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.STATUS)}</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(DOCTOR.ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -94,7 +97,7 @@ export const DoctorsTable = ({
                       : 'bg-carbon/10 text-carbon/60'
                   )}
                 >
-                  {doctor.is_active ? 'Active' : 'Inactive'}
+                  {doctor.is_active ? t(DOCTOR.ACTIVE) : t(DOCTOR.INACTIVE)}
                 </span>
               </td>
               <td className="py-3 px-4">
@@ -139,7 +142,7 @@ export const DoctorsTable = ({
                         size="sm"
                         onClick={() => onActivate(doctor)}
                         className="h-8 w-8 p-0 text-azure-dragon hover:text-azure-dragon"
-                        title="Activate doctor"
+                        title={t(DOCTOR.ACTIVATE_DOCTOR_TOOLTIP)}
                       >
                         <MdCheckCircle className="h-4 w-4" />
                       </Button>

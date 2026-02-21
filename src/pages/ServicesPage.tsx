@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDoctors } from '@/hooks/useDoctors';
 import { useServices, useDeactivateService, useActivateService, useDoctorServices } from '@/hooks/useServices';
+import { useTranslation, SERVICE } from '@/i18n';
 import { ServicesTable } from '@/components/services/ServicesTable';
 import { Button, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal, Select, Input } from '@/components/ui';
 import { MdAdd, MdSearch, MdFilterList, MdClear } from 'react-icons/md';
@@ -11,29 +12,30 @@ import type { Service } from '@/api/services';
 export const ServicesPage = () => {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  
+  const { t } = useTranslation();
+
   // Check if user can edit (only managers and admins)
   const normalizedRole = role?.toUpperCase();
   const canEdit = normalizedRole === 'MANAGER' || normalizedRole === 'ADMIN';
   const isDoctor = normalizedRole === 'DOCTOR';
-  
+
   // For clinic managers, automatically use their clinic_id (check both direct and nested locations)
   const clinicId = user?.clinic_id || user?.employee?.clinic_id || undefined;
-  
+
   // For doctors, fetch their doctor record to get doctor_id
   const { data: doctorsData } = useDoctors({
     user_id: user?.user_id,
     limit: 1,
   });
-  
+
   const doctor = doctorsData?.data?.[0];
-  
+
   // For doctors, fetch only their assigned services
   const { data: doctorServicesData, isLoading: isLoadingDoctorServices } = useDoctorServices(
     doctor?.doctor_id || '',
     isDoctor && !!doctor?.doctor_id
   );
-  
+
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
@@ -58,7 +60,7 @@ export const ServicesPage = () => {
   // For doctors, filter assigned services client-side
   let services: Service[] = [];
   let totalPages = 1;
-  
+
   if (isDoctor) {
     if (isLoadingDoctorServices) {
       // Will show loading state
@@ -66,32 +68,32 @@ export const ServicesPage = () => {
       const allServices = doctorServicesData || [];
       // Apply filters client-side
       let filtered = allServices;
-      
+
       if (search) {
         const searchLower = search.toLowerCase();
-        filtered = filtered.filter(s => 
+        filtered = filtered.filter(s =>
           s.name.toLowerCase().includes(searchLower) ||
           s.service_code.toLowerCase().includes(searchLower) ||
           s.description?.toLowerCase().includes(searchLower)
         );
       }
-      
+
       if (categoryFilter) {
         filtered = filtered.filter(s => s.category === categoryFilter);
       }
-      
+
       if (statusFilter === 'active') {
         filtered = filtered.filter(s => s.is_active);
       } else if (statusFilter === 'inactive') {
         filtered = filtered.filter(s => !s.is_active);
       }
-      
+
       if (requiresAppointmentFilter === 'true') {
         filtered = filtered.filter(s => s.requires_appointment);
       } else if (requiresAppointmentFilter === 'false') {
         filtered = filtered.filter(s => !s.requires_appointment);
       }
-      
+
       // Paginate
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
@@ -102,10 +104,10 @@ export const ServicesPage = () => {
     services = data?.data || [];
     totalPages = data?.totalPages || Math.ceil((data?.total || 0) / limit);
   }
-  
+
   const isLoadingServices = isDoctor ? isLoadingDoctorServices : isLoading;
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     search || statusFilter !== 'active' || categoryFilter || requiresAppointmentFilter;
 
   const handleClearFilters = () => {
@@ -163,10 +165,10 @@ export const ServicesPage = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-heading font-semibold text-azure-dragon mb-1">
-            Services Management
+            {t(SERVICE.SERVICES_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            Manage clinic services and offerings
+            {t(SERVICE.MANAGE_CLINIC_SERVICES)}
           </p>
         </div>
         {canEdit && (
@@ -177,7 +179,7 @@ export const ServicesPage = () => {
               onClick={() => navigate('/services/create')}
             >
               <MdAdd className="h-4 w-4 mr-2" />
-              Create Service
+              {t(SERVICE.CREATE_SERVICE)}
             </Button>
           </div>
         )}
@@ -189,14 +191,14 @@ export const ServicesPage = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MdFilterList className="h-5 w-5" />
-              Filters
+              {t(SERVICE.FILTERS)}
             </CardTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+              {showAdvancedFilters ? t(SERVICE.HIDE_ADVANCED) : t(SERVICE.SHOW_ADVANCED)}
             </Button>
           </div>
         </CardHeader>
@@ -205,9 +207,9 @@ export const ServicesPage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
               <Input
-                label="Search"
+                label={t(SERVICE.SEARCH)}
                 type="text"
-                placeholder="Search services..."
+                placeholder={t(SERVICE.SEARCH_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -218,16 +220,16 @@ export const ServicesPage = () => {
             </div>
 
             <Select
-              label="Status"
+              label={t(SERVICE.STATUS)}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
+                { value: 'all', label: t(SERVICE.ALL_STATUS) },
+                { value: 'active', label: t(SERVICE.ACTIVE) },
+                { value: 'inactive', label: t(SERVICE.INACTIVE) },
               ]}
             />
           </div>
@@ -236,9 +238,9 @@ export const ServicesPage = () => {
           {showAdvancedFilters && (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 pt-4 border-t border-carbon/10 mt-4">
               <Input
-                label="Category"
+                label={t(SERVICE.CATEGORY)}
                 type="text"
-                placeholder="Filter by category"
+                placeholder={t(SERVICE.CATEGORY_PLACEHOLDER)}
                 value={categoryFilter}
                 onChange={(e) => {
                   setCategoryFilter(e.target.value);
@@ -247,16 +249,16 @@ export const ServicesPage = () => {
               />
 
               <Select
-                label="Requires Appointment"
+                label={t(SERVICE.REQUIRES_APPOINTMENT)}
                 value={requiresAppointmentFilter}
                 onChange={(e) => {
                   setRequiresAppointmentFilter(e.target.value);
                   setPage(1);
                 }}
                 options={[
-                  { value: '', label: 'All' },
-                  { value: 'true', label: 'Yes' },
-                  { value: 'false', label: 'No' },
+                  { value: '', label: t(SERVICE.ALL) },
+                  { value: 'true', label: t(SERVICE.YES) },
+                  { value: 'false', label: t(SERVICE.NO) },
                 ]}
               />
             </div>
@@ -271,7 +273,7 @@ export const ServicesPage = () => {
                 className="text-sm"
               >
                 <MdClear className="h-4 w-4 mr-1" />
-                Clear Filters
+                {t(SERVICE.CLEAR_FILTERS)}
               </Button>
             </div>
           )}
@@ -284,7 +286,7 @@ export const ServicesPage = () => {
           {error ? (
             <div className="p-6 text-center">
               <p className="text-sm text-smudged-lips">
-                Failed to load services. Please try again.
+                {t(SERVICE.FAILED_TO_LOAD)}
               </p>
             </div>
           ) : (
@@ -303,7 +305,7 @@ export const ServicesPage = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-carbon/10 px-4 py-3">
                   <p className="text-sm text-carbon/60">
-                    Page {page} of {totalPages} ({data?.total || 0} total)
+                    {t(SERVICE.PAGE_OF, { page: String(page), totalPages: String(totalPages) })}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -312,7 +314,7 @@ export const ServicesPage = () => {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
-                      Previous
+                      {t(SERVICE.PREVIOUS)}
                     </Button>
                     <Button
                       variant="outline"
@@ -320,7 +322,7 @@ export const ServicesPage = () => {
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
                     >
-                      Next
+                      {t(SERVICE.NEXT)}
                     </Button>
                   </div>
                 </div>
@@ -336,9 +338,9 @@ export const ServicesPage = () => {
           isOpen={!!serviceToDelete}
           onClose={() => setServiceToDelete(null)}
           onConfirm={handleDeleteConfirm}
-          title="Deactivate Service"
-          message={`Are you sure you want to deactivate "${serviceToDelete.name}"? This service will no longer be available for appointments.`}
-          confirmText="Deactivate"
+          title={t(SERVICE.DEACTIVATE_TITLE)}
+          message={t(SERVICE.DEACTIVATE_MESSAGE, { name: serviceToDelete.name })}
+          confirmText={t(SERVICE.DEACTIVATE)}
           isLoading={deactivateMutation.isPending}
         />
       )}
@@ -349,10 +351,10 @@ export const ServicesPage = () => {
           isOpen={!!serviceToActivate}
           onClose={() => setServiceToActivate(null)}
           onConfirm={handleActivateConfirm}
-          title="Activate Service"
-          message={`Are you sure you want to activate "${serviceToActivate.name}"? This service will become available for appointments.`}
-          confirmText="Activate"
-          actionLabel="Activate"
+          title={t(SERVICE.ACTIVATE_TITLE)}
+          message={t(SERVICE.ACTIVATE_MESSAGE, { name: serviceToActivate.name })}
+          confirmText={t(SERVICE.ACTIVATE)}
+          actionLabel={t(SERVICE.ACTIVATE)}
           isLoading={activateMutation.isPending}
         />
       )}

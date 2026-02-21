@@ -27,4 +27,25 @@ export const COMMON = {
   LOGIN: 'common.login',
   REGISTER: 'common.register',
   TAGLINE: 'common.tagline',
+  PLACEHOLDER_MODULE_DESC: 'common.placeholderModuleDesc',
+  APPOINTMENTS: 'common.appointments',
+  QUEUE_MANAGEMENT: 'common.queueManagement',
+  NOTIFICATIONS: 'common.notifications',
+
+  // DeleteConfirmationModal defaults
+  CANCEL: 'common.cancel',
+  ITEM: 'common.item',
+  DELETE: 'common.delete',
+  DEACTIVATE: 'common.deactivate',
+  ACTIVATE: 'common.activate',
+
+  // Menu overview
+  NAV_MENU_OVERVIEW: 'common.navMenuOverview',
+  MENU_STRUCTURE_FOR_ROLE: 'common.menuStructureForRole',
+  SECTION_MAIN: 'common.sectionMain',
+  SECTION_PEOPLE_SERVICES: 'common.sectionPeopleServices',
+  SECTION_OPERATIONS: 'common.sectionOperations',
+  SECTION_ADMINISTRATION: 'common.sectionAdministration',
+  SECTION_SYSTEM: 'common.sectionSystem',
+  ALL_MENU_ITEMS: 'common.allMenuItems',
 } as const;

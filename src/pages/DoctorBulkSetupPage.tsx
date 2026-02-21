@@ -8,21 +8,23 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading } from
 import { MdArrowBack, MdSchedule, MdAdd, MdDelete } from 'react-icons/md';
 import { validateSlotWithinOperatingHours } from '@/utils/operatingHours';
 import type { DayOfWeek, InitializeDoctorTimetableSchedule } from '@/api/timetables';
-
-const dayOfWeekOptions = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
+import { useTranslation, TIMETABLE } from '@/i18n';
 
 export const DoctorBulkSetupPage = () => {
   const { id: doctorId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
+
+  const dayOfWeekOptions = [
+    { value: 'monday', label: t(TIMETABLE.MONDAY) },
+    { value: 'tuesday', label: t(TIMETABLE.TUESDAY) },
+    { value: 'wednesday', label: t(TIMETABLE.WEDNESDAY) },
+    { value: 'thursday', label: t(TIMETABLE.THURSDAY) },
+    { value: 'friday', label: t(TIMETABLE.FRIDAY) },
+    { value: 'saturday', label: t(TIMETABLE.SATURDAY) },
+    { value: 'sunday', label: t(TIMETABLE.SUNDAY) },
+  ];
 
   const { data: doctor, isLoading: isLoadingDoctor } = useDoctor(doctorId!, !!doctorId);
   const { data: clinic } = useClinic(doctor?.clinic_id ?? undefined);
@@ -49,7 +51,7 @@ export const DoctorBulkSetupPage = () => {
     replace_existing: boolean;
   }) => {
     if (!doctorId) {
-      showError('Doctor not found');
+      showError(t(TIMETABLE.DOCTOR_NOT_FOUND));
       return;
     }
 
@@ -73,10 +75,10 @@ export const DoctorBulkSetupPage = () => {
         doctorId,
         data,
       });
-      showSuccess('Doctor timetable initialized successfully!');
+      showSuccess(t(TIMETABLE.INITIALIZED_SUCCESS));
       navigate(`/doctors/${doctorId}/timetable`);
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to initialize timetable');
+      showError(error instanceof Error ? error.message : t(TIMETABLE.INITIALIZE_FAILED));
     }
   };
 
@@ -94,9 +96,9 @@ export const DoctorBulkSetupPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12 text-sm text-carbon/60">
-          Doctor not found.
+          {t(TIMETABLE.DOCTOR_NOT_FOUND)}
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mt-2">
-            Go back
+            {t(TIMETABLE.GO_BACK)}
           </Button>
         </div>
       </div>
@@ -118,10 +120,10 @@ export const DoctorBulkSetupPage = () => {
           </Button>
           <div>
             <h1 className="text-lg font-semibold text-carbon">
-              Bulk Setup — {doctor.full_name}
+              {t(TIMETABLE.BULK_SETUP)} — {doctor.full_name}
             </h1>
             <p className="text-sm text-carbon/60">
-              Configure time slots for each day of the week. You can add multiple slots per day.
+              {t(TIMETABLE.BULK_SETUP_DESC)}
             </p>
           </div>
         </div>
@@ -131,10 +133,10 @@ export const DoctorBulkSetupPage = () => {
         <CardHeader className="border-b border-carbon/10 bg-carbon/[0.02]">
           <CardTitle className="flex items-center gap-2 text-base font-medium text-carbon">
             <MdSchedule className="h-5 w-5 text-azure-dragon" />
-            Weekly Schedule
+            {t(TIMETABLE.WEEKLY_SCHEDULE)}
           </CardTitle>
           <p className="text-xs text-carbon/60 mt-1">
-            Add start/end times and optional notes for each day. Slots are created when you submit.
+            {t(TIMETABLE.WEEKLY_SCHEDULE_DESC)}
           </p>
         </CardHeader>
         <CardContent className="p-0">
@@ -168,7 +170,7 @@ export const DoctorBulkSetupPage = () => {
                               }}
                               className="flex-1 min-w-[100px]"
                             />
-                            <span className="text-sm text-carbon/60">to</span>
+                            <span className="text-sm text-carbon/60">{t(TIMETABLE.TO)}</span>
                             <Input
                               type="time"
                               value={slot.end_time || ''}
@@ -182,7 +184,7 @@ export const DoctorBulkSetupPage = () => {
                               className="flex-1 min-w-[100px]"
                             />
                             <Input
-                              placeholder="Notes (optional)"
+                              placeholder={t(TIMETABLE.NOTES_OPTIONAL)}
                               value={slot.notes || ''}
                               onChange={(e) => {
                                 const newSchedule = [...currentSchedule];
@@ -230,7 +232,7 @@ export const DoctorBulkSetupPage = () => {
                         }}
                       >
                         <MdAdd className="h-4 w-4 mr-1" />
-                        Add Time Slot
+                        {t(TIMETABLE.ADD_TIME_SLOT)}
                       </Button>
                     </div>
                   </div>
@@ -251,7 +253,7 @@ export const DoctorBulkSetupPage = () => {
                         onChange={field.onChange}
                         className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                       />
-                      <span className="text-sm text-carbon">Mark all as active</span>
+                      <span className="text-sm text-carbon">{t(TIMETABLE.MARK_ALL_ACTIVE)}</span>
                     </label>
                   )}
                 />
@@ -266,7 +268,7 @@ export const DoctorBulkSetupPage = () => {
                         onChange={field.onChange}
                         className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                       />
-                      <span className="text-sm text-carbon">Replace existing timetables</span>
+                      <span className="text-sm text-carbon">{t(TIMETABLE.REPLACE_EXISTING)}</span>
                     </label>
                   )}
                 />
@@ -278,14 +280,14 @@ export const DoctorBulkSetupPage = () => {
                   variant="ghost"
                   onClick={() => navigate(`/doctors/${doctorId}/timetable`)}
                 >
-                  Cancel
+                  {t(TIMETABLE.CANCEL)}
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
                   disabled={initializeMutation.isPending}
                 >
-                  {initializeMutation.isPending ? 'Initializing…' : 'Initialize Schedule'}
+                  {initializeMutation.isPending ? t(TIMETABLE.INITIALIZING) : t(TIMETABLE.INITIALIZE_SCHEDULE)}
                 </Button>
               </div>
             </div>

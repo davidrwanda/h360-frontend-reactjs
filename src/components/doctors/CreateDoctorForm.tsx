@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,50 +9,45 @@ import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from 
 import { DoctorSpecialtyInput } from './DoctorSpecialtyInput';
 import { MdLocalHospital, MdSearch, MdCheckCircle, MdPerson } from 'react-icons/md';
 import type { Doctor } from '@/api/doctors';
+import { useTranslation, DOCTOR } from '@/i18n';
 
-const createDoctorSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().optional(),
-  gender: z.enum(['M', 'F', 'Other']).optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  alternate_phone: z.string().optional().or(z.literal('')),
-  /** Optional name; backend uses existing id or creates new specialty. */
-  specialty: z.string().optional().or(z.literal('')),
-  /** Optional UUIDs from GET /api/doctor-specialties; merged with specialty. */
-  specialty_ids: z.array(z.string()).optional(),
-  license_number: z.string().optional(),
-  license_expiry_date: z.string().optional(),
-  medical_school: z.string().optional(),
-  years_of_experience: z.number().min(0).optional(),
-  qualifications: z.string().optional(),
-  bio: z.string().optional(),
-  clinic_id: z.string().min(1, 'Clinic is required'),
-  doctor_number: z.string().optional(),
-  profile_image_url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  // Clinic-specific fields
-  hire_date: z.string().optional(),
-  appointment_duration_minutes: z.number().min(1, 'Duration must be at least 1 minute').optional(),
-  max_daily_patients: z.number().min(1, 'Max daily patients must be at least 1').optional(),
-  accepts_new_patients: z.boolean().optional(),
-  consultation_fee: z.string().optional(),
-  notes: z.string().optional(),
-});
+interface CreateDoctorFormData {
+  first_name: string;
+  last_name: string;
+  date_of_birth?: string;
+  gender?: 'M' | 'F' | 'Other';
+  email?: string;
+  phone?: string;
+  alternate_phone?: string;
+  specialty?: string;
+  specialty_ids?: string[];
+  license_number?: string;
+  license_expiry_date?: string;
+  medical_school?: string;
+  years_of_experience?: number;
+  qualifications?: string;
+  bio?: string;
+  clinic_id: string;
+  doctor_number?: string;
+  profile_image_url?: string;
+  hire_date?: string;
+  appointment_duration_minutes?: number;
+  max_daily_patients?: number;
+  accepts_new_patients?: boolean;
+  consultation_fee?: string;
+  notes?: string;
+}
 
-const subscribeDoctorSchema = z.object({
-  clinic_id: z.string().min(1, 'Clinic is required'),
-  employment_status: z.enum(['active', 'inactive', 'on_leave']).optional(),
-  hire_date: z.string().optional(),
-  appointment_duration_minutes: z.number().min(1, 'Duration must be at least 1 minute').optional(),
-  max_daily_patients: z.number().min(1, 'Max daily patients must be at least 1').optional(),
-  accepts_new_patients: z.boolean().optional(),
-  consultation_fee: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type CreateDoctorFormData = z.infer<typeof createDoctorSchema>;
-type SubscribeDoctorFormData = z.infer<typeof subscribeDoctorSchema>;
+interface SubscribeDoctorFormData {
+  clinic_id: string;
+  employment_status?: 'active' | 'inactive' | 'on_leave';
+  hire_date?: string;
+  appointment_duration_minutes?: number;
+  max_daily_patients?: number;
+  accepts_new_patients?: boolean;
+  consultation_fee?: string;
+  notes?: string;
+}
 
 interface CreateDoctorFormProps {
   clinicId?: string;
@@ -65,6 +60,7 @@ export const CreateDoctorForm = ({
   onSuccess,
   onCancel,
 }: CreateDoctorFormProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [foundDoctor, setFoundDoctor] = useState<Doctor | null>(null);
@@ -82,6 +78,47 @@ export const CreateDoctorForm = ({
     limit: 10,
     is_active: true,
   });
+
+  const createDoctorSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(DOCTOR.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(DOCTOR.LAST_NAME_REQUIRED)),
+    date_of_birth: z.string().optional(),
+    gender: z.enum(['M', 'F', 'Other']).optional(),
+    email: z.string().email(t(DOCTOR.INVALID_EMAIL)).optional().or(z.literal('')),
+    phone: z.string().optional(),
+    alternate_phone: z.string().optional().or(z.literal('')),
+    /** Optional name; backend uses existing id or creates new specialty. */
+    specialty: z.string().optional().or(z.literal('')),
+    /** Optional UUIDs from GET /api/doctor-specialties; merged with specialty. */
+    specialty_ids: z.array(z.string()).optional(),
+    license_number: z.string().optional(),
+    license_expiry_date: z.string().optional(),
+    medical_school: z.string().optional(),
+    years_of_experience: z.number().min(0).optional(),
+    qualifications: z.string().optional(),
+    bio: z.string().optional(),
+    clinic_id: z.string().min(1, t(DOCTOR.CLINIC_REQUIRED)),
+    doctor_number: z.string().optional(),
+    profile_image_url: z.string().url(t(DOCTOR.INVALID_URL)).optional().or(z.literal('')),
+    // Clinic-specific fields
+    hire_date: z.string().optional(),
+    appointment_duration_minutes: z.number().min(1, t(DOCTOR.DURATION_MIN_ERROR)).optional(),
+    max_daily_patients: z.number().min(1, t(DOCTOR.MAX_DAILY_MIN_ERROR)).optional(),
+    accepts_new_patients: z.boolean().optional(),
+    consultation_fee: z.string().optional(),
+    notes: z.string().optional(),
+  }), [t]);
+
+  const subscribeDoctorSchema = useMemo(() => z.object({
+    clinic_id: z.string().min(1, t(DOCTOR.CLINIC_REQUIRED)),
+    employment_status: z.enum(['active', 'inactive', 'on_leave']).optional(),
+    hire_date: z.string().optional(),
+    appointment_duration_minutes: z.number().min(1, t(DOCTOR.DURATION_MIN_ERROR)).optional(),
+    max_daily_patients: z.number().min(1, t(DOCTOR.MAX_DAILY_MIN_ERROR)).optional(),
+    accepts_new_patients: z.boolean().optional(),
+    consultation_fee: z.string().optional(),
+    notes: z.string().optional(),
+  }), [t]);
 
   const {
     register,
@@ -117,7 +154,7 @@ export const CreateDoctorForm = ({
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || searchQuery.length < 3) {
-      showError('Please enter at least 3 characters to search');
+      showError(t(DOCTOR.SEARCH_MIN_CHARS));
       return;
     }
 
@@ -125,7 +162,7 @@ export const CreateDoctorForm = ({
     try {
       const result = await searchDoctors();
       const doctors = result.data?.data || [];
-      
+
       // Try to find exact match by email, phone, or doctor_number
       const exactMatch = doctors.find(
         (doc) =>
@@ -152,11 +189,11 @@ export const CreateDoctorForm = ({
         });
       } else {
         setFoundDoctor(null);
-        showError('No doctor found with that email, phone, or code');
+        showError(t(DOCTOR.NO_DOCTOR_FOUND));
       }
     } catch (err) {
       setFoundDoctor(null);
-      showError('Failed to search for doctor');
+      showError(t(DOCTOR.SEARCH_FAILED));
     } finally {
       setIsSearchingDoctor(false);
     }
@@ -205,12 +242,12 @@ export const CreateDoctorForm = ({
       });
 
       reset();
-      showSuccess('Doctor created successfully!');
+      showSuccess(t(DOCTOR.CREATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create doctor. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(DOCTOR.CREATE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -218,7 +255,7 @@ export const CreateDoctorForm = ({
 
   const onSubscribeSubmit = async (data: SubscribeDoctorFormData) => {
     if (!foundDoctor || !foundDoctor.doctor_number) {
-      showError('Doctor code is required to subscribe');
+      showError(t(DOCTOR.DOCTOR_CODE_REQUIRED));
       return;
     }
 
@@ -246,7 +283,7 @@ export const CreateDoctorForm = ({
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe doctor. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(DOCTOR.SUBSCRIBE_FAILED);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -260,7 +297,7 @@ export const CreateDoctorForm = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdCheckCircle className="h-5 w-5 text-azure-dragon" />
-              Subscribe Existing Doctor
+              {t(DOCTOR.SUBSCRIBE_EXISTING)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -282,11 +319,11 @@ export const CreateDoctorForm = ({
                   <p className="text-xs text-carbon/60">{foundDoctor.phone}</p>
                   {(foundDoctor.specialty || (foundDoctor.specialty_ids && foundDoctor.specialty_ids.length > 0)) && (
                     <p className="text-xs text-carbon/60 mt-1">
-                      Specialty: {foundDoctor.specialty ?? (foundDoctor.specialty_ids?.length ? `${foundDoctor.specialty_ids.length} selected` : '')}
+                      {t(DOCTOR.SPECIALTY)}: {foundDoctor.specialty ?? (foundDoctor.specialty_ids?.length ? `${foundDoctor.specialty_ids.length} selected` : '')}
                     </p>
                   )}
                   {foundDoctor.doctor_number && (
-                    <p className="text-xs text-carbon/60">Code: {foundDoctor.doctor_number}</p>
+                    <p className="text-xs text-carbon/60">{t(DOCTOR.CODE)}: {foundDoctor.doctor_number}</p>
                   )}
                 </div>
                 <Button
@@ -296,13 +333,13 @@ export const CreateDoctorForm = ({
                   onClick={handleClearSearch}
                   className="text-xs"
                 >
-                  Change
+                  {t(DOCTOR.CHANGE)}
                 </Button>
               </div>
             </div>
 
             <p className="text-xs text-carbon/60">
-              This doctor already exists in the system. Please provide clinic-specific information below.
+              {t(DOCTOR.DOCTOR_EXISTS_DESC)}
             </p>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -311,12 +348,12 @@ export const CreateDoctorForm = ({
                 control={controlSubscribe}
                 render={({ field }) => (
                   <Select
-                    label="Clinic"
+                    label={t(DOCTOR.CLINIC)}
                     error={subscribeErrors.clinic_id?.message}
                     required
                     disabled={!!clinicId}
                     options={[
-                      { value: '', label: 'Select a clinic' },
+                      { value: '', label: t(DOCTOR.SELECT_CLINIC) },
                       ...(clinicsData?.data || []).map((clinic) => ({
                         value: clinic.clinic_id,
                         label: clinic.name,
@@ -332,13 +369,13 @@ export const CreateDoctorForm = ({
                 control={controlSubscribe}
                 render={({ field }) => (
                   <Select
-                    label="Employment Status"
+                    label={t(DOCTOR.EMPLOYMENT_STATUS)}
                     error={subscribeErrors.employment_status?.message}
                     options={[
-                      { value: '', label: 'Select status' },
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' },
-                      { value: 'on_leave', label: 'On Leave' },
+                      { value: '', label: t(DOCTOR.SELECT_STATUS) },
+                      { value: 'active', label: t(DOCTOR.ACTIVE) },
+                      { value: 'inactive', label: t(DOCTOR.INACTIVE) },
+                      { value: 'on_leave', label: t(DOCTOR.ON_LEAVE) },
                     ]}
                     {...field}
                   />
@@ -346,14 +383,14 @@ export const CreateDoctorForm = ({
               />
 
               <Input
-                label="Hire Date"
+                label={t(DOCTOR.HIRE_DATE)}
                 type="date"
                 error={subscribeErrors.hire_date?.message}
                 {...registerSubscribe('hire_date')}
               />
 
               <Input
-                label="Appointment Duration (minutes)"
+                label={t(DOCTOR.APPOINTMENT_DURATION_LABEL)}
                 type="number"
                 placeholder="30"
                 error={subscribeErrors.appointment_duration_minutes?.message}
@@ -361,7 +398,7 @@ export const CreateDoctorForm = ({
               />
 
               <Input
-                label="Max Daily Patients"
+                label={t(DOCTOR.MAX_DAILY_PATIENTS)}
                 type="number"
                 placeholder="20"
                 error={subscribeErrors.max_daily_patients?.message}
@@ -369,8 +406,8 @@ export const CreateDoctorForm = ({
               />
 
               <Input
-                label="Consultation Fee"
-                placeholder="e.g., $150.00"
+                label={t(DOCTOR.CONSULTATION_FEE)}
+                placeholder={t(DOCTOR.CONSULTATION_FEE_PLACEHOLDER)}
                 error={subscribeErrors.consultation_fee?.message}
                 {...registerSubscribe('consultation_fee')}
               />
@@ -382,14 +419,14 @@ export const CreateDoctorForm = ({
                     {...registerSubscribe('accepts_new_patients')}
                     className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                   />
-                  <span className="text-sm text-carbon">Accepts New Patients</span>
+                  <span className="text-sm text-carbon">{t(DOCTOR.ACCEPTS_NEW_PATIENTS)}</span>
                 </label>
               </div>
 
               <div className="md:col-span-2">
                 <Input
-                  label="Notes"
-                  placeholder="Additional notes (optional)"
+                  label={t(DOCTOR.NOTES)}
+                  placeholder={t(DOCTOR.CLINIC_NOTES_PLACEHOLDER)}
                   error={subscribeErrors.notes?.message}
                   {...registerSubscribe('notes')}
                 />
@@ -403,7 +440,7 @@ export const CreateDoctorForm = ({
                 size="md"
                 disabled={subscribeMutation.isPending}
               >
-                {subscribeMutation.isPending ? 'Subscribing...' : 'Subscribe Doctor'}
+                {subscribeMutation.isPending ? t(DOCTOR.SUBSCRIBING) : t(DOCTOR.SUBSCRIBE_DOCTOR)}
               </Button>
               {onCancel && (
                 <Button
@@ -412,7 +449,7 @@ export const CreateDoctorForm = ({
                   size="md"
                   onClick={onCancel}
                 >
-                  Cancel
+                  {t(DOCTOR.CANCEL)}
                 </Button>
               )}
             </div>
@@ -429,7 +466,7 @@ export const CreateDoctorForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdLocalHospital className="h-5 w-5 text-azure-dragon" />
-            Create New Doctor
+            {t(DOCTOR.CREATE_NEW_DOCTOR)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -442,14 +479,14 @@ export const CreateDoctorForm = ({
           {/* Search for Existing Doctor */}
           <div className="rounded-md border border-carbon/15 p-4 bg-white-smoke/50">
             <label className="block text-xs font-medium text-carbon/80 mb-2">
-              Search for Existing Doctor (Optional)
+              {t(DOCTOR.SEARCH_EXISTING_LABEL)}
             </label>
             <p className="text-xs text-carbon/60 mb-3">
-              Search by email, phone number, or doctor code to subscribe an existing doctor to this clinic
+              {t(DOCTOR.SEARCH_EXISTING_DESC)}
             </p>
             <div className="flex gap-2">
               <Input
-                placeholder="Email, phone, or doctor code"
+                placeholder={t(DOCTOR.SEARCH_PLACEHOLDER_EXISTING)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -468,7 +505,7 @@ export const CreateDoctorForm = ({
                 disabled={isSearchingDoctor || !searchQuery.trim() || searchQuery.length < 3}
               >
                 <MdSearch className="h-4 w-4 mr-2" />
-                {isSearchingDoctor ? 'Searching...' : 'Search'}
+                {isSearchingDoctor ? t(DOCTOR.SEARCHING) : t(DOCTOR.SEARCH)}
               </Button>
             </div>
           </div>
@@ -476,48 +513,48 @@ export const CreateDoctorForm = ({
           {/* Basic Information Section */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-semibold text-azure-dragon mb-4">Basic Information</h3>
+              <h3 className="text-sm font-semibold text-azure-dragon mb-4">{t(DOCTOR.BASIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="First Name"
-                  placeholder="e.g., John"
+                  label={t(DOCTOR.FIRST_NAME)}
+                  placeholder={t(DOCTOR.FIRST_NAME_PLACEHOLDER)}
                   error={errors.first_name?.message}
                   required
                   {...register('first_name')}
                 />
 
                 <Input
-                  label="Last Name"
-                  placeholder="e.g., Smith"
+                  label={t(DOCTOR.LAST_NAME)}
+                  placeholder={t(DOCTOR.LAST_NAME_PLACEHOLDER)}
                   error={errors.last_name?.message}
                   required
                   {...register('last_name')}
                 />
 
                 <Input
-                  label="Email"
+                  label={t(DOCTOR.EMAIL)}
                   type="email"
-                  placeholder="e.g., john.smith@clinic.com"
+                  placeholder={t(DOCTOR.EMAIL_PLACEHOLDER)}
                   error={errors.email?.message}
                   {...register('email')}
                 />
 
                 <Input
-                  label="Phone"
-                  placeholder="e.g., +250788475841"
+                  label={t(DOCTOR.PHONE)}
+                  placeholder={t(DOCTOR.PHONE_PLACEHOLDER)}
                   error={errors.phone?.message}
                   {...register('phone')}
                 />
 
                 <Input
-                  label="Alternate Phone"
-                  placeholder="e.g., +250788475842"
+                  label={t(DOCTOR.ALTERNATE_PHONE)}
+                  placeholder={t(DOCTOR.ALTERNATE_PHONE_PLACEHOLDER)}
                   error={errors.alternate_phone?.message}
                   {...register('alternate_phone')}
                 />
 
                 <Input
-                  label="Date of Birth"
+                  label={t(DOCTOR.DATE_OF_BIRTH)}
                   type="date"
                   error={errors.date_of_birth?.message}
                   {...register('date_of_birth')}
@@ -528,13 +565,13 @@ export const CreateDoctorForm = ({
                   control={control}
                   render={({ field }) => (
                     <Select
-                      label="Gender"
+                      label={t(DOCTOR.GENDER)}
                       error={errors.gender?.message}
                       options={[
-                        { value: '', label: 'Select gender' },
-                        { value: 'M', label: 'Male' },
-                        { value: 'F', label: 'Female' },
-                        { value: 'Other', label: 'Other' },
+                        { value: '', label: t(DOCTOR.SELECT_GENDER) },
+                        { value: 'M', label: t(DOCTOR.MALE) },
+                        { value: 'F', label: t(DOCTOR.FEMALE) },
+                        { value: 'Other', label: t(DOCTOR.OTHER_GENDER) },
                       ]}
                       {...field}
                     />
@@ -546,8 +583,8 @@ export const CreateDoctorForm = ({
                   control={control}
                   render={({ field }) => (
                     <DoctorSpecialtyInput
-                      label="Specialties"
-                      placeholder="Select or type to filter specialties"
+                      label={t(DOCTOR.SPECIALTIES)}
+                      placeholder={t(DOCTOR.SPECIALTIES_PLACEHOLDER)}
                       value={field.value || []}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -558,35 +595,35 @@ export const CreateDoctorForm = ({
                 />
 
                 <Input
-                  label="Custom specialty name (optional)"
-                  placeholder="e.g., Cardiology — adds or links by name"
+                  label={t(DOCTOR.CUSTOM_SPECIALTY)}
+                  placeholder={t(DOCTOR.CUSTOM_SPECIALTY_PLACEHOLDER)}
                   error={errors.specialty?.message}
                   {...register('specialty')}
                 />
 
                 <Input
-                  label="License Number"
-                  placeholder="e.g., MD-LIC-2024-001"
+                  label={t(DOCTOR.LICENSE_NUMBER)}
+                  placeholder={t(DOCTOR.LICENSE_NUMBER_PLACEHOLDER)}
                   error={errors.license_number?.message}
                   {...register('license_number')}
                 />
 
                 <Input
-                  label="License Expiry Date"
+                  label={t(DOCTOR.LICENSE_EXPIRY_DATE)}
                   type="date"
                   error={errors.license_expiry_date?.message}
                   {...register('license_expiry_date')}
                 />
 
                 <Input
-                  label="Medical School"
-                  placeholder="e.g., Harvard Medical School"
+                  label={t(DOCTOR.MEDICAL_SCHOOL)}
+                  placeholder={t(DOCTOR.MEDICAL_SCHOOL_PLACEHOLDER)}
                   error={errors.medical_school?.message}
                   {...register('medical_school')}
                 />
 
                 <Input
-                  label="Years of Experience"
+                  label={t(DOCTOR.YEARS_OF_EXPERIENCE)}
                   type="number"
                   placeholder="15"
                   error={errors.years_of_experience?.message}
@@ -594,21 +631,21 @@ export const CreateDoctorForm = ({
                 />
 
                 <Input
-                  label="Qualifications"
-                  placeholder="e.g., Board Certified"
+                  label={t(DOCTOR.QUALIFICATIONS)}
+                  placeholder={t(DOCTOR.QUALIFICATIONS_PLACEHOLDER)}
                   error={errors.qualifications?.message}
                   {...register('qualifications')}
                 />
 
                 <Input
-                  label="Doctor Number"
-                  placeholder="e.g., H260D-001 (auto-generated if empty)"
+                  label={t(DOCTOR.DOCTOR_NUMBER_LABEL)}
+                  placeholder={t(DOCTOR.DOCTOR_NUMBER_PLACEHOLDER)}
                   error={errors.doctor_number?.message}
                   {...register('doctor_number')}
                 />
 
                 <Input
-                  label="Profile Image URL"
+                  label={t(DOCTOR.PROFILE_IMAGE_URL)}
                   type="url"
                   placeholder="https://example.com/image.jpg"
                   error={errors.profile_image_url?.message}
@@ -617,8 +654,8 @@ export const CreateDoctorForm = ({
 
                 <div className="md:col-span-2">
                   <Input
-                    label="Bio"
-                    placeholder="Doctor biography"
+                    label={t(DOCTOR.BIO)}
+                    placeholder={t(DOCTOR.BIO_PLACEHOLDER)}
                     error={errors.bio?.message}
                     {...register('bio')}
                   />
@@ -628,19 +665,19 @@ export const CreateDoctorForm = ({
 
             {/* Clinic Information Section */}
             <div className="pt-6 border-t border-carbon/10">
-              <h3 className="text-sm font-semibold text-azure-dragon mb-4">Clinic Information</h3>
+              <h3 className="text-sm font-semibold text-azure-dragon mb-4">{t(DOCTOR.CLINIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Controller
                   name="clinic_id"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      label="Clinic"
+                      label={t(DOCTOR.CLINIC)}
                       error={errors.clinic_id?.message}
                       required
                       disabled={!!clinicId}
                       options={[
-                        { value: '', label: 'Select a clinic' },
+                        { value: '', label: t(DOCTOR.SELECT_CLINIC) },
                         ...(clinicsData?.data || []).map((clinic) => ({
                           value: clinic.clinic_id,
                           label: clinic.name,
@@ -652,14 +689,14 @@ export const CreateDoctorForm = ({
                 />
 
                 <Input
-                  label="Hire Date"
+                  label={t(DOCTOR.HIRE_DATE)}
                   type="date"
                   error={errors.hire_date?.message}
                   {...register('hire_date')}
                 />
 
                 <Input
-                  label="Appointment Duration (minutes)"
+                  label={t(DOCTOR.APPOINTMENT_DURATION_LABEL)}
                   type="number"
                   placeholder="30"
                   error={errors.appointment_duration_minutes?.message}
@@ -667,7 +704,7 @@ export const CreateDoctorForm = ({
                 />
 
                 <Input
-                  label="Max Daily Patients"
+                  label={t(DOCTOR.MAX_DAILY_PATIENTS)}
                   type="number"
                   placeholder="20"
                   error={errors.max_daily_patients?.message}
@@ -675,8 +712,8 @@ export const CreateDoctorForm = ({
                 />
 
                 <Input
-                  label="Consultation Fee"
-                  placeholder="e.g., $150.00"
+                  label={t(DOCTOR.CONSULTATION_FEE)}
+                  placeholder={t(DOCTOR.CONSULTATION_FEE_PLACEHOLDER)}
                   error={errors.consultation_fee?.message}
                   {...register('consultation_fee')}
                 />
@@ -688,14 +725,14 @@ export const CreateDoctorForm = ({
                       {...register('accepts_new_patients')}
                       className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                     />
-                    <span className="text-sm text-carbon">Accepts New Patients</span>
+                    <span className="text-sm text-carbon">{t(DOCTOR.ACCEPTS_NEW_PATIENTS)}</span>
                   </label>
                 </div>
 
                 <div className="md:col-span-2">
                   <Input
-                    label="Notes"
-                    placeholder="Clinic-specific notes"
+                    label={t(DOCTOR.NOTES)}
+                    placeholder={t(DOCTOR.CLINIC_NOTES_PLACEHOLDER)}
                     error={errors.notes?.message}
                     {...register('notes')}
                   />
@@ -711,7 +748,7 @@ export const CreateDoctorForm = ({
               size="md"
               disabled={createMutation.isPending}
             >
-              {createMutation.isPending ? 'Creating...' : 'Create Doctor'}
+              {createMutation.isPending ? t(DOCTOR.CREATING) : t(DOCTOR.CREATE_DOCTOR)}
             </Button>
             {onCancel && (
               <Button
@@ -720,7 +757,7 @@ export const CreateDoctorForm = ({
                 size="md"
                 onClick={onCancel}
               >
-                Cancel
+                {t(DOCTOR.CANCEL)}
               </Button>
             )}
           </div>
