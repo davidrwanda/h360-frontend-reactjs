@@ -90,11 +90,11 @@ export interface PatientSelfRegistrationRequest {
   username: string;
   password: string;
   phone?: string;
+  gender?: 'M' | 'F' | 'Other';
   date_of_birth?: string;
 }
 
 export interface CreateAccountRequest {
-  clinic_id: string;
   send_email?: boolean;
 }
 
@@ -105,6 +105,7 @@ export interface CreateAccountResponse {
 
 export interface SubscribePatientRequest {
   clinic_id: string;
+  is_primary?: boolean;
   notes?: string;
 }
 

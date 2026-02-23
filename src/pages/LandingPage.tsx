@@ -578,11 +578,11 @@ export const LandingPage = () => {
               {/* Left Column: Clinic Slots (only show when there are results) */}
               {showResults && (
                 <div className="lg:col-span-2 space-y-6">
-                  {isLoading ? (
+                  {isLoading || isLoadingSlots ? (
                     <div className="flex items-center justify-center py-12">
                       <Loading size="lg" />
                     </div>
-                  ) : error ? (
+                  ) : error && displayClinics.length === 0 ? (
                     <div className="text-center py-12">
                       <MdLocalHospital className="h-16 w-16 text-carbon/20 mx-auto mb-4" />
                       <p className="text-carbon/60 text-lg">

@@ -111,6 +111,9 @@ export const clinicFr: Record<string, string> = {
   'clinic.notConfigured': 'Non configuré',
   'clinic.open': 'Ouverture',
   'clinic.close': 'Fermeture',
+  'clinic.defaultHours': 'Par défaut (08:00 - 17:00)',
+  'clinic.customHours': 'Personnalisé',
+  'clinic.applyDefault': 'Appliquer les heures par défaut',
 
   // Days
   'clinic.monday': 'Lundi',
@@ -259,4 +262,11 @@ export const clinicFr: Record<string, string> = {
   'clinic.typeCodeRequired': 'Le code du type est requis',
   'clinic.typeCreated': 'Type de clinique créé avec succès',
   'clinic.typeCreateFailed': 'Échec de la création du type de clinique',
+  'clinic.startTypingAddress': 'Commencez à taper une adresse...',
+  'clinic.enterAddressManually': "Entrez l'adresse manuellement...",
+  'clinic.loadingAddressSuggestions': 'Chargement des suggestions d\'adresses...',
+  'clinic.manualAddressHelper': "Entrez l'adresse manuellement. Ajoutez une clé API Google Maps pour les suggestions automatiques.",
+  'clinic.clinicNameOrEstablishment': 'Nom de la clinique ou établissement',
+  'clinic.cityOrPostalCode': 'Ville ou code postal',
+  'clinic.selectClinicFirst': "Sélectionnez d'abord une clinique",
 };

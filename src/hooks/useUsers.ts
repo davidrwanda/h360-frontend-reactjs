@@ -187,7 +187,7 @@ export const useUpdateMyPreferences = () => {
       // Update cache with server response (this ensures all fields are correct)
       queryClient.setQueryData(['preferences', 'me'], updatedPreferences);
     },
-    onError: (error, newPreferences, context) => {
+    onError: (error, _newPreferences, context) => {
       // Rollback to previous value on error
       if (context?.previousPreferences) {
         queryClient.setQueryData(['preferences', 'me'], context.previousPreferences);

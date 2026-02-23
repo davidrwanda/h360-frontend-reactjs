@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,43 +37,20 @@ import {
 import { cn } from '@/utils/cn';
 import { validateSlotWithinOperatingHours } from '@/utils/operatingHours';
 import { UserCalendarViewModal } from '@/components/calendar/UserCalendarViewModal';
+import { useTranslation, DOCTOR, CLINIC, COMMON } from '@/i18n';
 import type { DayOfWeek, DoctorTimetable } from '@/api/timetables';
 
-const dayOfWeekOptions = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
-
-const timetableFormSchema = z.object({
-  day_of_week: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
-  start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
-  end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
-  is_active: z.boolean().default(true),
-  slot_order: z.number().min(1).default(1),
-  notes: z.string().optional(),
-}).refine((data) => {
-  const startParts = data.start_time.split(':').map(Number);
-  const endParts = data.end_time.split(':').map(Number);
-  const startHours = startParts[0] ?? 0;
-  const startMinutes = startParts[1] ?? 0;
-  const endHours = endParts[0] ?? 0;
-  const endMinutes = endParts[1] ?? 0;
-  const startTime = startHours * 60 + startMinutes;
-  const endTime = endHours * 60 + endMinutes;
-  return endTime > startTime;
-}, {
-  message: 'End time must be after start time',
-  path: ['end_time'],
-});
-
-type TimetableFormData = z.infer<typeof timetableFormSchema>;
+interface TimetableFormData {
+  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  slot_order: number;
+  notes?: string;
+}
 
 export const DoctorCalendarConfigPage = () => {
+  const { t } = useTranslation();
   const { id: doctorIdFromRoute } = useParams<{ id?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -106,7 +83,7 @@ export const DoctorCalendarConfigPage = () => {
     limit: 100,
   });
 
-  const doctors = doctorsData?.data || [];
+  const doctors = useMemo(() => doctorsData?.data || [], [doctorsData?.data]);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>(doctorIdFromRoute || '');
 
@@ -132,6 +109,38 @@ export const DoctorCalendarConfigPage = () => {
   const [isUserCalendarOpen, setIsUserCalendarOpen] = useState(false);
   const [editingTimetable, setEditingTimetable] = useState<DoctorTimetable | null>(null);
   const [deletingTimetable, setDeletingTimetable] = useState<DoctorTimetable | null>(null);
+
+  const timetableFormSchema = useMemo(() => z.object({
+    day_of_week: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+    start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, t(DOCTOR.INVALID_TIME_FORMAT)),
+    end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, t(DOCTOR.INVALID_TIME_FORMAT)),
+    is_active: z.boolean().default(true),
+    slot_order: z.number().min(1).default(1),
+    notes: z.string().optional(),
+  }).refine((data) => {
+    const startParts = data.start_time.split(':').map(Number);
+    const endParts = data.end_time.split(':').map(Number);
+    const startHours = startParts[0] ?? 0;
+    const startMinutes = startParts[1] ?? 0;
+    const endHours = endParts[0] ?? 0;
+    const endMinutes = endParts[1] ?? 0;
+    const startTime = startHours * 60 + startMinutes;
+    const endTime = endHours * 60 + endMinutes;
+    return endTime > startTime;
+  }, {
+    message: t(DOCTOR.END_AFTER_START),
+    path: ['end_time'],
+  }), [t]);
+
+  const dayOfWeekOptions = useMemo(() => [
+    { value: 'monday', label: t(CLINIC.MONDAY) },
+    { value: 'tuesday', label: t(CLINIC.TUESDAY) },
+    { value: 'wednesday', label: t(CLINIC.WEDNESDAY) },
+    { value: 'thursday', label: t(CLINIC.THURSDAY) },
+    { value: 'friday', label: t(CLINIC.FRIDAY) },
+    { value: 'saturday', label: t(CLINIC.SATURDAY) },
+    { value: 'sunday', label: t(CLINIC.SUNDAY) },
+  ], [t]);
 
   const form = useForm<TimetableFormData>({
     resolver: zodResolver(timetableFormSchema),
@@ -196,15 +205,15 @@ export const DoctorCalendarConfigPage = () => {
         id: timetable.timetable_id,
         data: { is_active: !timetable.is_active },
       });
-      showSuccess(timetable.is_active ? 'Time slot turned off.' : 'Time slot turned on.');
+      showSuccess(timetable.is_active ? t(DOCTOR.SLOT_TURNED_OFF) : t(DOCTOR.SLOT_TURNED_ON));
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to update');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_UPDATE));
     }
   };
 
   const onSubmit = async (data: TimetableFormData) => {
     if (!selectedDoctorId) {
-      showError('Please select a doctor first');
+      showError(t(DOCTOR.SELECT_DOCTOR_FIRST));
       return;
     }
 
@@ -228,7 +237,7 @@ export const DoctorCalendarConfigPage = () => {
         const startMinutes = startParts[1] ?? 0;
         const endHours = endParts[0] ?? 0;
         const endMinutes = endParts[1] ?? 0;
-        
+
         await updateMutation.mutateAsync({
           doctorId: selectedDoctorId,
           id: editingTimetable.timetable_id,
@@ -248,17 +257,17 @@ export const DoctorCalendarConfigPage = () => {
             notes: data.notes || undefined,
           },
         });
-        showSuccess('Timetable updated successfully!');
+        showSuccess(t(DOCTOR.TIMETABLE_UPDATED));
       } else {
         await createMutation.mutateAsync({
           doctorId: selectedDoctorId,
           data,
         });
-        showSuccess('Timetable created successfully!');
+        showSuccess(t(DOCTOR.TIMETABLE_CREATED));
       }
       handleCloseModal();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to save timetable');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_SAVE_TIMETABLE));
     }
   };
 
@@ -270,10 +279,10 @@ export const DoctorCalendarConfigPage = () => {
         doctorId: selectedDoctorId,
         id: deletingTimetable.timetable_id,
       });
-      showSuccess('Timetable deleted successfully!');
+      showSuccess(t(DOCTOR.TIMETABLE_DELETED));
       setDeletingTimetable(null);
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to delete timetable');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_DELETE_TIMETABLE));
     }
   };
 
@@ -281,9 +290,9 @@ export const DoctorCalendarConfigPage = () => {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="text-center py-12">
-          <h2 className="text-lg font-medium text-smudged-lips mb-2">No Clinic Assigned</h2>
+          <h2 className="text-lg font-medium text-smudged-lips mb-2">{t(DOCTOR.NO_CLINIC_ASSIGNED)}</h2>
           <p className="text-sm text-carbon/60">
-            You are not assigned to any clinic. Please contact your administrator.
+            {t(DOCTOR.NO_CLINIC_ASSIGNED_DESC)}
           </p>
         </div>
       </div>
@@ -310,18 +319,18 @@ export const DoctorCalendarConfigPage = () => {
               }
             }}
             className="h-9 w-9 p-0 shrink-0"
-            aria-label="Back"
+            aria-label={t(COMMON.BACK)}
           >
             <MdArrowBack className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-lg font-semibold text-carbon">
               {doctorIdFromRoute && selectedDoctorId
-                ? `Timetable - ${doctors.find(d => d.doctor_id === selectedDoctorId)?.full_name || 'Doctor'}`
-                : 'Doctor Calendar Configuration'}
+                ? t(DOCTOR.TIMETABLE_DASH, { name: doctors.find(d => d.doctor_id === selectedDoctorId)?.full_name || 'Doctor' })
+                : t(DOCTOR.CALENDAR_CONFIG)}
             </h1>
             <p className="text-sm text-carbon/60">
-              {doctorIdFromRoute ? 'Manage doctor schedule and availability' : 'Manage doctor schedules and availability'}
+              {doctorIdFromRoute ? t(DOCTOR.MANAGE_SCHEDULE_SINGLE) : t(DOCTOR.MANAGE_SCHEDULES)}
             </p>
           </div>
         </div>
@@ -333,7 +342,7 @@ export const DoctorCalendarConfigPage = () => {
               onClick={() => setIsUserCalendarOpen(true)}
             >
               <MdCalendarToday className="h-4 w-4 mr-2" />
-              View User Calendar
+              {t(DOCTOR.VIEW_USER_CALENDAR)}
             </Button>
             <Button
               variant="outline"
@@ -341,11 +350,11 @@ export const DoctorCalendarConfigPage = () => {
               onClick={() => navigate(doctorIdFromRoute ? `/doctors/${doctorIdFromRoute}/bulk-setup` : `/doctors/${selectedDoctorId}/bulk-setup`)}
             >
               <MdSchedule className="h-4 w-4 mr-2" />
-              Bulk Setup
+              {t(DOCTOR.BULK_SETUP)}
             </Button>
             <Button variant="primary" size="md" onClick={() => handleOpenModal()}>
               <MdAdd className="h-4 w-4 mr-2" />
-              Add Time Slot
+              {t(DOCTOR.ADD_TIME_SLOT_TITLE)}
             </Button>
           </div>
         )}
@@ -357,7 +366,7 @@ export const DoctorCalendarConfigPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MdPerson className="h-5 w-5 text-azure-dragon" />
-              Select Doctor
+              {t(DOCTOR.SELECT_DOCTOR_TITLE)}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -365,9 +374,9 @@ export const DoctorCalendarConfigPage = () => {
               <Loading size="sm" />
             ) : (
               <Select
-                label="Doctor"
+                label={t(DOCTOR.DOCTOR_LABEL)}
                 options={[
-                  { value: '', label: 'Select a doctor...' },
+                  { value: '', label: t(DOCTOR.SELECT_DOCTOR_OPTION) },
                   ...doctorOptions,
                 ]}
                 value={selectedDoctorId}
@@ -383,7 +392,7 @@ export const DoctorCalendarConfigPage = () => {
         <Card variant="elevated">
           <CardContent className="py-12">
             <p className="text-center text-sm text-carbon/60">
-              Please select a doctor to view and manage their schedule
+              {t(DOCTOR.SELECT_DOCTOR_PROMPT)}
             </p>
           </CardContent>
         </Card>
@@ -392,10 +401,10 @@ export const DoctorCalendarConfigPage = () => {
           <CardHeader className="border-b border-carbon/10 bg-carbon/[0.02]">
             <CardTitle className="flex items-center gap-2 text-base font-medium text-carbon">
               <MdSchedule className="h-5 w-5 text-azure-dragon" />
-              Operating schedule
+              {t(DOCTOR.OPERATING_SCHEDULE)}
             </CardTitle>
             <p className="text-xs text-carbon/60 mt-1">
-              Toggle a slot off to stop taking appointments for that period without deleting it.
+              {t(DOCTOR.TOGGLE_SCHEDULE_HELPER)}
             </p>
           </CardHeader>
           <CardContent className="p-0">
@@ -424,7 +433,7 @@ export const DoctorCalendarConfigPage = () => {
                       </div>
                       <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
                         {dayTimetables.length === 0 ? (
-                          <span className="text-sm text-carbon/50">No time slots configured</span>
+                          <span className="text-sm text-carbon/50">{t(DOCTOR.NO_SLOTS_CONFIGURED)}</span>
                         ) : (
                           dayTimetables.map((timetable) => {
                             const tooltipParts = [
@@ -451,7 +460,7 @@ export const DoctorCalendarConfigPage = () => {
                                 type="button"
                                 role="switch"
                                 aria-checked={timetable.is_active}
-                                aria-label={timetable.is_active ? 'Turn off' : 'Turn on'}
+                                aria-label={timetable.is_active ? t(DOCTOR.TURN_OFF) : t(DOCTOR.TURN_ON)}
                                 onClick={() => handleToggleActive(timetable)}
                                 disabled={updateMutation.isPending}
                                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md focus:outline-none focus:ring-1 focus:ring-azure-dragon focus:ring-offset-0"
@@ -475,7 +484,7 @@ export const DoctorCalendarConfigPage = () => {
                                 size="sm"
                                 onClick={() => handleOpenModal(timetable)}
                                 className="h-7 w-7 min-w-7 p-0 text-carbon/60 hover:text-azure-dragon"
-                                aria-label="Edit"
+                                aria-label={t(DOCTOR.EDIT_LABEL)}
                               >
                                 <MdEdit className="h-4 w-4" />
                               </Button>
@@ -484,7 +493,7 @@ export const DoctorCalendarConfigPage = () => {
                                 size="sm"
                                 onClick={() => setDeletingTimetable(timetable)}
                                 className="h-7 w-7 min-w-7 p-0 text-carbon/60 hover:text-smudged-lips"
-                                aria-label="Delete"
+                                aria-label={t(DOCTOR.DELETE_LABEL)}
                               >
                                 <MdDelete className="h-4 w-4" />
                               </Button>
@@ -506,7 +515,7 @@ export const DoctorCalendarConfigPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingTimetable ? 'Edit Time Slot' : 'Add Time Slot'}
+        title={editingTimetable ? t(DOCTOR.EDIT_TIME_SLOT) : t(DOCTOR.ADD_TIME_SLOT_TITLE)}
         size="md"
       >
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -515,7 +524,7 @@ export const DoctorCalendarConfigPage = () => {
             control={form.control}
             render={({ field, fieldState }) => (
               <Select
-                label="Day of Week"
+                label={t(DOCTOR.DAY_OF_WEEK)}
                 options={dayOfWeekOptions}
                 error={fieldState.error?.message}
                 disabled={!!editingTimetable}
@@ -530,7 +539,7 @@ export const DoctorCalendarConfigPage = () => {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Input
-                  label="Start Time"
+                  label={t(DOCTOR.START_TIME)}
                   type="time"
                   error={fieldState.error?.message}
                   required
@@ -543,7 +552,7 @@ export const DoctorCalendarConfigPage = () => {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Input
-                  label="End Time"
+                  label={t(DOCTOR.END_TIME)}
                   type="time"
                   error={fieldState.error?.message}
                   required
@@ -559,7 +568,7 @@ export const DoctorCalendarConfigPage = () => {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Input
-                  label="Slot Order"
+                  label={t(DOCTOR.SLOT_ORDER)}
                   type="number"
                   min={1}
                   error={fieldState.error?.message}
@@ -580,7 +589,7 @@ export const DoctorCalendarConfigPage = () => {
                       onChange={field.onChange}
                       className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                     />
-                    <span className="text-sm text-carbon">Active</span>
+                    <span className="text-sm text-carbon">{t(DOCTOR.ACTIVE_LABEL)}</span>
                   </label>
                 )}
               />
@@ -592,7 +601,7 @@ export const DoctorCalendarConfigPage = () => {
             control={form.control}
             render={({ field, fieldState }) => (
               <Input
-                label="Notes (Optional)"
+                label={t(DOCTOR.NOTES_LABEL)}
                 error={fieldState.error?.message}
                 {...field}
               />
@@ -601,14 +610,14 @@ export const DoctorCalendarConfigPage = () => {
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="ghost" onClick={handleCloseModal}>
-              Cancel
+              {t(DOCTOR.CANCEL)}
             </Button>
             <Button
               type="submit"
               variant="primary"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {editingTimetable ? 'Update' : 'Create'}
+              {editingTimetable ? t(DOCTOR.UPDATE_LABEL) : t(DOCTOR.CREATE_LABEL)}
             </Button>
           </div>
         </form>
@@ -619,8 +628,8 @@ export const DoctorCalendarConfigPage = () => {
         isOpen={!!deletingTimetable}
         onClose={() => setDeletingTimetable(null)}
         onConfirm={handleDelete}
-        title="Delete Time Slot"
-        message={`Are you sure you want to delete the time slot "${deletingTimetable?.formatted_time}" for ${deletingTimetable?.day_of_week}? This action cannot be undone.`}
+        title={t(DOCTOR.DELETE_TIME_SLOT)}
+        message={t(DOCTOR.DELETE_SLOT_MSG, { time: deletingTimetable?.formatted_time ?? '', day: deletingTimetable?.day_of_week ?? '' })}
         isLoading={deleteMutation.isPending}
       />
 
@@ -631,8 +640,8 @@ export const DoctorCalendarConfigPage = () => {
           clinicId={clinicId}
           doctorId={selectedDoctorId}
           title={doctorIdFromRoute && selectedDoctorId
-            ? `Calendar View - ${doctors.find(d => d.doctor_id === selectedDoctorId)?.full_name || 'Doctor'}`
-            : 'Doctor Calendar View'}
+            ? `${t(DOCTOR.DOCTOR_CALENDAR_VIEW)} - ${doctors.find(d => d.doctor_id === selectedDoctorId)?.full_name || 'Doctor'}`
+            : t(DOCTOR.DOCTOR_CALENDAR_VIEW)}
         />
       )}
     </div>

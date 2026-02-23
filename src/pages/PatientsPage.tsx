@@ -15,15 +15,16 @@ export const PatientsPage = () => {
   const { user, role } = useAuth();
   const { t } = useTranslation();
 
-  // Determine if user is a clinic manager
+  // Determine user type and resolve clinic_id from all possible locations
   const normalizedRole = role?.toUpperCase();
-  const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
   const isSystemAdmin = user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN';
+  const userClinicId = user?.clinic_id || user?.employee?.clinic_id || user?.employee_profile?.clinic_id || undefined;
+  const isClinicUser = !isSystemAdmin && !!userClinicId;
 
-  // For clinic managers, automatically use their clinic_id
+  // For clinic-level users, automatically use their clinic_id
   // For system admins, allow clinic selection
   const [selectedClinicId, setSelectedClinicId] = useState<string>(
-    isClinicManager ? (user?.clinic_id || '') : ''
+    isClinicUser ? (userClinicId || '') : ''
   );
 
   const [search, setSearch] = useState('');
@@ -39,12 +40,12 @@ export const PatientsPage = () => {
   // Fetch all clinics for the clinic filter (only for system admins)
   const { data: clinicsData } = useClinics({ limit: 100, is_active: true });
 
-  // Auto-set clinic_id for clinic managers
+  // Auto-set clinic_id for clinic-level users
   useEffect(() => {
-    if (isClinicManager && user?.clinic_id && !selectedClinicId) {
-      setSelectedClinicId(user.clinic_id);
+    if (isClinicUser && userClinicId && !selectedClinicId) {
+      setSelectedClinicId(userClinicId);
     }
-  }, [isClinicManager, user?.clinic_id, selectedClinicId]);
+  }, [isClinicUser, userClinicId, selectedClinicId]);
 
   // Fetch patients
   const { data: patientsData, isLoading, error } = usePatients({
@@ -95,7 +96,7 @@ export const PatientsPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!patientToDelete) return;
-    if (isSystemAdmin && !selectedClinicId && !isClinicManager) return;
+    if (isSystemAdmin && !selectedClinicId && !isClinicUser) return;
 
     try {
       await deleteMutation.mutateAsync(patientToDelete.patient_id);
@@ -127,11 +128,13 @@ export const PatientsPage = () => {
   };
 
   const handleCreate = () => {
-    if (isClinicManager && user?.clinic_id) {
-      navigate(`/patients/create?clinic_id=${user.clinic_id}`);
+    if (isClinicUser && userClinicId) {
+      // Clinic-level users (manager, operator, receptionist, etc.) always use their clinic
+      navigate(`/patients/create?clinic_id=${userClinicId}`);
     } else if (selectedClinicId) {
       navigate(`/patients/create?clinic_id=${selectedClinicId}`);
     } else {
+      // System admins without a selected clinic — CreatePatientPage will show a clinic selector
       navigate('/patients/create');
     }
   };
@@ -145,7 +148,7 @@ export const PatientsPage = () => {
             {t(PATIENT.PATIENTS_MANAGEMENT)}
           </h1>
           <p className="text-sm text-carbon/60">
-            {isClinicManager
+            {isClinicUser
               ? t(PATIENT.MANAGE_CLINIC_PATIENTS)
               : t(PATIENT.MANAGE_ALL_PATIENTS)}
           </p>
@@ -155,7 +158,7 @@ export const PatientsPage = () => {
             variant="primary"
             size="md"
             onClick={handleCreate}
-            disabled={isSystemAdmin && !selectedClinicId && !isClinicManager}
+            disabled={isSystemAdmin && !selectedClinicId && !isClinicUser}
           >
             <MdAdd className="h-4 w-4 mr-2" />
             {t(PATIENT.CREATE_PATIENT)}
@@ -197,7 +200,7 @@ export const PatientsPage = () => {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Clinic filter - only for system admins */}
-            {isSystemAdmin && !isClinicManager && (
+            {isSystemAdmin && !isClinicUser && (
               <Select
                 label={t(PATIENT.CLINIC)}
                 value={selectedClinicId}

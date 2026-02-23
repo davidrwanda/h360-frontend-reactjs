@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { cn } from '@/utils/cn';
+import { useTranslation, CLINIC } from '@/i18n';
 
 interface AddressInputProps {
   label?: string;
@@ -82,9 +83,10 @@ export const AddressInput = ({
   onAddressSelect,
   error,
   required,
-  placeholder = 'Start typing an address...',
+  placeholder,
   className,
 }: AddressInputProps) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<InstanceType<NonNullable<typeof window.google>['maps']['places']['Autocomplete']> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -250,7 +252,7 @@ export const AddressInput = ({
         type="text"
         value={value}
         onChange={hasApiKey ? (e) => onChange(e.target.value) : handleManualChange}
-        placeholder={hasApiKey ? placeholder : 'Enter address manually...'}
+        placeholder={hasApiKey ? (placeholder || t(CLINIC.START_TYPING_ADDRESS)) : t(CLINIC.ENTER_ADDRESS_MANUALLY)}
         className={cn(
           'flex h-10 w-full rounded-md border bg-white px-3.5 py-2.5 text-sm',
           'font-ui text-carbon transition-all duration-150',
@@ -271,12 +273,12 @@ export const AddressInput = ({
       )}
       {hasApiKey && !isLoaded && (
         <p className="mt-1.5 text-xs text-carbon/50 font-ui">
-          Loading address suggestions...
+          {t(CLINIC.LOADING_ADDRESS_SUGGESTIONS)}
         </p>
       )}
       {!hasApiKey && (
         <p className="mt-1.5 text-xs text-carbon/50 font-ui">
-          💡 Enter address manually. Add Google Maps API key for autocomplete suggestions.
+          {t(CLINIC.MANUAL_ADDRESS_HELPER)}
         </p>
       )}
     </div>

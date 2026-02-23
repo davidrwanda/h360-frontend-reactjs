@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUpdatePatient } from '@/hooks/usePatients';
+import { useCountries, DEFAULT_COUNTRY } from '@/hooks/useCountries';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
@@ -42,6 +43,7 @@ export const EditPatientForm = ({
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdatePatient();
+  const { countries, isLoading: countriesLoading } = useCountries();
   const { success: showSuccess, error: showError } = useToastStore();
 
   const editPatientSchema = useMemo(() => z.object({
@@ -85,7 +87,7 @@ export const EditPatientForm = ({
         city: patient.city || '',
         state: patient.state || '',
         postal_code: patient.postal_code || '',
-        country: patient.country || '',
+        country: patient.country || DEFAULT_COUNTRY,
         emergency_contact_name: patient.emergency_contact_name || '',
         emergency_contact_phone: patient.emergency_contact_phone || '',
         emergency_contact_relationship: patient.emergency_contact_relationship || '',
@@ -241,11 +243,21 @@ export const EditPatientForm = ({
                   {...register('postal_code')}
                 />
 
-                <Input
-                  label={t(PATIENT.COUNTRY)}
-                  placeholder={t(PATIENT.COUNTRY_PLACEHOLDER)}
-                  error={errors.country?.message}
-                  {...register('country')}
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label={t(PATIENT.COUNTRY)}
+                      error={errors.country?.message}
+                      disabled={countriesLoading}
+                      options={[
+                        { value: '', label: t(PATIENT.COUNTRY_PLACEHOLDER) },
+                        ...countries,
+                      ]}
+                      {...field}
+                    />
+                  )}
                 />
               </div>
             </div>

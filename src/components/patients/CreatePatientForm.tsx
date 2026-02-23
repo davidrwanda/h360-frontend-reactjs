@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePatient } from '@/hooks/usePatients';
+import { useCountries, DEFAULT_COUNTRY } from '@/hooks/useCountries';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Select } from '@/components/ui';
 import { MdPerson, MdAccountCircle } from 'react-icons/md';
@@ -42,6 +43,7 @@ export const CreatePatientForm = ({
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const createMutation = useCreatePatient();
+  const { countries, isLoading: countriesLoading } = useCountries();
   const { success: showSuccess, error: showError } = useToastStore();
 
   const createPatientSchema = useMemo(() => z.object({
@@ -71,6 +73,9 @@ export const CreatePatientForm = ({
     reset,
   } = useForm<CreatePatientFormData>({
     resolver: zodResolver(createPatientSchema),
+    defaultValues: {
+      country: DEFAULT_COUNTRY,
+    },
   });
 
   const formData = watch();
@@ -228,11 +233,21 @@ export const CreatePatientForm = ({
                   {...register('postal_code')}
                 />
 
-                <Input
-                  label={t(PATIENT.COUNTRY)}
-                  placeholder={t(PATIENT.COUNTRY_PLACEHOLDER)}
-                  error={errors.country?.message}
-                  {...register('country')}
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label={t(PATIENT.COUNTRY)}
+                      error={errors.country?.message}
+                      disabled={countriesLoading}
+                      options={[
+                        { value: '', label: t(PATIENT.COUNTRY_PLACEHOLDER) },
+                        ...countries,
+                      ]}
+                      {...field}
+                    />
+                  )}
                 />
               </div>
             </div>

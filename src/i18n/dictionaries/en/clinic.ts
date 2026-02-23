@@ -111,6 +111,9 @@ export const clinicEn: Record<string, string> = {
   'clinic.notConfigured': 'Not configured',
   'clinic.open': 'Open',
   'clinic.close': 'Close',
+  'clinic.defaultHours': 'Default (08:00 - 17:00)',
+  'clinic.customHours': 'Custom',
+  'clinic.applyDefault': 'Apply Default Hours',
 
   // Days
   'clinic.monday': 'Monday',
@@ -268,4 +271,11 @@ export const clinicEn: Record<string, string> = {
   'clinic.typeCodeRequired': 'Type code is required',
   'clinic.typeCreated': 'Clinic type created successfully',
   'clinic.typeCreateFailed': 'Failed to create clinic type',
+  'clinic.startTypingAddress': 'Start typing an address...',
+  'clinic.enterAddressManually': 'Enter address manually...',
+  'clinic.loadingAddressSuggestions': 'Loading address suggestions...',
+  'clinic.manualAddressHelper': 'Enter address manually. Add Google Maps API key for autocomplete suggestions.',
+  'clinic.clinicNameOrEstablishment': 'Clinic Name or Establishment',
+  'clinic.cityOrPostalCode': 'City or Postal Code',
+  'clinic.selectClinicFirst': 'Select a clinic first',
 };

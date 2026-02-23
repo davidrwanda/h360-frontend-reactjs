@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,41 +24,17 @@ import {
 import { MdSchedule, MdAdd, MdEdit, MdDelete } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 import { validateSlotWithinOperatingHours } from '@/utils/operatingHours';
+import { useTranslation, DOCTOR, CLINIC } from '@/i18n';
 import type { DayOfWeek, DoctorTimetable } from '@/api/timetables';
 
-const dayOfWeekOptions = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
-
-const timetableFormSchema = z.object({
-  day_of_week: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
-  start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
-  end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
-  is_active: z.boolean().default(true),
-  slot_order: z.number().min(1).default(1),
-  notes: z.string().optional(),
-}).refine((data) => {
-  const startParts = data.start_time.split(':').map(Number);
-  const endParts = data.end_time.split(':').map(Number);
-  const startHours = startParts[0] ?? 0;
-  const startMinutes = startParts[1] ?? 0;
-  const endHours = endParts[0] ?? 0;
-  const endMinutes = endParts[1] ?? 0;
-  const startTime = startHours * 60 + startMinutes;
-  const endTime = endHours * 60 + endMinutes;
-  return endTime > startTime;
-}, {
-  message: 'End time must be after start time',
-  path: ['end_time'],
-});
-
-type TimetableFormData = z.infer<typeof timetableFormSchema>;
+interface TimetableFormData {
+  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  slot_order: number;
+  notes?: string;
+}
 
 interface DoctorTimetableDisplayProps {
   doctorId: string;
@@ -66,6 +42,7 @@ interface DoctorTimetableDisplayProps {
 }
 
 export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTimetableDisplayProps) => {
+  const { t } = useTranslation();
   const { success: showSuccess, error: showError } = useToastStore();
   const { data: doctor } = useDoctor(doctorId);
   const { data: clinic } = useClinic(doctor?.clinic_id ?? undefined);
@@ -77,6 +54,38 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTimetable, setEditingTimetable] = useState<DoctorTimetable | null>(null);
   const [deletingTimetable, setDeletingTimetable] = useState<DoctorTimetable | null>(null);
+
+  const timetableFormSchema = useMemo(() => z.object({
+    day_of_week: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+    start_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, t(DOCTOR.INVALID_TIME_FORMAT)),
+    end_time: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, t(DOCTOR.INVALID_TIME_FORMAT)),
+    is_active: z.boolean().default(true),
+    slot_order: z.number().min(1).default(1),
+    notes: z.string().optional(),
+  }).refine((data) => {
+    const startParts = data.start_time.split(':').map(Number);
+    const endParts = data.end_time.split(':').map(Number);
+    const startHours = startParts[0] ?? 0;
+    const startMinutes = startParts[1] ?? 0;
+    const endHours = endParts[0] ?? 0;
+    const endMinutes = endParts[1] ?? 0;
+    const startTime = startHours * 60 + startMinutes;
+    const endTime = endHours * 60 + endMinutes;
+    return endTime > startTime;
+  }, {
+    message: t(DOCTOR.END_AFTER_START),
+    path: ['end_time'],
+  }), [t]);
+
+  const dayOfWeekOptions = useMemo(() => [
+    { value: 'monday', label: t(CLINIC.MONDAY) },
+    { value: 'tuesday', label: t(CLINIC.TUESDAY) },
+    { value: 'wednesday', label: t(CLINIC.WEDNESDAY) },
+    { value: 'thursday', label: t(CLINIC.THURSDAY) },
+    { value: 'friday', label: t(CLINIC.FRIDAY) },
+    { value: 'saturday', label: t(CLINIC.SATURDAY) },
+    { value: 'sunday', label: t(CLINIC.SUNDAY) },
+  ], [t]);
 
   const form = useForm<TimetableFormData>({
     resolver: zodResolver(timetableFormSchema),
@@ -152,7 +161,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
         const startMinutes = startParts[1] ?? 0;
         const endHours = endParts[0] ?? 0;
         const endMinutes = endParts[1] ?? 0;
-        
+
         await updateMutation.mutateAsync({
           doctorId,
           id: editingTimetable.timetable_id,
@@ -172,17 +181,17 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
             notes: data.notes || undefined,
           },
         });
-        showSuccess('Timetable updated successfully!');
+        showSuccess(t(DOCTOR.TIMETABLE_UPDATED));
       } else {
         await createMutation.mutateAsync({
           doctorId,
           data,
         });
-        showSuccess('Timetable created successfully!');
+        showSuccess(t(DOCTOR.TIMETABLE_CREATED));
       }
       handleCloseModal();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to save timetable');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_SAVE_TIMETABLE));
     }
   };
 
@@ -193,9 +202,9 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
         id: timetable.timetable_id,
         data: { is_active: !timetable.is_active },
       });
-      showSuccess(timetable.is_active ? 'Time slot turned off.' : 'Time slot turned on.');
+      showSuccess(timetable.is_active ? t(DOCTOR.SLOT_TURNED_OFF) : t(DOCTOR.SLOT_TURNED_ON));
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to update');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_UPDATE));
     }
   };
 
@@ -207,10 +216,10 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
         doctorId,
         id: deletingTimetable.timetable_id,
       });
-      showSuccess('Timetable deleted successfully!');
+      showSuccess(t(DOCTOR.TIMETABLE_DELETED));
       setDeletingTimetable(null);
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to delete timetable');
+      showError(error instanceof Error ? error.message : t(DOCTOR.FAILED_DELETE_TIMETABLE));
     }
   };
 
@@ -221,18 +230,18 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium text-carbon">
               <MdSchedule className="h-5 w-5 text-azure-dragon" />
-              Availability Schedule
+              {t(DOCTOR.AVAILABILITY_SCHEDULE)}
             </CardTitle>
             {canEdit && (
               <Button variant="primary" size="sm" onClick={() => handleOpenModal()}>
                 <MdAdd className="h-4 w-4 mr-2" />
-                Add time slot
+                {t(DOCTOR.ADD_TIME_SLOT)}
               </Button>
             )}
           </div>
           {canEdit && (
             <p className="text-xs text-carbon/60 mt-1">
-              Toggle a slot off to make it unavailable without deleting.
+              {t(DOCTOR.TOGGLE_SLOT_HELPER)}
             </p>
           )}
         </CardHeader>
@@ -262,7 +271,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
                     </div>
                     <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
                       {dayTimetables.length === 0 ? (
-                        <span className="text-sm text-carbon/50">No time slots</span>
+                        <span className="text-sm text-carbon/50">{t(DOCTOR.NO_TIME_SLOTS)}</span>
                       ) : (
                         dayTimetables.map((timetable) => {
                           const tooltipParts = [
@@ -289,7 +298,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
                                   type="button"
                                   role="switch"
                                   aria-checked={timetable.is_active}
-                                  aria-label={timetable.is_active ? 'Turn off' : 'Turn on'}
+                                  aria-label={timetable.is_active ? t(DOCTOR.TURN_OFF) : t(DOCTOR.TURN_ON)}
                                   onClick={() => handleToggleActive(timetable)}
                                   disabled={updateMutation.isPending}
                                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md focus:outline-none focus:ring-1 focus:ring-azure-dragon focus:ring-offset-0"
@@ -313,7 +322,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
                                   size="sm"
                                   onClick={() => handleOpenModal(timetable)}
                                   className="h-7 w-7 min-w-7 p-0 text-carbon/60 hover:text-azure-dragon"
-                                  aria-label="Edit"
+                                  aria-label={t(DOCTOR.EDIT_LABEL)}
                                 >
                                   <MdEdit className="h-4 w-4" />
                                 </Button>
@@ -322,7 +331,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
                                   size="sm"
                                   onClick={() => setDeletingTimetable(timetable)}
                                   className="h-7 w-7 min-w-7 p-0 text-carbon/60 hover:text-smudged-lips"
-                                  aria-label="Delete"
+                                  aria-label={t(DOCTOR.DELETE_LABEL)}
                                 >
                                   <MdDelete className="h-4 w-4" />
                                 </Button>
@@ -345,7 +354,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingTimetable ? 'Edit Time Slot' : 'Add Time Slot'}
+        title={editingTimetable ? t(DOCTOR.EDIT_TIME_SLOT) : t(DOCTOR.ADD_TIME_SLOT_TITLE)}
         size="md"
       >
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -373,7 +382,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
               control={form.control}
               render={({ field, fieldState }) => (
                 <div className="w-full">
-                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">Start Time</label>
+                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">{t(DOCTOR.START_TIME)}</label>
                   <input
                     type="time"
                     {...field}
@@ -390,7 +399,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
               control={form.control}
               render={({ field, fieldState }) => (
                 <div className="w-full">
-                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">End Time</label>
+                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">{t(DOCTOR.END_TIME)}</label>
                   <input
                     type="time"
                     {...field}
@@ -410,7 +419,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
               control={form.control}
               render={({ field }) => (
                 <div className="w-full">
-                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">Slot Order</label>
+                  <label className="block text-xs font-medium text-carbon/80 mb-1.5">{t(DOCTOR.SLOT_ORDER)}</label>
                   <input
                     type="number"
                     min={1}
@@ -433,7 +442,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
                       onChange={field.onChange}
                       className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                     />
-                    <span className="text-sm text-carbon">Active</span>
+                    <span className="text-sm text-carbon">{t(DOCTOR.ACTIVE_LABEL)}</span>
                   </label>
                 )}
               />
@@ -445,7 +454,7 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
             control={form.control}
             render={({ field }) => (
               <div className="w-full">
-                <label className="block text-xs font-medium text-carbon/80 mb-1.5">Notes (Optional)</label>
+                <label className="block text-xs font-medium text-carbon/80 mb-1.5">{t(DOCTOR.NOTES_LABEL)}</label>
                 <input
                   type="text"
                   {...field}
@@ -457,14 +466,14 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="ghost" onClick={handleCloseModal}>
-              Cancel
+              {t(DOCTOR.CANCEL)}
             </Button>
             <Button
               type="submit"
               variant="primary"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {editingTimetable ? 'Update' : 'Create'}
+              {editingTimetable ? t(DOCTOR.UPDATE_LABEL) : t(DOCTOR.CREATE_LABEL)}
             </Button>
           </div>
         </form>
@@ -475,8 +484,8 @@ export const DoctorTimetableDisplay = ({ doctorId, canEdit = false }: DoctorTime
         isOpen={!!deletingTimetable}
         onClose={() => setDeletingTimetable(null)}
         onConfirm={handleDelete}
-        title="Delete Time Slot"
-        message={`Are you sure you want to delete the time slot "${deletingTimetable?.formatted_time}" for ${deletingTimetable?.day_of_week}? This action cannot be undone.`}
+        title={t(DOCTOR.DELETE_TIME_SLOT)}
+        message={t(DOCTOR.DELETE_SLOT_MSG, { time: deletingTimetable?.formatted_time ?? '', day: deletingTimetable?.day_of_week ?? '' })}
         isLoading={deleteMutation.isPending}
       />
     </>

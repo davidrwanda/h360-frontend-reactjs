@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { OperatingHours } from '@/api/clinics';
 import { Input } from '@/components/ui';
 import { useTranslation, CLINIC } from '@/i18n';
@@ -6,6 +7,9 @@ interface OperatingHoursEditorProps {
   value?: OperatingHours;
   onChange: (value: OperatingHours) => void;
 }
+
+const DEFAULT_OPEN = '08:00';
+const DEFAULT_CLOSE = '17:00';
 
 export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEditorProps) => {
   const { t } = useTranslation();
@@ -20,6 +24,27 @@ export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEdi
     { key: 'sunday' as const, label: t(CLINIC.SUNDAY) },
   ];
 
+  // Check if all active days have the default hours (08:00 - 17:00)
+  const isDefault = useMemo(() => {
+    return days.every(({ key }) => {
+      const dayHours = value[key];
+      if (!dayHours || dayHours.closed) return true;
+      return dayHours.open === DEFAULT_OPEN && dayHours.close === DEFAULT_CLOSE;
+    });
+  }, [value, days]);
+
+  const applyDefaultHours = () => {
+    const defaultHours: OperatingHours = {};
+    for (const { key } of days) {
+      defaultHours[key] = {
+        open: DEFAULT_OPEN,
+        close: DEFAULT_CLOSE,
+        closed: false,
+      };
+    }
+    onChange(defaultHours);
+  };
+
   const updateDay = (day: keyof OperatingHours, updates: Partial<OperatingHours[typeof day]>) => {
     onChange({
       ...value,
@@ -31,7 +56,36 @@ export const OperatingHoursEditor = ({ value = {}, onChange }: OperatingHoursEdi
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Default / Custom toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={applyDefaultHours}
+          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+            isDefault
+              ? 'bg-azure-dragon text-white border-azure-dragon'
+              : 'bg-white text-carbon/70 border-carbon/20 hover:border-azure-dragon/40'
+          }`}
+        >
+          {t(CLINIC.DEFAULT_HOURS)}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            // If currently default, don't change anything — user will edit individual days
+          }}
+          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+            !isDefault
+              ? 'bg-azure-dragon text-white border-azure-dragon'
+              : 'bg-white text-carbon/70 border-carbon/20 hover:border-azure-dragon/40'
+          }`}
+        >
+          {t(CLINIC.CUSTOM_HOURS)}
+        </button>
+      </div>
+
+      {/* Day rows */}
       {days.map((day) => {
         const dayHours = value[day.key] || {};
         return (

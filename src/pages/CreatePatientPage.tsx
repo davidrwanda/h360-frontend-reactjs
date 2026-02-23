@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useClinic } from '@/hooks/useClinics';
+import { useClinic, useClinics } from '@/hooks/useClinics';
 import { CreatePatientForm } from '@/components/patients';
-import { Loading, Button } from '@/components/ui';
+import { Loading, Button, Select } from '@/components/ui';
 import { MdArrowBack } from 'react-icons/md';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation, PATIENT } from '@/i18n';
@@ -12,13 +13,20 @@ export const CreatePatientPage = () => {
   const { user, role } = useAuth();
   const { t } = useTranslation();
 
-  // Get clinic_id from URL params or user's clinic_id for clinic managers
-  const normalizedRole = role?.toUpperCase();
-  const isClinicManager = normalizedRole === 'MANAGER' && user?.clinic_id;
+  // Get clinic_id from URL params or user's clinic_id for clinic-level users
   const clinicIdFromUrl = searchParams.get('clinic_id');
-  const clinicId = clinicIdFromUrl || (isClinicManager ? user?.clinic_id : undefined);
+  const isSystemAdmin = user?.user_type === 'SYSTEM' || role?.toUpperCase() === 'ADMIN';
+  // clinic_id can be on the user object directly, or nested in employee/employee_profile
+  const userClinicId = user?.clinic_id || user?.employee?.clinic_id || user?.employee_profile?.clinic_id || undefined;
+  const initialClinicId = clinicIdFromUrl || (!isSystemAdmin && userClinicId ? userClinicId : undefined);
+
+  // For system admins without a pre-selected clinic, allow inline selection
+  const [selectedClinicId, setSelectedClinicId] = useState<string>(initialClinicId || '');
+  const clinicId = initialClinicId || selectedClinicId || undefined;
 
   const { data: clinic, isLoading } = useClinic(clinicId || undefined);
+  const { data: clinicsData } = useClinics({ limit: 100, is_active: true });
+  const clinics = clinicsData?.data || [];
 
   const handleSuccess = () => {
     navigate('/patients');
@@ -32,22 +40,6 @@ export const CreatePatientPage = () => {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loading size="lg" />
-      </div>
-    );
-  }
-
-  if (!clinicId) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-h2 text-smudged-lips mb-4">{t(PATIENT.INVALID_CLINIC)}</h1>
-          <p className="text-body text-carbon/70 mb-4">
-            {t(PATIENT.CLINIC_ID_MISSING)}
-          </p>
-          <Button variant="outline" onClick={() => navigate('/patients')}>
-            {t(PATIENT.BACK_TO_PATIENTS)}
-          </Button>
-        </div>
       </div>
     );
   }
@@ -75,12 +67,34 @@ export const CreatePatientPage = () => {
         </div>
       </div>
 
-      <CreatePatientForm
-        clinicId={clinicId}
-        clinicName={clinic?.name}
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
+      {/* Clinic selector for system admins when no clinic pre-selected */}
+      {!initialClinicId && (
+        <div className="mb-6">
+          <Select
+            label={t(PATIENT.SELECT_CLINIC)}
+            value={selectedClinicId}
+            onChange={(e) => setSelectedClinicId(e.target.value)}
+            required
+            options={[
+              { value: '', label: t(PATIENT.SELECT_CLINIC) },
+              ...clinics.map((c) => ({ value: c.clinic_id, label: c.name })),
+            ]}
+          />
+        </div>
+      )}
+
+      {clinicId ? (
+        <CreatePatientForm
+          clinicId={clinicId}
+          clinicName={clinic?.name}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      ) : (
+        <div className="text-center py-12 text-carbon/50 text-sm">
+          {t(PATIENT.CLINIC_ID_MISSING)}
+        </div>
+      )}
     </div>
   );
 };

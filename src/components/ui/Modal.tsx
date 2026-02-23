@@ -2,6 +2,7 @@ import { useEffect, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
 import { cn } from '@/utils/cn';
+import { useTranslation, COMMON } from '@/i18n';
 import { Button } from './Button';
 
 export interface ModalProps {
@@ -21,6 +22,8 @@ export const Modal = ({
   size = 'md',
   showCloseButton = true,
 }: ModalProps) => {
+  const { t } = useTranslation();
+
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -87,7 +90,7 @@ export const Modal = ({
                 size="sm"
                 onClick={onClose}
                 className="h-8 w-8 p-0 -mr-2"
-                aria-label="Close modal"
+                aria-label={t(COMMON.CLOSE_MODAL)}
               >
                 <MdClose className="h-5 w-5" />
               </Button>

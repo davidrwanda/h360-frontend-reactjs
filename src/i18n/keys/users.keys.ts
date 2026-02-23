@@ -123,4 +123,55 @@ export const USERS = {
   
   // Modal titles
   EDIT_SYSTEM_ADMIN: 'users.editSystemAdmin',
+
+  // Password fields
+  PASSWORD: 'users.password',
+  CONFIRM_PASSWORD: 'users.confirmPassword',
+  ENTER_FIRST_NAME: 'users.enterFirstName',
+  ENTER_LAST_NAME: 'users.enterLastName',
+  ENTER_EMAIL: 'users.enterEmail',
+  ENTER_USERNAME: 'users.enterUsername',
+  ENTER_PASSWORD: 'users.enterPassword',
+  CONFIRM_PASSWORD_PLACEHOLDER: 'users.confirmPasswordPlaceholder',
+  GENERATE_PASSWORD: 'users.generatePassword',
+  SHOW_PASSWORD: 'users.showPassword',
+  HIDE_PASSWORD: 'users.hidePassword',
+  PASSWORD_MIN_LENGTH: 'users.passwordMinLength',
+  PASSWORD_COMPLEXITY: 'users.passwordComplexity',
+  PASSWORDS_DONT_MATCH: 'users.passwordsDontMatch',
+
+  // Admin form sections
+  USER_INFORMATION: 'users.userInformation',
+  FOR_CLINIC: 'users.forClinic',
+  SYSTEM_ADMIN_INFORMATION: 'users.systemAdminInformation',
+  EDIT_USER: 'users.editUser',
+  UPDATE_USER: 'users.updateUser',
+  UPDATE_SYSTEM_ADMIN: 'users.updateSystemAdmin',
+  UPDATING: 'users.updating',
+
+  // Admin form messages
+  USER_UPDATED_SUCCESS: 'users.userUpdatedSuccess',
+  FAILED_UPDATE_USER: 'users.failedUpdateUser',
+  SYSTEM_ADMIN_CREATED_SUCCESS: 'users.systemAdminCreatedSuccess',
+  FAILED_CREATE_SYSTEM_ADMIN: 'users.failedCreateSystemAdmin',
+  SYSTEM_ADMIN_UPDATED_SUCCESS: 'users.systemAdminUpdatedSuccess',
+  FAILED_UPDATE_SYSTEM_ADMIN: 'users.failedUpdateSystemAdmin',
+  DOCTOR_ROLE_CANNOT_CHANGE: 'users.doctorRoleCannotChange',
+  SELECT_ROLE: 'users.selectRole',
+  DOCTOR: 'users.doctor',
+
+  // Table headers for admin tables
+  TH_NAME: 'users.thName',
+  TH_EMAIL: 'users.thEmail',
+  TH_USERNAME: 'users.thUsername',
+  TH_PHONE: 'users.thPhone',
+  TH_DEPARTMENT: 'users.thDepartment',
+  TH_STATUS: 'users.thStatus',
+  TH_ACTIONS: 'users.thActions',
+  NO_ADMINS_FOUND_FOR: 'users.noAdminsFoundFor',
+  NO_CLINIC_ADMINS_FOUND: 'users.noClinicAdminsFound',
+  NO_SYSTEM_ADMINS_FOUND: 'users.noSystemAdminsFound',
+  EDIT_ADMIN: 'users.editAdmin',
+  DEACTIVATE_ADMIN: 'users.deactivateAdmin',
+  ACTIVATE_ADMIN: 'users.activateAdmin',
 } as const;

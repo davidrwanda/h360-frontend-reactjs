@@ -653,12 +653,20 @@ export const CreateDoctorForm = ({
                 />
 
                 <div className="md:col-span-2">
-                  <Input
-                    label={t(DOCTOR.BIO)}
-                    placeholder={t(DOCTOR.BIO_PLACEHOLDER)}
-                    error={errors.bio?.message}
-                    {...register('bio')}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-carbon mb-1">
+                      {t(DOCTOR.BIO)}
+                    </label>
+                    <textarea
+                      placeholder={t(DOCTOR.BIO_PLACEHOLDER)}
+                      rows={4}
+                      className="w-full rounded-md border border-carbon/20 bg-white px-3 py-2 text-sm text-carbon placeholder:text-carbon/40 focus:border-azure-dragon focus:outline-none focus:ring-1 focus:ring-azure-dragon disabled:opacity-50"
+                      {...register('bio')}
+                    />
+                    {errors.bio?.message && (
+                      <p className="mt-1 text-xs text-smudged-lips">{errors.bio.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -89,7 +89,6 @@ export const PatientDetailPage = () => {
       const result = await createAccountMutation.mutateAsync({
         id: patient.patient_id,
         data: {
-          clinic_id: clinicId,
           send_email: true,
         },
       });

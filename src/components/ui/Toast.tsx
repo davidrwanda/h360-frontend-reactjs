@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { MdCheckCircle, MdError, MdInfo, MdWarning, MdClose } from 'react-icons/md';
 import { cn } from '@/utils/cn';
+import { useTranslation, COMMON } from '@/i18n';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -31,6 +32,7 @@ const toastStyles = {
 };
 
 export const ToastComponent = ({ toast, onClose }: ToastProps) => {
+  const { t } = useTranslation();
   const Icon = toastIcons[toast.type];
   const duration = toast.duration ?? 5000;
 
@@ -41,6 +43,7 @@ export const ToastComponent = ({ toast, onClose }: ToastProps) => {
       }, duration);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [duration, toast.id, onClose]);
 
   return (
@@ -60,7 +63,7 @@ export const ToastComponent = ({ toast, onClose }: ToastProps) => {
             ? 'text-carbon/60 hover:text-carbon' 
             : 'text-white/80 hover:text-white'
         )}
-        aria-label="Close toast"
+        aria-label={t(COMMON.CLOSE_TOAST)}
       >
         <MdClose className="h-4 w-4" />
       </button>

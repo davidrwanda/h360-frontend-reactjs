@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loading } from '@/components/ui';
+import { useTranslation, COMMON } from '@/i18n';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { isAuthenticated, user, role, isLoading } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -30,12 +32,12 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   // Normalize role for comparison (handle both "Admin" and "ADMIN")
   const normalizedRole = role?.toUpperCase();
   const hasFullAccess = user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN';
-  
+
   // If user has full access, grant access immediately
   if (hasFullAccess) {
     return <>{children}</>;
   }
-  
+
   // Otherwise, check role-based access
   if (requiredRole && normalizedRole) {
     const normalizedRequiredRoles = requiredRole.map(r => r.toUpperCase());
@@ -43,13 +45,13 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       return (
         <div className="flex min-h-screen items-center justify-center p-4">
           <div className="text-center">
-            <h1 className="text-h2 text-smudged-lips mb-4">Access Denied</h1>
+            <h1 className="text-h2 text-smudged-lips mb-4">{t(COMMON.ACCESS_DENIED)}</h1>
             <p className="text-body text-carbon/70">
-              You don't have permission to access this page.
+              {t(COMMON.NO_PERMISSION)}
             </p>
             {(user?.user_type === 'SYSTEM' || normalizedRole === 'ADMIN') && (
               <p className="mt-2 text-sm text-carbon/50">
-                System users and Admin role users can access all clinic and employee management features.
+                {t(COMMON.SYSTEM_ADMIN_ACCESS_NOTE)}
               </p>
             )}
           </div>

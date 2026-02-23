@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getFilteredNavigation } from '@/config/navigation';
-import { useTranslation } from '@/i18n';
+import { useTranslation, COMMON } from '@/i18n';
 import { cn } from '@/utils/cn';
 
 interface SidebarProps {
@@ -71,7 +71,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <button
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-md text-carbon/60 transition-colors hover:bg-white-smoke md:hidden"
-              aria-label="Close menu"
+              aria-label={t(COMMON.CLOSE_MENU)}
             >
               <span className="text-lg leading-none">×</span>
             </button>
@@ -81,7 +81,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <nav className="flex-1 overflow-y-auto p-3 scrollbar-thin">
             {navigationItems.length === 0 ? (
               <div className="flex items-center justify-center h-full text-sm text-carbon/50">
-                <p>No menu items available</p>
+                <p>{t(COMMON.NO_MENU_ITEMS)}</p>
               </div>
             ) : (
               <ul className="space-y-0.5">
@@ -129,13 +129,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Footer */}
           <div className="border-t border-carbon/10 p-3">
             <div className="rounded-md bg-azure-dragon/5 p-2.5">
-              <p className="text-xs font-medium text-azure-dragon mb-1">Current Role</p>
+              <p className="text-xs font-medium text-azure-dragon mb-1">{t(COMMON.CURRENT_ROLE)}</p>
               <p className="text-sm capitalize text-carbon font-medium">
                 {role || user?.user_type || 'N/A'}
               </p>
               {user?.permissions && (
                 <p className="text-[10px] text-carbon/50 mt-0.5">
-                  {user.permissions === 'ALL' ? 'Full Access' : user.permissions}
+                  {user.permissions === 'ALL' ? t(COMMON.FULL_ACCESS) : user.permissions}
                 </p>
               )}
             </div>

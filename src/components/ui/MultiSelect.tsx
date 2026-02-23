@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/utils/cn';
 import { MdClose, MdExpandMore, MdCheck } from 'react-icons/md';
+import { useTranslation, COMMON } from '@/i18n';
 
 export interface MultiSelectOption {
   value: string;
@@ -32,8 +33,10 @@ export const MultiSelect = ({
   required,
   disabled,
   isLoading,
-  loadingText = 'Loading...',
+  loadingText,
 }: MultiSelectProps) => {
+  const { t } = useTranslation();
+  const resolvedLoadingText = loadingText || t(COMMON.LOADING);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -74,7 +77,7 @@ export const MultiSelect = ({
       {isLoading ? (
         <div className="flex items-center gap-2 h-10 px-3.5 border border-carbon/15 rounded-md bg-white-smoke">
           <div className="h-3.5 w-3.5 border-2 border-azure-dragon/30 border-t-azure-dragon rounded-full animate-spin" />
-          <span className="text-xs text-carbon/60">{loadingText}</span>
+          <span className="text-xs text-carbon/60">{resolvedLoadingText}</span>
         </div>
       ) : (
         <div className="relative">
@@ -135,7 +138,7 @@ export const MultiSelect = ({
             <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md border border-carbon/15 bg-white shadow-lg">
               {options.length === 0 ? (
                 <div className="px-3.5 py-2.5 text-xs text-carbon/50 text-center">
-                  No options available
+                  {t(COMMON.NO_OPTIONS_AVAILABLE)}
                 </div>
               ) : (
                 options.map((opt) => {

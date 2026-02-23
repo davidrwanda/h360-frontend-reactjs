@@ -111,6 +111,9 @@ export const clinicRw: Record<string, string> = {
   'clinic.notConfigured': 'Ntibigenzuwe',
   'clinic.open': 'Gufungura',
   'clinic.close': 'Gufunga',
+  'clinic.defaultHours': "Ibisanzwe (08:00 - 17:00)",
+  'clinic.customHours': 'Guhitamo',
+  'clinic.applyDefault': "Shyiraho amasaha y'ibisanzwe",
 
   // Days
   'clinic.monday': 'Kuwa mbere',
@@ -259,4 +262,11 @@ export const clinicRw: Record<string, string> = {
   'clinic.typeCodeRequired': 'Kode y\'ubwoko irakenewe',
   'clinic.typeCreated': 'Ubwoko bw\'ikigo bwakozwe neza',
   'clinic.typeCreateFailed': 'Gukora ubwoko bw\'ikigo byanze',
+  'clinic.startTypingAddress': 'Tangira kwandika aderesi...',
+  'clinic.enterAddressManually': "Injiza aderesi n'amaboko...",
+  'clinic.loadingAddressSuggestions': "Gutegura aderesi z'ibyifuzo...",
+  'clinic.manualAddressHelper': "Injiza aderesi n'amaboko. Ongeraho urufunguzo rwa Google Maps API kugira ngo ubone ibyifuzo.",
+  'clinic.clinicNameOrEstablishment': "Izina ry'ikigo cyangwa ishuri",
+  'clinic.cityOrPostalCode': "Umujyi cyangwa kode y'iposita",
+  'clinic.selectClinicFirst': "Hitamo ikigo mbere",
 };

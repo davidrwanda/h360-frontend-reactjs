@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,15 +7,13 @@ import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
+import { useTranslation, USERS } from '@/i18n';
 
-const editSystemAdminSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').min(1, 'Email is required'),
-  // System admins don't have clinic_id (global admins)
-});
-
-type EditSystemAdminFormData = z.infer<typeof editSystemAdminSchema>;
+interface EditSystemAdminFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+}
 
 interface EditSystemAdminFormProps {
   admin: User;
@@ -31,6 +29,14 @@ export const EditSystemAdminForm = ({
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateUser();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
+
+  const editSystemAdminSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
+    email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
+    // System admins don't have clinic_id (global admins)
+  }), [t]);
 
   const {
     register,
@@ -65,12 +71,12 @@ export const EditSystemAdminForm = ({
         },
       });
 
-      showSuccess('System admin updated successfully!');
+      showSuccess(t(USERS.SYSTEM_ADMIN_UPDATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update system admin. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(USERS.FAILED_UPDATE_SYSTEM_ADMIN);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -82,7 +88,7 @@ export const EditSystemAdminForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Edit System Admin
+            {t(USERS.EDIT_SYSTEM_ADMIN)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -95,25 +101,25 @@ export const EditSystemAdminForm = ({
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="First Name"
-                placeholder="Enter first name"
+                label={t(USERS.FIRST_NAME)}
+                placeholder={t(USERS.ENTER_FIRST_NAME)}
                 error={errors.first_name?.message}
                 required
                 {...register('first_name')}
               />
 
               <Input
-                label="Last Name"
-                placeholder="Enter last name"
+                label={t(USERS.LAST_NAME)}
+                placeholder={t(USERS.ENTER_LAST_NAME)}
                 error={errors.last_name?.message}
                 required
                 {...register('last_name')}
               />
 
               <Input
-                label="Email"
+                label={t(USERS.EMAIL)}
                 type="email"
-                placeholder="Enter email address"
+                placeholder={t(USERS.ENTER_EMAIL)}
                 error={errors.email?.message}
                 required
                 {...register('email')}
@@ -128,7 +134,7 @@ export const EditSystemAdminForm = ({
                 size="md"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update System Admin'}
+                {updateMutation.isPending ? t(USERS.UPDATING) : t(USERS.UPDATE_SYSTEM_ADMIN)}
               </Button>
               {onCancel && (
                 <Button
@@ -138,7 +144,7 @@ export const EditSystemAdminForm = ({
                   onClick={onCancel}
                   disabled={updateMutation.isPending}
                 >
-                  Cancel
+                  {t(USERS.CANCEL)}
                 </Button>
               )}
             </div>

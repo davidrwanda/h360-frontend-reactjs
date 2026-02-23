@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { cn } from '@/utils/cn';
 import type { Clinic } from '@/api/clinics';
+import { useTranslation, CLINIC, COMMON } from '@/i18n';
 
 interface ClinicAutocompleteProps {
   value?: string;
@@ -59,10 +60,11 @@ export const ClinicAutocomplete = ({
   value = '',
   onChange,
   onClinicSelect,
-  placeholder = 'Clinic Name or Establishment',
+  placeholder,
   className,
   disabled = false,
 }: ClinicAutocompleteProps) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -141,7 +143,7 @@ export const ClinicAutocomplete = ({
             setShowSuggestions(true);
           }
         }}
-        placeholder={placeholder}
+        placeholder={placeholder || t(CLINIC.CLINIC_NAME_OR_ESTABLISHMENT)}
         disabled={disabled}
         className={cn(
           'flex h-full w-full rounded-xl border-0 bg-[#f5f5f5] px-4 py-4 text-base',
@@ -160,7 +162,7 @@ export const ClinicAutocomplete = ({
           className="absolute z-50 w-full mt-1 bg-white border border-carbon/10 rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
           {isLoading && (
-            <div className="p-3 text-sm text-carbon/60 text-center">Loading...</div>
+            <div className="p-3 text-sm text-carbon/60 text-center">{t(COMMON.LOADING)}</div>
           )}
           {clinics.map((clinic, index) => (
             <button

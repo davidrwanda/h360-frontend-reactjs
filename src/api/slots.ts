@@ -169,7 +169,7 @@ export const slotsApi = {
   generate: async (data: GenerateSlotsRequest): Promise<GenerateSlotsResponse> => {
     const response = await apiClient.post<
       ApiResponse<GenerateSlotsResponse> | GenerateSlotsResponse
-    >('/slots/generate', data);
+    >('/slots/generate', data, { timeout: 0 });
     if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
       return (response.data as ApiResponse<GenerateSlotsResponse>).data;
     }
@@ -186,7 +186,7 @@ export const slotsApi = {
   ): Promise<RegenerateFutureSlotsResponse> => {
     const response = await apiClient.post<
       ApiResponse<RegenerateFutureSlotsResponse> | RegenerateFutureSlotsResponse
-    >('/slots/regenerate-future', data);
+    >('/slots/regenerate-future', data, { timeout: 0 });
     if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
       return (response.data as ApiResponse<RegenerateFutureSlotsResponse>).data;
     }

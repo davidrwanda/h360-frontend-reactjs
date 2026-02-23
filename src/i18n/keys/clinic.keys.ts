@@ -111,6 +111,9 @@ export const CLINIC = {
   NOT_CONFIGURED: 'clinic.notConfigured',
   OPEN: 'clinic.open',
   CLOSE: 'clinic.close',
+  DEFAULT_HOURS: 'clinic.defaultHours',
+  CUSTOM_HOURS: 'clinic.customHours',
+  APPLY_DEFAULT: 'clinic.applyDefault',
 
   // === Days of Week ===
   MONDAY: 'clinic.monday',
@@ -260,6 +263,15 @@ export const CLINIC = {
   TYPE_CODE_REQUIRED: 'clinic.typeCodeRequired',
   TYPE_CREATED: 'clinic.typeCreated',
   TYPE_CREATE_FAILED: 'clinic.typeCreateFailed',
+
+  // === Address / Location Inputs ===
+  START_TYPING_ADDRESS: 'clinic.startTypingAddress',
+  ENTER_ADDRESS_MANUALLY: 'clinic.enterAddressManually',
+  LOADING_ADDRESS_SUGGESTIONS: 'clinic.loadingAddressSuggestions',
+  MANUAL_ADDRESS_HELPER: 'clinic.manualAddressHelper',
+  CLINIC_NAME_OR_ESTABLISHMENT: 'clinic.clinicNameOrEstablishment',
+  CITY_OR_POSTAL_CODE: 'clinic.cityOrPostalCode',
+  SELECT_CLINIC_FIRST: 'clinic.selectClinicFirst',
 
   // === Additional Error Messages ===
   INVALID_TIME_FORMAT: 'clinic.invalidTimeFormat',

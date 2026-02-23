@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,26 +6,16 @@ import { useCreateUser } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson, MdRefresh, MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { useTranslation, USERS } from '@/i18n';
 
-const createClinicAdminSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').min(1, 'Email is required'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain uppercase, lowercase, and number'
-    ),
-  confirm_password: z.string(),
-}).refine((data) => data.password === data.confirm_password, {
-  message: "Passwords don't match",
-  path: ['confirm_password'],
-});
-
-type CreateClinicAdminFormData = z.infer<typeof createClinicAdminSchema>;
+interface CreateClinicAdminFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  password: string;
+  confirm_password: string;
+}
 
 interface CreateClinicAdminFormProps {
   clinicId: string;
@@ -49,7 +39,7 @@ const generatePassword = (): string => {
   };
 
   // Ensure at least one character from each required set
-  let password = 
+  let password =
     getRandomChar(lowercase) +
     getRandomChar(uppercase) +
     getRandomChar(numbers) +
@@ -75,6 +65,25 @@ export const CreateClinicAdminForm = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const createMutation = useCreateUser();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
+
+  const createClinicAdminSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
+    email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
+    username: z.string().min(3, t(USERS.USERNAME_MIN_LENGTH)),
+    password: z
+      .string()
+      .min(8, t(USERS.PASSWORD_MIN_LENGTH))
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        t(USERS.PASSWORD_COMPLEXITY)
+      ),
+    confirm_password: z.string(),
+  }).refine((data) => data.password === data.confirm_password, {
+    message: t(USERS.PASSWORDS_DONT_MATCH),
+    path: ['confirm_password'],
+  }), [t]);
 
   const {
     register,
@@ -107,12 +116,12 @@ export const CreateClinicAdminForm = ({
       });
 
       reset();
-      showSuccess('User created successfully!');
+      showSuccess(t(USERS.USER_CREATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create user. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(USERS.FAILED_CREATE_USER);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -124,10 +133,10 @@ export const CreateClinicAdminForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            User Information
+            {t(USERS.USER_INFORMATION)}
             {clinicName && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
-                for {clinicName}
+                {t(USERS.FOR_CLINIC, { clinicName })}
               </span>
             )}
           </CardTitle>
@@ -143,33 +152,33 @@ export const CreateClinicAdminForm = ({
             {/* Basic Information */}
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label="First Name"
-                placeholder="Enter first name"
+                label={t(USERS.FIRST_NAME)}
+                placeholder={t(USERS.ENTER_FIRST_NAME)}
                 error={errors.first_name?.message}
                 required
                 {...register('first_name')}
               />
 
               <Input
-                label="Last Name"
-                placeholder="Enter last name"
+                label={t(USERS.LAST_NAME)}
+                placeholder={t(USERS.ENTER_LAST_NAME)}
                 error={errors.last_name?.message}
                 required
                 {...register('last_name')}
               />
 
               <Input
-                label="Email"
+                label={t(USERS.EMAIL)}
                 type="email"
-                placeholder="Enter email address"
+                placeholder={t(USERS.ENTER_EMAIL)}
                 error={errors.email?.message}
                 required
                 {...register('email')}
               />
 
               <Input
-                label="Username"
-                placeholder="Enter username"
+                label={t(USERS.USERNAME)}
+                placeholder={t(USERS.ENTER_USERNAME)}
                 error={errors.username?.message}
                 required
                 {...register('username')}
@@ -177,12 +186,12 @@ export const CreateClinicAdminForm = ({
 
               <div>
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  Password<span className="text-smudged-lips ml-0.5">*</span>
+                  {t(USERS.PASSWORD)}<span className="text-smudged-lips ml-0.5">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter password"
+                    placeholder={t(USERS.ENTER_PASSWORD)}
                     className={`flex h-10 w-full rounded-md border bg-white pl-3.5 pr-24 py-2.5 text-sm font-ui text-carbon transition-all duration-150 placeholder:text-carbon/35 placeholder:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0 ${
                       errors.password
                         ? 'border-smudged-lips/40 focus-visible:border-smudged-lips focus-visible:ring-smudged-lips/30'
@@ -195,8 +204,8 @@ export const CreateClinicAdminForm = ({
                       type="button"
                       onClick={handleGeneratePassword}
                       className="p-1.5 rounded-md hover:bg-white-smoke transition-colors text-azure-dragon hover:text-azure-dragon-dark"
-                      title="Generate secure password"
-                      aria-label="Generate password"
+                      title={t(USERS.GENERATE_PASSWORD)}
+                      aria-label={t(USERS.GENERATE_PASSWORD)}
                     >
                       <MdRefresh className="h-4 w-4" />
                     </button>
@@ -204,8 +213,8 @@ export const CreateClinicAdminForm = ({
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="p-1.5 rounded-md hover:bg-white-smoke transition-colors text-carbon/60 hover:text-carbon"
-                      title={showPassword ? 'Hide password' : 'Show password'}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? t(USERS.HIDE_PASSWORD) : t(USERS.SHOW_PASSWORD)}
+                      aria-label={showPassword ? t(USERS.HIDE_PASSWORD) : t(USERS.SHOW_PASSWORD)}
                     >
                       {showPassword ? (
                         <MdVisibilityOff className="h-4 w-4" />
@@ -222,12 +231,12 @@ export const CreateClinicAdminForm = ({
 
               <div>
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                  Confirm Password<span className="text-smudged-lips ml-0.5">*</span>
+                  {t(USERS.CONFIRM_PASSWORD)}<span className="text-smudged-lips ml-0.5">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm password"
+                    placeholder={t(USERS.CONFIRM_PASSWORD_PLACEHOLDER)}
                     className={`flex h-10 w-full rounded-md border bg-white pl-3.5 pr-12 py-2.5 text-sm font-ui text-carbon transition-all duration-150 placeholder:text-carbon/35 placeholder:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:ring-offset-0 ${
                       errors.confirm_password
                         ? 'border-smudged-lips/40 focus-visible:border-smudged-lips focus-visible:ring-smudged-lips/30'
@@ -240,8 +249,8 @@ export const CreateClinicAdminForm = ({
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="p-1.5 rounded-md hover:bg-white-smoke transition-colors text-carbon/60 hover:text-carbon"
-                      title={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      title={showConfirmPassword ? t(USERS.HIDE_PASSWORD) : t(USERS.SHOW_PASSWORD)}
+                      aria-label={showConfirmPassword ? t(USERS.HIDE_PASSWORD) : t(USERS.SHOW_PASSWORD)}
                     >
                       {showConfirmPassword ? (
                         <MdVisibilityOff className="h-4 w-4" />
@@ -265,7 +274,7 @@ export const CreateClinicAdminForm = ({
                 size="md"
                 disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? 'Creating...' : 'Create User'}
+                {createMutation.isPending ? t(USERS.CREATING) : t(USERS.CREATE_USER)}
               </Button>
               {onCancel && (
                 <Button
@@ -275,7 +284,7 @@ export const CreateClinicAdminForm = ({
                   onClick={onCancel}
                   disabled={createMutation.isPending}
                 >
-                  Cancel
+                  {t(USERS.CANCEL)}
                 </Button>
               )}
             </div>

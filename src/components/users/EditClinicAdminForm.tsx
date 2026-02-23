@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,20 +7,17 @@ import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
+import { useTranslation, USERS } from '@/i18n';
 
-const editClinicAdminSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email').min(1, 'Email is required'),
-  phone: z.string().min(1, 'Phone number is required'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
-  gender: z.enum(['M', 'F', 'Other'], { required_error: 'Gender is required' }),
-  role: z.enum(['MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'Operator'], {
-    required_error: 'Role is required',
-  }),
-});
-
-type EditClinicAdminFormData = z.infer<typeof editClinicAdminSchema>;
+interface EditClinicAdminFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string;
+  gender: 'M' | 'F' | 'Other';
+  role: 'MANAGER' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'Operator';
+}
 
 interface EditClinicAdminFormProps {
   adminId: string;
@@ -40,6 +37,19 @@ export const EditClinicAdminForm = ({
   const [error, setError] = useState<string | null>(null);
   const updateMutation = useUpdateUser();
   const { success: showSuccess, error: showError } = useToastStore();
+  const { t } = useTranslation();
+
+  const editClinicAdminSchema = useMemo(() => z.object({
+    first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
+    last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
+    email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
+    phone: z.string().min(1, t(USERS.PHONE_REQUIRED)),
+    date_of_birth: z.string().min(1, t(USERS.DATE_OF_BIRTH_REQUIRED)),
+    gender: z.enum(['M', 'F', 'Other'], { required_error: t(USERS.GENDER_REQUIRED) }),
+    role: z.enum(['MANAGER', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'Operator'], {
+      required_error: t(USERS.ROLE_REQUIRED),
+    }),
+  }), [t]);
 
   const {
     register,
@@ -99,12 +109,12 @@ export const EditClinicAdminForm = ({
         },
       });
 
-      showSuccess('User updated successfully!');
+      showSuccess(t(USERS.USER_UPDATED_SUCCESS));
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update user. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : t(USERS.FAILED_UPDATE_USER);
       setError(errorMessage);
       showError(errorMessage);
     }
@@ -116,10 +126,10 @@ export const EditClinicAdminForm = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MdPerson className="h-5 w-5 text-azure-dragon" />
-            Edit User
+            {t(USERS.EDIT_USER)}
             {clinicName && (
               <span className="text-sm font-normal text-carbon/60 ml-2">
-                for {clinicName}
+                {t(USERS.FOR_CLINIC, { clinicName })}
               </span>
             )}
           </CardTitle>
@@ -134,24 +144,24 @@ export const EditClinicAdminForm = ({
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-semibold text-carbon mb-4">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-carbon mb-4">{t(USERS.BASIC_INFORMATION)}</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
-                  label="First Name"
+                  label={t(USERS.FIRST_NAME)}
                   required={true}
                   error={errors.first_name?.message}
                   {...register('first_name')}
                 />
 
                 <Input
-                  label="Last Name"
+                  label={t(USERS.LAST_NAME)}
                   required={true}
                   error={errors.last_name?.message}
                   {...register('last_name')}
                 />
 
                 <Input
-                  label="Email"
+                  label={t(USERS.EMAIL)}
                   type="email"
                   required={true}
                   error={errors.email?.message}
@@ -159,7 +169,7 @@ export const EditClinicAdminForm = ({
                 />
 
                 <Input
-                  label="Phone"
+                  label={t(USERS.PHONE)}
                   type="tel"
                   required={true}
                   error={errors.phone?.message}
@@ -172,16 +182,16 @@ export const EditClinicAdminForm = ({
                   render={({ field }) => (
                     <div>
                       <label className="block text-sm font-medium text-carbon/80 mb-1">
-                        Gender <span className="text-smudged-lips ml-0.5">*</span>
+                        {t(USERS.GENDER)} <span className="text-smudged-lips ml-0.5">*</span>
                       </label>
                       <select
                         {...field}
                         className="w-full px-3 py-2 border border-carbon/20 rounded-md focus:outline-none focus:ring-2 focus:ring-azure-dragon/20 focus:border-azure-dragon"
                       >
-                        <option value="">Select gender</option>
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="Other">Other</option>
+                        <option value="">{t(USERS.SELECT_GENDER)}</option>
+                        <option value="M">{t(USERS.MALE)}</option>
+                        <option value="F">{t(USERS.FEMALE)}</option>
+                        <option value="Other">{t(USERS.OTHER)}</option>
                       </select>
                       {errors.gender && (
                         <p className="text-xs text-smudged-lips mt-1">{errors.gender.message}</p>
@@ -191,7 +201,7 @@ export const EditClinicAdminForm = ({
                 />
 
                 <Input
-                  label="Date of Birth"
+                  label={t(USERS.DATE_OF_BIRTH)}
                   type="date"
                   required={true}
                   error={errors.date_of_birth?.message}
@@ -204,7 +214,7 @@ export const EditClinicAdminForm = ({
                   render={({ field }) => (
                     <div>
                       <label className="block text-sm font-medium text-carbon/80 mb-1">
-                        Role <span className="text-smudged-lips ml-0.5">*</span>
+                        {t(USERS.ROLE)} <span className="text-smudged-lips ml-0.5">*</span>
                       </label>
                       <select
                         {...field}
@@ -214,18 +224,18 @@ export const EditClinicAdminForm = ({
                         }`}
                       >
                         {isDoctor ? (
-                          <option value="DOCTOR">Doctor</option>
+                          <option value="DOCTOR">{t(USERS.DOCTOR)}</option>
                         ) : (
                           <>
-                            <option value="">Select role</option>
-                            <option value="MANAGER">Manager</option>
-                            <option value="Operator">Operator</option>
+                            <option value="">{t(USERS.SELECT_ROLE)}</option>
+                            <option value="MANAGER">{t(USERS.MANAGER)}</option>
+                            <option value="Operator">{t(USERS.OPERATOR)}</option>
                           </>
                         )}
                       </select>
                       {isDoctor && (
                         <p className="text-xs text-carbon/60 mt-1">
-                          Doctor role cannot be changed
+                          {t(USERS.DOCTOR_ROLE_CANNOT_CHANGE)}
                         </p>
                       )}
                       {errors.role && (
@@ -245,7 +255,7 @@ export const EditClinicAdminForm = ({
                 size="md"
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? 'Updating...' : 'Update User'}
+                {updateMutation.isPending ? t(USERS.UPDATING) : t(USERS.UPDATE_USER)}
               </Button>
               {onCancel && (
                 <Button
@@ -255,7 +265,7 @@ export const EditClinicAdminForm = ({
                   onClick={onCancel}
                   disabled={updateMutation.isPending}
                 >
-                  Cancel
+                  {t(USERS.CANCEL)}
                 </Button>
               )}
             </div>

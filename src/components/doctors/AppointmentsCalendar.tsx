@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { MdChevronLeft, MdChevronRight, MdCalendarToday, MdEvent } from 'react-icons/md';
 import { cn } from '@/utils/cn';
+import { useTranslation, DOCTOR } from '@/i18n';
 import type { Appointment } from '@/api/appointments';
 
 interface AppointmentsCalendarProps {
@@ -12,14 +13,17 @@ interface AppointmentsCalendarProps {
   title?: string;
 }
 
-export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Calendar' }: AppointmentsCalendarProps) => {
+export const AppointmentsCalendar = ({ appointments, onDateClick, title }: AppointmentsCalendarProps) => {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const displayTitle = title ?? t(DOCTOR.MY_CALENDAR);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
-  
+
   const daysInMonth = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getAppointmentsForDate = (date: Date) => {
@@ -49,7 +53,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
     setCurrentMonth(new Date());
   };
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = [t(DOCTOR.SUN), t(DOCTOR.MON), t(DOCTOR.TUE), t(DOCTOR.WED), t(DOCTOR.THU), t(DOCTOR.FRI), t(DOCTOR.SAT)];
 
   return (
     <Card variant="elevated">
@@ -57,7 +61,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <MdCalendarToday className="h-5 w-5 text-azure-dragon" />
-            {title}
+            {displayTitle}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -74,7 +78,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
               onClick={goToToday}
               className="text-xs px-3"
             >
-              Today
+              {t(DOCTOR.TODAY)}
             </Button>
             <Button
               variant="ghost"
@@ -138,7 +142,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
                       // Safely parse the appointment date/time
                       let aptDateTime: Date | null = null;
                       let timeString = 'N/A';
-                      
+
                       if (apt.appointment_date && apt.appointment_time) {
                         try {
                           aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
@@ -150,7 +154,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
                           console.warn('Invalid appointment date/time:', apt.appointment_date, apt.appointment_time);
                         }
                       }
-                      
+
                       return (
                         <div
                           key={apt.appointment_id}
@@ -173,7 +177,7 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
                     })}
                     {dayAppointments.length > 2 && (
                       <div className="text-[10px] text-carbon/60 px-1">
-                        +{dayAppointments.length - 2} more
+                        {t(DOCTOR.MORE_APPOINTMENTS, { count: String(dayAppointments.length - 2) })}
                       </div>
                     )}
                   </div>
@@ -188,19 +192,19 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title = 'My Ca
           <div className="flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-azure-dragon/20 border border-azure-dragon/50"></div>
-              <span className="text-carbon/70">Today</span>
+              <span className="text-carbon/70">{t(DOCTOR.TODAY)}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-azure-dragon/20"></div>
-              <span className="text-carbon/70">Booked</span>
+              <span className="text-carbon/70">{t(DOCTOR.BOOKED)}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-blue-500/20"></div>
-              <span className="text-carbon/70">Checked In</span>
+              <span className="text-carbon/70">{t(DOCTOR.CHECKED_IN)}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-yellow-500/20"></div>
-              <span className="text-carbon/70">In Progress</span>
+              <span className="text-carbon/70">{t(DOCTOR.IN_PROGRESS)}</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useClinics } from '@/hooks/useClinics';
 import { cn } from '@/utils/cn';
+import { useTranslation, DOCTOR } from '@/i18n';
 
 export interface ClinicMultiSelectProps {
   value?: string[];
@@ -24,11 +25,12 @@ export const ClinicMultiSelect = ({
   className,
   primaryClinicId,
 }: ClinicMultiSelectProps) => {
+  const { t } = useTranslation();
   const { data: clinicsData, isLoading } = useClinics({ limit: 100, is_active: true });
 
   const handleClinicToggle = (clinicId: string) => {
     if (!onChange) return;
-    
+
     const currentValue = value || [];
     if (currentValue.includes(clinicId)) {
       // Remove clinic (but not primary clinic)
@@ -64,15 +66,15 @@ export const ClinicMultiSelect = ({
         )}
       >
         {isLoading ? (
-          <p className="text-sm text-carbon/60">Loading clinics...</p>
+          <p className="text-sm text-carbon/60">{t(DOCTOR.LOADING_CLINICS)}</p>
         ) : clinics.length === 0 ? (
-          <p className="text-sm text-carbon/60">No clinics available</p>
+          <p className="text-sm text-carbon/60">{t(DOCTOR.NO_CLINICS_AVAILABLE)}</p>
         ) : (
           <div className="space-y-2">
             {clinics.map((clinic) => {
               const isPrimary = Boolean(primaryClinicId && clinic.clinic_id === primaryClinicId);
               const isSelected = value?.includes(clinic.clinic_id) || isPrimary;
-              
+
               return (
                 <label
                   key={clinic.clinic_id}
@@ -91,7 +93,7 @@ export const ClinicMultiSelect = ({
                   />
                   <span className={cn('text-sm text-carbon', isPrimary && 'font-medium')}>
                     {clinic.name}
-                    {isPrimary && <span className="text-xs text-azure-dragon ml-2">(Primary)</span>}
+                    {isPrimary && <span className="text-xs text-azure-dragon ml-2">{t(DOCTOR.PRIMARY_LABEL)}</span>}
                   </span>
                 </label>
               );
@@ -104,7 +106,7 @@ export const ClinicMultiSelect = ({
       )}
       {label && !error && (
         <p className="mt-1.5 text-xs text-carbon/60 font-ui">
-          Select additional clinics (primary clinic is automatically included)
+          {t(DOCTOR.ADDITIONAL_CLINICS_HELPER)}
         </p>
       )}
     </div>

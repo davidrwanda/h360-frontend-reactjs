@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { cn } from '@/utils/cn';
+import { useTranslation, CLINIC } from '@/i18n';
 
 interface LocationInputProps {
   value?: string;
@@ -77,10 +78,11 @@ export const LocationInput = ({
   value = '',
   onChange,
   onLocationSelect,
-  placeholder = 'City or Postal Code',
+  placeholder,
   className,
   disabled = false,
 }: LocationInputProps) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<InstanceType<NonNullable<typeof window.google>['maps']['places']['Autocomplete']> | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -289,7 +291,7 @@ export const LocationInput = ({
         type="text"
         value={value}
         onChange={handleChange}
-        placeholder={disabled ? 'Select a clinic first' : placeholder}
+        placeholder={disabled ? t(CLINIC.SELECT_CLINIC_FIRST) : (placeholder || t(CLINIC.CITY_OR_POSTAL_CODE))}
         disabled={disabled}
         className={cn(
           'flex h-full w-full rounded-xl border-0 bg-[#f5f5f5] px-4 py-4 text-base',

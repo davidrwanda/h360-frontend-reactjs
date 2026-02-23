@@ -31,6 +31,7 @@ export interface SubscribeDoctorRequest {
 }
 
 export interface UpdateDoctorClinicRequest {
+  employment_status?: 'active' | 'inactive' | 'on_leave';
   max_daily_patients?: number;
   appointment_duration_minutes?: number;
   accepts_new_patients?: boolean;

@@ -48,4 +48,21 @@ export const COMMON = {
   SECTION_ADMINISTRATION: 'common.sectionAdministration',
   SECTION_SYSTEM: 'common.sectionSystem',
   ALL_MENU_ITEMS: 'common.allMenuItems',
+
+  // Access control
+  ACCESS_DENIED: 'common.accessDenied',
+  NO_PERMISSION: 'common.noPermission',
+  SYSTEM_ADMIN_ACCESS_NOTE: 'common.systemAdminAccessNote',
+
+  // UI aria labels & common actions
+  CLOSE_MODAL: 'common.closeModal',
+  CLOSE_TOAST: 'common.closeToast',
+  CLOSE_MENU: 'common.closeMenu',
+  NO_OPTIONS_AVAILABLE: 'common.noOptionsAvailable',
+  CURRENT_ROLE: 'common.currentRole',
+  NO_MENU_ITEMS: 'common.noMenuItems',
+  BACK: 'common.back',
+  EDIT: 'common.edit',
+  SAVE: 'common.save',
+  LOADING: 'common.loading',
 } as const;
