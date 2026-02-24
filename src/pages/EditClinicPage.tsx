@@ -48,6 +48,9 @@ interface ClinicFormData {
   appointment_slot_duration?: number | null;
   max_daily_appointments?: number | null;
   allow_online_booking?: boolean;
+  booking_mode?: string;
+  auto_assign_doctor?: boolean;
+  auto_check_in?: boolean;
   send_sms_reminders?: boolean;
   send_email_reminders?: boolean;
   reminder_hours_before?: number | null;
@@ -166,6 +169,9 @@ export const EditClinicPage = () => {
       appointment_slot_duration: z.number().min(5).max(120).optional().nullable(),
       max_daily_appointments: z.number().min(1).optional().nullable(),
       allow_online_booking: z.boolean().optional(),
+      booking_mode: z.enum(['both_required', 'doctor_required', 'service_required', 'flexible', 'time_slot_only']).optional(),
+      auto_assign_doctor: z.boolean().optional(),
+      auto_check_in: z.boolean().optional(),
       send_sms_reminders: z.boolean().optional(),
       send_email_reminders: z.boolean().optional(),
       reminder_hours_before: z.number().min(1).max(168).optional().nullable(),
@@ -194,6 +200,7 @@ export const EditClinicPage = () => {
   });
 
   const address = watch('address');
+  const watchedBookingMode = watch('booking_mode');
 
   // Update form when clinic data loads
   useEffect(() => {
@@ -220,6 +227,8 @@ export const EditClinicPage = () => {
         appointment_slot_duration: clinic.appointment_slot_duration || null,
         max_daily_appointments: clinic.max_daily_appointments || null,
         allow_online_booking: clinic.allow_online_booking ?? undefined,
+        booking_mode: clinic.booking_mode || 'both_required',
+        auto_assign_doctor: clinic.auto_assign_doctor ?? false,
         send_sms_reminders: clinic.send_sms_reminders ?? undefined,
         send_email_reminders: clinic.send_email_reminders ?? undefined,
         reminder_hours_before: clinic.reminder_hours_before || null,
@@ -671,6 +680,23 @@ export const EditClinicPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Select
+                  label={t(CLINIC.BOOKING_MODE_LABEL)}
+                  error={errors.booking_mode?.message}
+                  options={[
+                    { value: 'both_required', label: t(CLINIC.BOOKING_MODE_BOTH_REQUIRED) },
+                    { value: 'doctor_required', label: t(CLINIC.BOOKING_MODE_DOCTOR_REQUIRED) },
+                    { value: 'service_required', label: t(CLINIC.BOOKING_MODE_SERVICE_REQUIRED) },
+                    { value: 'flexible', label: t(CLINIC.BOOKING_MODE_FLEXIBLE) },
+                    { value: 'time_slot_only', label: t(CLINIC.BOOKING_MODE_TIME_SLOT_ONLY) },
+                  ]}
+                  {...register('booking_mode')}
+                />
+                <p className="text-xs text-carbon/50 mt-1">
+                  {t(CLINIC.BOOKING_MODE_HELPER)}
+                </p>
+              </div>
               <Input
                 label={t(CLINIC.SLOT_DURATION_LABEL)}
                 type="number"
@@ -718,6 +744,34 @@ export const EditClinicPage = () => {
                 />
                 <span className="text-sm font-medium text-carbon">{t(CLINIC.SEND_EMAIL_REMINDERS)}</span>
               </label>
+              {watchedBookingMode !== 'doctor_required' && watchedBookingMode !== 'both_required' && (
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      {...register('auto_assign_doctor')}
+                      className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
+                    />
+                    <span className="text-sm font-medium text-carbon">{t(CLINIC.AUTO_ASSIGN_DOCTOR)}</span>
+                  </label>
+                  <p className="text-xs text-carbon/50 mt-1 ml-6">
+                    {t(CLINIC.AUTO_ASSIGN_DOCTOR_HELPER)}
+                  </p>
+                </div>
+              )}
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register('auto_check_in')}
+                    className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
+                  />
+                  <span className="text-sm font-medium text-carbon">{t(CLINIC.AUTO_CHECK_IN)}</span>
+                </label>
+                <p className="text-xs text-carbon/50 mt-1 ml-6">
+                  {t(CLINIC.AUTO_CHECK_IN_HELPER)}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

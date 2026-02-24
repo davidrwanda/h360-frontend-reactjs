@@ -26,6 +26,7 @@ import { PatientRegisterPage } from '@/pages/PatientRegisterPage';
 import { BookAppointmentPage } from '@/pages/BookAppointmentPage';
 import { BookAppointmentAuthPage } from '@/pages/BookAppointmentAuthPage';
 import { LandingPage } from '@/pages/LandingPage';
+import { PublicClinicDetailPage } from '@/pages/PublicClinicDetailPage';
 import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
 import { MyProfilePage } from '@/pages/MyProfilePage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
@@ -43,6 +44,8 @@ import { DoctorCalendarConfigPage } from '@/pages/DoctorCalendarConfigPage';
 import { DoctorBulkSetupPage } from '@/pages/DoctorBulkSetupPage';
 import { SlotGenerationPage } from '@/pages/SlotGenerationPage';
 import { TimetablePage } from '@/pages/TimetablePage';
+import { AppointmentsPage } from '@/pages/AppointmentsPage';
+import { QueuePage } from '@/pages/QueuePage';
 
 export const router = createBrowserRouter([
   {
@@ -80,6 +83,10 @@ export const router = createBrowserRouter([
   {
     path: '/book-appointment',
     element: <BookAppointmentPage />,
+  },
+  {
+    path: '/clinic/:id',
+    element: <PublicClinicDetailPage />,
   },
   {
     path: '/',
@@ -244,9 +251,9 @@ export const router = createBrowserRouter([
   {
     path: '/appointments',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
-          <PlaceholderPage titleKey={COMMON.APPOINTMENTS} />
+          <AppointmentsPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -254,9 +261,9 @@ export const router = createBrowserRouter([
   {
     path: '/queue',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
-          <PlaceholderPage titleKey={COMMON.QUEUE_MANAGEMENT} />
+          <QueuePage />
         </MainLayout>
       </ProtectedRoute>
     ),

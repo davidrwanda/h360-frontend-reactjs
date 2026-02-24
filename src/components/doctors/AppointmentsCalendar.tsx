@@ -139,20 +139,24 @@ export const AppointmentsCalendar = ({ appointments, onDateClick, title }: Appoi
                   </div>
                   <div className="space-y-0.5">
                     {dayAppointments.slice(0, 2).map((apt) => {
-                      // Safely parse the appointment date/time
-                      let aptDateTime: Date | null = null;
+                      // Safely format the appointment time
                       let timeString = 'N/A';
 
-                      if (apt.appointment_date && apt.appointment_time) {
+                      if (apt.formatted_time_slot) {
+                        timeString = apt.formatted_time_slot;
+                      } else if (apt.appointment_date && apt.appointment_time) {
                         try {
-                          aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
-                          // Check if the date is valid
+                          const aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
                           if (aptDateTime && !isNaN(aptDateTime.getTime())) {
                             timeString = format(aptDateTime, 'hh:mm a');
                           }
-                        } catch (error) {
-                          console.warn('Invalid appointment date/time:', apt.appointment_date, apt.appointment_time);
+                        } catch {
+                          // Invalid date/time — keep default
                         }
+                      } else if (apt.start_time) {
+                        const h = String(apt.start_time.hours).padStart(2, '0');
+                        const m = String(apt.start_time.minutes).padStart(2, '0');
+                        timeString = `${h}:${m}`;
                       }
 
                       return (

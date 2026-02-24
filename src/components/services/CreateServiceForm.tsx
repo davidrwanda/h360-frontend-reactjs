@@ -19,7 +19,9 @@ interface CreateServiceFormData {
   duration_minutes: number;
   requires_appointment: boolean;
   is_walk_in_allowed: boolean;
+  requires_doctor: boolean;
   max_daily_capacity?: number;
+  preparation_instructions?: string;
 }
 
 interface CreateServiceFormProps {
@@ -48,7 +50,9 @@ export const CreateServiceForm = ({
     duration_minutes: z.number().min(1, t(SERVICE.DURATION_MIN_ERROR)),
     requires_appointment: z.boolean(),
     is_walk_in_allowed: z.boolean(),
+    requires_doctor: z.boolean(),
     max_daily_capacity: z.number().min(1).optional(),
+    preparation_instructions: z.string().optional(),
   }), [t]);
 
   const {
@@ -63,6 +67,7 @@ export const CreateServiceForm = ({
       clinic_id: clinicId,
       requires_appointment: true,
       is_walk_in_allowed: false,
+      requires_doctor: true,
       duration_minutes: 30,
     },
   });
@@ -81,7 +86,9 @@ export const CreateServiceForm = ({
         duration_minutes: data.duration_minutes,
         requires_appointment: data.requires_appointment,
         is_walk_in_allowed: data.is_walk_in_allowed,
+        requires_doctor: data.requires_doctor,
         max_daily_capacity: data.max_daily_capacity || undefined,
+        preparation_instructions: data.preparation_instructions || undefined,
       });
 
       reset();
@@ -179,7 +186,21 @@ export const CreateServiceForm = ({
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-carbon/10">
+          <div className="md:col-span-2">
+            <div>
+              <label className="block text-sm font-medium text-carbon mb-1">
+                {t(SERVICE.PREPARATION_INSTRUCTIONS)}
+              </label>
+              <textarea
+                placeholder={t(SERVICE.PREPARATION_INSTRUCTIONS_PLACEHOLDER)}
+                rows={3}
+                className="w-full rounded-md border border-carbon/20 bg-white px-3 py-2 text-sm text-carbon placeholder:text-carbon/40 focus:border-azure-dragon focus:outline-none focus:ring-1 focus:ring-azure-dragon disabled:opacity-50"
+                {...register('preparation_instructions')}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3 pt-4 border-t border-carbon/10">
             <div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -199,6 +220,17 @@ export const CreateServiceForm = ({
                   className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
                 />
                 <span className="text-sm text-carbon">{t(SERVICE.WALK_IN_ALLOWED)}</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('requires_doctor')}
+                  className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
+                />
+                <span className="text-sm text-carbon">{t(SERVICE.REQUIRES_DOCTOR)}</span>
               </label>
             </div>
           </div>

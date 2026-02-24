@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, addDays, startOfWeek, parseISO, addWeeks, subWeeks, isBefore, startOfDay, isAfter } from 'date-fns';
 import { useSlots } from '@/hooks/useSlots';
+import { Link } from 'react-router-dom';
 import { Loading } from '@/components/ui';
 import { useTranslation, LANDING } from '@/i18n';
 import type { Clinic } from '@/api/clinics';
@@ -20,8 +21,7 @@ export const ClinicSlotsDisplay = ({
 }: ClinicSlotsDisplayProps) => {
   const { t } = useTranslation();
   const today = useMemo(() => startOfDay(new Date()), []);
-  const twoWeeksFromToday = useMemo(() => addDays(today, 14), [today]);
-  
+
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // Start from today's week, but ensure we don't go before today
     const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
@@ -29,14 +29,17 @@ export const ClinicSlotsDisplay = ({
   });
   const [showAllSlots, setShowAllSlots] = useState(false);
 
-  // Fetch slots with two-week interval from today
+  // End of the visible 5-day window
+  const weekEnd = useMemo(() => addDays(currentWeekStart, 4), [currentWeekStart]);
+
+  // Fetch slots for the current visible week only — re-fetches when navigating
   const { data: slotsData, isLoading } = useSlots({
     clinic_id: clinic.clinic_id,
     service_id: serviceId,
-    dateFrom: format(today, 'yyyy-MM-dd'),
-    dateTo: format(twoWeeksFromToday, 'yyyy-MM-dd'),
+    dateFrom: format(currentWeekStart, 'yyyy-MM-dd'),
+    dateTo: format(weekEnd, 'yyyy-MM-dd'),
     available_only: true,
-    limit: 100,
+    limit: 500,
   });
 
   const slots = useMemo(() => slotsData?.data || [], [slotsData?.data]);
@@ -87,22 +90,20 @@ export const ClinicSlotsDisplay = ({
       setCurrentWeekStart(previousWeek);
     } else {
       // If previous week would be before today, set to today
-      const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-      setCurrentWeekStart(isBefore(weekStart, today) ? today : weekStart);
+      const ws = startOfWeek(today, { weekStartsOn: 1 });
+      setCurrentWeekStart(isBefore(ws, today) ? today : ws);
     }
+    setShowAllSlots(false);
   };
 
   const handleNextWeek = () => {
     const nextWeek = addWeeks(currentWeekStart, 1);
     // Check if next week would go beyond last available date
     if (lastAvailableDate && isAfter(nextWeek, lastAvailableDate)) {
-      return; // Don't allow going beyond last available date
-    }
-    // Check if next week would go beyond two weeks from today
-    if (isAfter(nextWeek, twoWeeksFromToday)) {
-      return; // Don't allow going beyond two weeks
+      return;
     }
     setCurrentWeekStart(nextWeek);
+    setShowAllSlots(false);
   };
 
   // Check if we can go to previous week (not before today)
@@ -111,14 +112,14 @@ export const ClinicSlotsDisplay = ({
     return !isBefore(previousWeek, today);
   }, [currentWeekStart, today]);
 
-  // Check if we can go to next week (not beyond last available date or two weeks)
+  // Check if we can go to next week (not beyond last available date)
   const canGoNext = useMemo(() => {
     const nextWeek = addWeeks(currentWeekStart, 1);
     if (lastAvailableDate && isAfter(nextWeek, lastAvailableDate)) {
       return false;
     }
-    return !isAfter(nextWeek, twoWeeksFromToday);
-  }, [currentWeekStart, lastAvailableDate, twoWeeksFromToday]);
+    return true;
+  }, [currentWeekStart, lastAvailableDate]);
 
   const getFullAddress = () => {
     const parts = [
@@ -134,17 +135,20 @@ export const ClinicSlotsDisplay = ({
   return (
     <div className="bg-white rounded-xl shadow-lg border border-carbon/10 overflow-hidden">
       {/* Clinic Header */}
-      <div className="bg-azure-dragon/5 p-4 border-b border-carbon/10">
+      <Link
+        to={`/clinic/${clinic.clinic_id}`}
+        className="block bg-azure-dragon/5 p-4 border-b border-carbon/10 hover:bg-azure-dragon/10 transition-colors"
+      >
         <div className="flex items-start gap-3">
           <div className="bg-azure-dragon/10 p-2 rounded-lg shrink-0">
             <MdLocalHospital className="h-6 w-6 text-azure-dragon" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg text-carbon mb-1">{clinic.name}</h3>
+            <h3 className="font-semibold text-lg text-carbon mb-1 hover:text-azure-dragon transition-colors">{clinic.name}</h3>
             <p className="text-sm text-carbon/70 line-clamp-2">{getFullAddress()}</p>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Calendar Grid */}
       <div className="p-4">

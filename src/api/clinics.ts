@@ -1,6 +1,8 @@
 import apiClient from './client';
 import type { ApiResponse } from '@/types/auth';
 
+export type BookingMode = 'both_required' | 'doctor_required' | 'service_required' | 'flexible' | 'time_slot_only';
+
 export interface OperatingHours {
   monday?: { open?: string; close?: string; closed?: boolean };
   tuesday?: { open?: string; close?: string; closed?: boolean };
@@ -34,6 +36,9 @@ export interface Clinic {
   appointment_slot_duration?: number;
   max_daily_appointments?: number;
   allow_online_booking?: boolean;
+  booking_mode?: BookingMode;
+  auto_assign_doctor?: boolean;
+  auto_check_in?: boolean;
   send_sms_reminders?: boolean;
   send_email_reminders?: boolean;
   reminder_hours_before?: number;
@@ -93,6 +98,9 @@ export interface CreateClinicRequest {
   appointment_slot_duration?: number;
   max_daily_appointments?: number;
   allow_online_booking?: boolean;
+  booking_mode?: BookingMode;
+  auto_assign_doctor?: boolean;
+  auto_check_in?: boolean;
   send_sms_reminders?: boolean;
   send_email_reminders?: boolean;
   reminder_hours_before?: number;

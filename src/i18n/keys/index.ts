@@ -13,3 +13,4 @@ export { ACTIVITY_LOG } from './activityLog.keys';
 export { APPOINTMENT } from './appointment.keys';
 export { PROFILE } from './profile.keys';
 export { TIMETABLE } from './timetable.keys';
+export { QUEUE } from './queue.keys';

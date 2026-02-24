@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom';
 import { StatCard } from './StatCard';
 import { QuickActions } from './QuickActions';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
-import { MdEvent, MdPeople, MdQueue, MdCheckCircle } from 'react-icons/md';
+import { MdEvent, MdPeople, MdQueue, MdCheckCircle, MdArrowForward } from 'react-icons/md';
 import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
 export const ReceptionistDashboard = () => {
@@ -94,9 +95,15 @@ export const ReceptionistDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <p className="text-sm text-carbon/60">
+              <p className="text-sm text-carbon/60 mb-2">
                 {t(DASHBOARD.QUEUE_PLACEHOLDER)}
               </p>
+              <Link to="/queue">
+                <Button variant="outline" size="sm" className="w-full">
+                  {t(DASHBOARD.QUEUE_MANAGEMENT)}
+                  <MdArrowForward className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

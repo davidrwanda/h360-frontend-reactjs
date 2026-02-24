@@ -84,6 +84,9 @@ export const serviceRw: Dictionary = {
   'service.duration_min_error': 'Igihe kigomba kuba nibura umunota 1',
   'service.max_daily_capacity_label': 'Umubare Ntarengwa ku Munsi',
   'service.walk_in_allowed': 'Kwinjira Bidakeneye Gahunda Byemewe',
+  'service.requires_doctor': 'Bisaba Umuganga',
+  'service.preparation_instructions': 'Amabwiriza yo Gutegura',
+  'service.preparation_instructions_placeholder': 'Andika amabwiriza yo gutegura abarwayi',
   'service.clinic_required': 'Ivuriro rirakenewe',
 
   // Form actions

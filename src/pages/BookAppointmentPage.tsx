@@ -6,10 +6,13 @@ import { z } from 'zod';
 import { format, parseISO, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useSlots, useAvailableDoctors } from '@/hooks/useSlots';
-import { useServices } from '@/hooks/useServices';
+import { useServices, useServiceDoctors, useDoctorServices } from '@/hooks/useServices';
 import type { AppointmentSlot } from '@/api/slots';
 import { useAuth } from '@/hooks/useAuth';
+import { useClinic } from '@/hooks/useClinics';
 import { useToastStore } from '@/store/toastStore';
+import { getBookingModeRequirements } from '@/utils/bookingMode';
+import type { BookingMode } from '@/api/clinics';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
 import { PublicHeader, PublicFooter } from '@/components/layout';
 import { cn } from '@/utils/cn';
@@ -24,8 +27,9 @@ import {
 import { useTranslation, APPOINTMENT } from '@/i18n';
 
 interface AppointmentFormData {
-  doctor_id: string;
+  doctor_id?: string;
   service_id?: string;
+  auto_assign_doctor?: boolean;
   reason?: string;
   notes?: string;
   guest_name?: string;
@@ -48,24 +52,39 @@ export const BookAppointmentPage = () => {
   const createMutation = useCreateAppointment();
   const { t } = useTranslation();
 
+  // Get slot and clinic info from URL params (declared early for clinic fetch)
+  const slotId = searchParams.get('slot_id');
+  const clinicId = searchParams.get('clinic_id');
+  const slotDateParam = searchParams.get('slot_date');
+
+  // Fetch clinic data to get booking_mode
+  const { data: clinicData } = useClinic(clinicId || undefined);
+
+  const bookingRequirements = useMemo(() => {
+    return getBookingModeRequirements(
+      clinicData?.booking_mode as BookingMode | undefined,
+      { autoAssignDoctorEnabled: clinicData?.auto_assign_doctor }
+    );
+  }, [clinicData?.booking_mode, clinicData?.auto_assign_doctor]);
+
   const appointmentSchema = useMemo(() => z.object({
-    doctor_id: z.string().min(1, t(APPOINTMENT.DOCTOR_REQUIRED)),
-    service_id: z.string().optional(),
+    doctor_id: bookingRequirements.doctorRequired
+      ? z.string().min(1, t(APPOINTMENT.DOCTOR_REQUIRED))
+      : z.string().optional(),
+    service_id: bookingRequirements.serviceRequired
+      ? z.string().min(1, t(APPOINTMENT.SERVICE_REQUIRED_LABEL))
+      : z.string().optional(),
+    auto_assign_doctor: z.boolean().optional(),
     reason: z.string().optional(),
     notes: z.string().optional(),
     // Guest booking fields
     guest_name: z.string().optional(),
     guest_phone: z.string().optional(),
     guest_email: z.string().email(t(APPOINTMENT.INVALID_EMAIL)).optional().or(z.literal('')),
-  }), [t]);
+  }), [t, bookingRequirements]);
 
   // Get guest info from location state (if coming from auth page)
   const guestInfoFromState = (location.state as { guestInfo?: GuestInfoFormData })?.guestInfo;
-
-  // Get slot and clinic info from URL params
-  const slotId = searchParams.get('slot_id');
-  const clinicId = searchParams.get('clinic_id');
-  const slotDateParam = searchParams.get('slot_date');
 
   // Fetch slot details - use specific date if available (more efficient and reliable)
   const { data: slotsData, isLoading: isLoadingSlot } = useSlots(
@@ -141,13 +160,6 @@ export const BookAppointmentPage = () => {
     }
   }, [isLoggedInButNotPatient, showError, t]);
 
-  // Show error if logged in but not a patient
-  useEffect(() => {
-    if (isLoggedInButNotPatient) {
-      showError(t(APPOINTMENT.ONLY_PATIENTS_ALLOWED));
-    }
-  }, [isLoggedInButNotPatient, showError, t]);
-
   const {
     register,
     handleSubmit,
@@ -160,6 +172,7 @@ export const BookAppointmentPage = () => {
     defaultValues: {
       doctor_id: selectedSlot?.doctor_id || '',
       service_id: selectedSlot?.service_id || '',
+      auto_assign_doctor: false,
     },
   });
 
@@ -176,6 +189,12 @@ export const BookAppointmentPage = () => {
   }, [selectedSlot, setValue]);
 
   const selectedDoctorId = watch('doctor_id');
+  const selectedServiceId = watch('service_id');
+
+  // Cross-filtering: fetch doctors assigned to selected service, and services assigned to selected doctor
+  const { data: serviceDoctorsData } = useServiceDoctors(selectedServiceId || '', !!selectedServiceId);
+  const { data: doctorServicesData } = useDoctorServices(selectedDoctorId || '', !!selectedDoctorId);
+
   const [selectedAlternativeSlot, setSelectedAlternativeSlot] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
@@ -258,11 +277,29 @@ export const BookAppointmentPage = () => {
 
   // Filter services based on selected doctor (if doctor has assigned services)
   const availableServices = useMemo(() => {
-    if (!selectedDoctorId) return services;
-    // If doctor is selected, show services assigned to that doctor
-    // For now, return all services - you might want to filter by doctor assignments
+    if (!selectedDoctorId || !doctorServicesData) return services;
+    // When a doctor is selected and we have their service assignments,
+    // filter to show only services assigned to that doctor
+    if (Array.isArray(doctorServicesData) && doctorServicesData.length > 0) {
+      const doctorServiceIds = new Set(doctorServicesData.map((s) => s.service_id));
+      return services.filter((s) => doctorServiceIds.has(s.service_id));
+    }
     return services;
-  }, [services, selectedDoctorId]);
+  }, [services, selectedDoctorId, doctorServicesData]);
+
+  // Filter available doctors based on selected service (if service has assigned doctors)
+  const filteredDoctors = useMemo(() => {
+    if (!selectedServiceId || !serviceDoctorsData) return availableDoctors;
+    // When a service is selected and we have its doctor assignments,
+    // filter to show only doctors assigned to that service (intersected with slot-available doctors)
+    if (Array.isArray(serviceDoctorsData) && serviceDoctorsData.length > 0) {
+      const serviceDoctorIds = new Set(serviceDoctorsData.map((d) => d.doctor_id));
+      const filtered = availableDoctors.filter((d) => serviceDoctorIds.has(d.doctor_id));
+      // If filtering results in empty list, show all available doctors (assignments may not exist)
+      return filtered.length > 0 ? filtered : availableDoctors;
+    }
+    return availableDoctors;
+  }, [availableDoctors, selectedServiceId, serviceDoctorsData]);
 
   const onSubmit = async (data: AppointmentFormData) => {
     if (!selectedSlot || !clinicId) {
@@ -322,8 +359,15 @@ export const BookAppointmentPage = () => {
         return;
       }
 
+      // Flexible mode: at least one of doctor or service must be selected
+      if (clinicData?.booking_mode === 'flexible' && !data.doctor_id && !data.service_id) {
+        showError(t(APPOINTMENT.DOCTOR_OR_SERVICE_REQUIRED));
+        return;
+      }
+
       const appointmentPayload = {
-        doctor_id: data.doctor_id,
+        // doctor_id is optional depending on booking mode
+        ...(data.doctor_id ? { doctor_id: data.doctor_id } : {}),
         clinic_id: clinicId,
         service_id: data.service_id || undefined,
         appointment_date: appointmentDate,
@@ -331,21 +375,31 @@ export const BookAppointmentPage = () => {
         end_time: slotToUse.end_time,
         reason: data.reason || undefined,
         notes: data.notes || undefined,
+        // Auto-assign doctor when no doctor selected and clinic supports it
+        ...(!data.doctor_id && bookingRequirements.canAutoAssignDoctor
+          ? { auto_assign_doctor: true }
+          : data.auto_assign_doctor ? { auto_assign_doctor: true } : {}),
         // Include patient_id for registered patients
         ...(isPatientType && patientId
           ? {
               patient_id: patientId,
             }
           : {
-              // Guest booking fields
-              guest_name: guestInfoFromState?.guest_name || data.guest_name || undefined,
-              guest_phone: guestInfoFromState?.guest_phone || data.guest_phone || undefined,
-              guest_email: guestInfoFromState?.guest_email || data.guest_email || undefined,
+              // Guest booking — backend expects guest info nested in additional_data
+              additional_data: {
+                guest_name: guestInfoFromState?.guest_name || data.guest_name || undefined,
+                guest_phone: guestInfoFromState?.guest_phone || data.guest_phone || undefined,
+                guest_email: guestInfoFromState?.guest_email || data.guest_email || undefined,
+              },
             }),
       };
 
-      await createMutation.mutateAsync(appointmentPayload);
-      showSuccess(t(APPOINTMENT.BOOKED_SUCCESS));
+      const result = await createMutation.mutateAsync(appointmentPayload);
+      if (result.status === 'checked_in' && result.queue_number) {
+        showSuccess(t(APPOINTMENT.BOOKED_AND_CHECKED_IN, { queueNumber: result.queue_number }));
+      } else {
+        showSuccess(t(APPOINTMENT.BOOKED_SUCCESS));
+      }
       navigate('/');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t(APPOINTMENT.BOOK_FAILED);
@@ -489,10 +543,54 @@ export const BookAppointmentPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/*
+              Booking mode determines field ordering:
+              - doctor_required / both_required: Doctor first, then Service
+              - service_required: Service first, then Doctor
+              - flexible: Service first (user can pick either)
+              - time_slot_only: Neither shown
+            */}
+
+            {/* Service Selection — shown FIRST when service_required or flexible */}
+            {bookingRequirements.serviceVisible && (clinicData?.booking_mode === 'service_required' || clinicData?.booking_mode === 'flexible') && (
+              <div>
+                <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
+                  {bookingRequirements.serviceRequired
+                    ? <>{t(APPOINTMENT.SERVICE_LABEL)} <span className="text-smudged-lips ml-0.5">*</span></>
+                    : t(APPOINTMENT.SERVICE_OPTIONAL)
+                  }
+                </label>
+                <Controller
+                  name="service_id"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
+                    >
+                      <option value="">{t(APPOINTMENT.SELECT_SERVICE)}</option>
+                      {availableServices.map((service) => (
+                        <option key={service.service_id} value={service.service_id}>
+                          {service.name} {service.price ? `- ${service.price}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.service_id && (
+                  <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.service_id.message}</p>
+                )}
+              </div>
+            )}
+
             {/* Doctor Selection */}
+            {bookingRequirements.doctorVisible && (
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                {t(APPOINTMENT.DOCTOR)} <span className="text-smudged-lips ml-0.5">*</span>
+                {bookingRequirements.doctorRequired
+                  ? <>{t(APPOINTMENT.DOCTOR)} <span className="text-smudged-lips ml-0.5">*</span></>
+                  : t(APPOINTMENT.DOCTOR_OPTIONAL)
+                }
               </label>
               <Controller
                 name="doctor_id"
@@ -503,7 +601,7 @@ export const BookAppointmentPage = () => {
                     className="flex h-10 w-full rounded-md border border-carbon/15 bg-white px-3.5 py-2.5 text-sm font-ui text-carbon focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-azure-dragon/30 focus-visible:border-azure-dragon/60"
                   >
                     <option value="">{t(APPOINTMENT.SELECT_DOCTOR)}</option>
-                    {availableDoctors.map((doctor) => (
+                    {filteredDoctors.map((doctor) => (
                       <option
                         key={doctor.doctor_id}
                         value={doctor.doctor_id}
@@ -523,9 +621,9 @@ export const BookAppointmentPage = () => {
               {errors.doctor_id && (
                 <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.doctor_id.message}</p>
               )}
-              {availableDoctors.length > 0 && (
+              {filteredDoctors.length > 0 && (
                 <p className="mt-1.5 text-xs text-carbon/60 font-ui">
-                  {t(APPOINTMENT.DOCTORS_AVAILABLE, { count: availableDoctors.filter((d) => d.isAvailable).length })}
+                  {t(APPOINTMENT.DOCTORS_AVAILABLE, { count: filteredDoctors.filter((d) => d.isAvailable).length })}
                 </p>
               )}
               {selectedDoctorId && !selectedDoctorAvailable && (
@@ -534,9 +632,30 @@ export const BookAppointmentPage = () => {
                 </p>
               )}
             </div>
+            )}
+
+            {/* Auto-assign Doctor Info/Checkbox */}
+            {bookingRequirements.canAutoAssignDoctor && (
+              <div className="p-3 bg-bright-halo/10 border border-bright-halo/30 rounded-md">
+                {bookingRequirements.doctorVisible ? (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      {...register('auto_assign_doctor')}
+                      className="rounded border-carbon/20 text-azure-dragon focus:ring-azure-dragon"
+                    />
+                    <span className="text-sm text-carbon">{t(APPOINTMENT.AUTO_ASSIGN_DOCTOR_CHECKBOX)}</span>
+                  </label>
+                ) : (
+                  <p className="text-xs text-azure-dragon font-ui">
+                    {t(APPOINTMENT.AUTO_ASSIGN_DOCTOR_INFO)}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Alternative Slots - Show when selected doctor is not available and no alternative slot selected yet */}
-            {selectedDoctorId && !selectedDoctorAvailable && Object.keys(alternativeSlots).length > 0 && !selectedAlternativeSlot && (
+            {bookingRequirements.doctorRequired && selectedDoctorId && !selectedDoctorAvailable && Object.keys(alternativeSlots).length > 0 && !selectedAlternativeSlot && (
               <div className="mt-4">
                 <label className="block text-xs font-ui font-medium text-carbon/80 mb-2 tracking-wide">
                   {t(APPOINTMENT.AVAILABLE_TIME_SLOTS)}
@@ -676,10 +795,14 @@ export const BookAppointmentPage = () => {
               </div>
             )}
 
-            {/* Service Selection */}
+            {/* Service Selection — shown AFTER doctor for both_required, doctor_required, or default modes */}
+            {bookingRequirements.serviceVisible && clinicData?.booking_mode !== 'service_required' && clinicData?.booking_mode !== 'flexible' && (
             <div>
               <label className="block text-xs font-ui font-medium text-carbon/80 mb-1.5 tracking-wide">
-                {t(APPOINTMENT.SERVICE_OPTIONAL)}
+                {bookingRequirements.serviceRequired
+                  ? <>{t(APPOINTMENT.SERVICE_LABEL)} <span className="text-smudged-lips ml-0.5">*</span></>
+                  : t(APPOINTMENT.SERVICE_OPTIONAL)
+                }
               </label>
               <Controller
                 name="service_id"
@@ -702,6 +825,7 @@ export const BookAppointmentPage = () => {
                 <p className="mt-1.5 text-xs text-smudged-lips font-ui">{errors.service_id.message}</p>
               )}
             </div>
+            )}
 
             {/* Reason */}
             <Input

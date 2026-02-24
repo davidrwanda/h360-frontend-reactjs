@@ -13,7 +13,9 @@ export interface Service {
   duration_minutes: number;
   requires_appointment: boolean;
   is_walk_in_allowed: boolean;
+  requires_doctor: boolean;
   max_daily_capacity?: number;
+  preparation_instructions?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -29,7 +31,9 @@ export interface CreateServiceRequest {
   duration_minutes: number;
   requires_appointment: boolean;
   is_walk_in_allowed: boolean;
+  requires_doctor: boolean;
   max_daily_capacity?: number;
+  preparation_instructions?: string;
 }
 
 export interface UpdateServiceRequest extends Partial<CreateServiceRequest> {

@@ -138,6 +138,20 @@ export const clinicFr: Record<string, string> = {
   'clinic.reminderHoursBefore': 'Heures de rappel avant',
   'clinic.hours': '{{count}} heures',
 
+  // Booking Mode
+  'clinic.bookingMode': 'Mode de réservation',
+  'clinic.bookingModeLabel': 'Mode de réservation des rendez-vous',
+  'clinic.bookingModeHelper': 'Contrôle les champs que les patients doivent fournir lors de la prise de rendez-vous.',
+  'clinic.bookingModeBothRequired': 'Médecin et Service requis',
+  'clinic.bookingModeDoctorRequired': 'Médecin requis',
+  'clinic.bookingModeServiceRequired': 'Service requis',
+  'clinic.bookingModeFlexible': 'Flexible (au moins un)',
+  'clinic.bookingModeTimeSlotOnly': 'Créneau horaire uniquement',
+  'clinic.autoAssignDoctor': 'Attribution automatique du médecin',
+  'clinic.autoAssignDoctorHelper': "Lorsqu'activé, un médecin sera automatiquement attribué si le patient n'en sélectionne pas.",
+  'clinic.autoCheckIn': 'Enregistrement Automatique à la Réservation',
+  'clinic.autoCheckInHelper': "Lorsqu'activé, les patients sont automatiquement enregistrés et reçoivent un numéro de file d'attente lors de la réservation.",
+
   // Management
   'clinic.establishedDate': 'Date de création',
   'clinic.licenseNumber': 'Numéro de licence',

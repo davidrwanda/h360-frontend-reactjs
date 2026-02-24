@@ -82,6 +82,9 @@ export const SERVICE = {
   DURATION_MIN_ERROR: 'service.duration_min_error',
   MAX_DAILY_CAPACITY_LABEL: 'service.max_daily_capacity_label',
   WALK_IN_ALLOWED: 'service.walk_in_allowed',
+  REQUIRES_DOCTOR: 'service.requires_doctor',
+  PREPARATION_INSTRUCTIONS: 'service.preparation_instructions',
+  PREPARATION_INSTRUCTIONS_PLACEHOLDER: 'service.preparation_instructions_placeholder',
   CLINIC_REQUIRED: 'service.clinic_required',
 
   // Form actions

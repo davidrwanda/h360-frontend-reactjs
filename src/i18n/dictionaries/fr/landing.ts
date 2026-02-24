@@ -61,6 +61,22 @@ export const landingFr: Record<string, string> = {
   'landing.noSlotContact': 'Si vous ne trouvez pas de créneau qui vous convient, veuillez contacter la clinique au :',
   'landing.contactClinic': 'Contacter la clinique',
 
+  // Public clinic detail page
+  'landing.clinicDetails': 'Détails de la Clinique',
+  'landing.backToSearch': 'Retour à la Recherche',
+  'landing.about': 'À propos',
+  'landing.contactInfo': 'Coordonnées',
+  'landing.operatingHours': 'Heures d\'ouverture',
+  'landing.bookingInfo': 'Informations de Réservation',
+  'landing.availableAppointments': 'Rendez-vous Disponibles',
+  'landing.visitWebsite': 'Visiter le site web',
+  'landing.callClinic': 'Appeler',
+  'landing.emailClinic': 'Email',
+  'landing.viewOnMap': 'Voir sur la carte',
+  'landing.clinicNotFoundPublic': 'Clinique Introuvable',
+  'landing.clinicNotFoundDescPublic': 'La clinique que vous recherchez est introuvable ou n\'est plus disponible.',
+  'landing.slotDurationInfo': 'Rendez-vous de {{count}} min',
+
   // Footer
   'landing.footerDesc': 'Votre plateforme de gestion de santé de confiance. Connecter les patients avec des prestataires de santé de qualité.',
   'landing.quickLinks': 'Liens rapides',

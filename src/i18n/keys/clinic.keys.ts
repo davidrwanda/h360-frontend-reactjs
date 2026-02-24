@@ -138,6 +138,20 @@ export const CLINIC = {
   REMINDER_HOURS_BEFORE: 'clinic.reminderHoursBefore',
   HOURS: 'clinic.hours',
 
+  // === Booking Mode ===
+  BOOKING_MODE: 'clinic.bookingMode',
+  BOOKING_MODE_LABEL: 'clinic.bookingModeLabel',
+  BOOKING_MODE_HELPER: 'clinic.bookingModeHelper',
+  BOOKING_MODE_BOTH_REQUIRED: 'clinic.bookingModeBothRequired',
+  BOOKING_MODE_DOCTOR_REQUIRED: 'clinic.bookingModeDoctorRequired',
+  BOOKING_MODE_SERVICE_REQUIRED: 'clinic.bookingModeServiceRequired',
+  BOOKING_MODE_FLEXIBLE: 'clinic.bookingModeFlexible',
+  BOOKING_MODE_TIME_SLOT_ONLY: 'clinic.bookingModeTimeSlotOnly',
+  AUTO_ASSIGN_DOCTOR: 'clinic.autoAssignDoctor',
+  AUTO_ASSIGN_DOCTOR_HELPER: 'clinic.autoAssignDoctorHelper',
+  AUTO_CHECK_IN: 'clinic.autoCheckIn',
+  AUTO_CHECK_IN_HELPER: 'clinic.autoCheckInHelper',
+
   // === Management Fields ===
   ESTABLISHED_DATE: 'clinic.establishedDate',
   LICENSE_NUMBER: 'clinic.licenseNumber',

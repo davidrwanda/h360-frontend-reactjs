@@ -138,6 +138,20 @@ export const clinicEn: Record<string, string> = {
   'clinic.reminderHoursBefore': 'Reminder Hours Before',
   'clinic.hours': '{{count}} hours',
 
+  // Booking Mode
+  'clinic.bookingMode': 'Booking Mode',
+  'clinic.bookingModeLabel': 'Appointment Booking Mode',
+  'clinic.bookingModeHelper': 'Controls which fields patients must provide when booking an appointment.',
+  'clinic.bookingModeBothRequired': 'Doctor & Service Required',
+  'clinic.bookingModeDoctorRequired': 'Doctor Required',
+  'clinic.bookingModeServiceRequired': 'Service Required',
+  'clinic.bookingModeFlexible': 'Flexible (at least one)',
+  'clinic.bookingModeTimeSlotOnly': 'Time Slot Only',
+  'clinic.autoAssignDoctor': 'Auto-assign Doctor',
+  'clinic.autoAssignDoctorHelper': 'When enabled, a doctor will be automatically assigned if the patient does not select one.',
+  'clinic.autoCheckIn': 'Auto Check-in on Booking',
+  'clinic.autoCheckInHelper': 'When enabled, patients are automatically checked in and assigned a queue number when their appointment is booked.',
+
   // Management
   'clinic.establishedDate': 'Established Date',
   'clinic.licenseNumber': 'License Number',

@@ -273,6 +273,18 @@ export const ClinicInfoPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
+              {clinic.booking_mode && (
+                <div>
+                  <label className="text-xs font-medium text-carbon/60">{t(CLINIC.BOOKING_MODE_LABEL)}</label>
+                  <p className="text-sm text-carbon mt-1">
+                    {clinic.booking_mode === 'both_required' && t(CLINIC.BOOKING_MODE_BOTH_REQUIRED)}
+                    {clinic.booking_mode === 'doctor_required' && t(CLINIC.BOOKING_MODE_DOCTOR_REQUIRED)}
+                    {clinic.booking_mode === 'service_required' && t(CLINIC.BOOKING_MODE_SERVICE_REQUIRED)}
+                    {clinic.booking_mode === 'flexible' && t(CLINIC.BOOKING_MODE_FLEXIBLE)}
+                    {clinic.booking_mode === 'time_slot_only' && t(CLINIC.BOOKING_MODE_TIME_SLOT_ONLY)}
+                  </p>
+                </div>
+              )}
               {clinic.appointment_slot_duration && (
                 <div>
                   <label className="text-xs font-medium text-carbon/60">{t(CLINIC.SLOT_DURATION)}</label>
@@ -292,6 +304,14 @@ export const ClinicInfoPage = () => {
                     {clinic.allow_online_booking ? t(CLINIC.ENABLED) : t(CLINIC.DISABLED)}
                   </span>
                 </div>
+                {clinic.auto_assign_doctor !== undefined && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-carbon/60">{t(CLINIC.AUTO_ASSIGN_DOCTOR)}</span>
+                    <span className="text-carbon">
+                      {clinic.auto_assign_doctor ? t(CLINIC.ENABLED) : t(CLINIC.DISABLED)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-carbon/60">{t(CLINIC.SMS_REMINDERS)}</span>
                   <span className="text-carbon">

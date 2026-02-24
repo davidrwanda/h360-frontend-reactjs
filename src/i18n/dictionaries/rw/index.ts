@@ -13,6 +13,7 @@ import { activityLogRw } from './activityLog';
 import { appointmentRw } from './appointment';
 import { profileRw } from './profile';
 import { timetableRw } from './timetable';
+import { queueRw } from './queue';
 import type { Dictionary } from '../../types';
 
 export const rw: Dictionary = {
@@ -31,4 +32,5 @@ export const rw: Dictionary = {
   ...appointmentRw,
   ...profileRw,
   ...timetableRw,
+  ...queueRw,
 };

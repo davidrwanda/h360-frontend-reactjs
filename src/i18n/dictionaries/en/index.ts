@@ -13,6 +13,7 @@ import { activityLogEn } from './activityLog';
 import { appointmentEn } from './appointment';
 import { profileEn } from './profile';
 import { timetableEn } from './timetable';
+import { queueEn } from './queue';
 import type { Dictionary } from '../../types';
 
 export const en: Dictionary = {
@@ -31,4 +32,5 @@ export const en: Dictionary = {
   ...appointmentEn,
   ...profileEn,
   ...timetableEn,
+  ...queueEn,
 };

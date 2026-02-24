@@ -6,7 +6,7 @@ import { AppointmentsCalendar } from '@/components/doctors/AppointmentsCalendar'
 import { useAuth } from '@/hooks/useAuth';
 import { useAppointments } from '@/hooks/useAppointments';
 import { MdPeople, MdEvent, MdLocalHospital, MdMedicalServices, MdAccessTime, MdPerson } from 'react-icons/md';
-import { format, isToday, parseISO, isSameDay } from 'date-fns';
+import { format, isToday, parseISO, isSameDay, isValid } from 'date-fns';
 import { cn } from '@/utils/cn';
 import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
@@ -157,7 +157,9 @@ export const ClinicAdminDashboard = () => {
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
                 {upcomingAppointments.map((apt) => {
                   const aptDate = parseISO(apt.appointment_date);
-                  const aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
+                  const aptDateTime = apt.appointment_time
+                    ? parseISO(`${apt.appointment_date}T${apt.appointment_time}`)
+                    : null;
                   return (
                     <div
                       key={apt.appointment_id}
@@ -173,12 +175,14 @@ export const ClinicAdminDashboard = () => {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-carbon/60 mb-1">
                             <MdEvent className="h-3.5 w-3.5" />
-                            <span>{format(aptDate, 'MMM d, yyyy')}</span>
+                            <span>{isValid(aptDate) ? format(aptDate, 'MMM d, yyyy') : apt.appointment_date}</span>
                           </div>
+                          {aptDateTime && isValid(aptDateTime) && (
                           <div className="flex items-center gap-2 text-xs text-carbon/60 mb-2">
                             <MdAccessTime className="h-3.5 w-3.5" />
                             <span>{format(aptDateTime, 'hh:mm a')}</span>
                           </div>
+                          )}
                           {apt.doctor_name && (
                             <p className="text-xs text-carbon/50">{t(COMMON.DR_PREFIX)} {apt.doctor_name}</p>
                           )}
@@ -282,7 +286,9 @@ export const ClinicAdminDashboard = () => {
               <p className="text-sm text-carbon/60 text-center py-4">{t(DASHBOARD.NO_APPOINTMENTS_FOR_DATE)}</p>
             ) : (
               selectedDateAppointments.map((apt) => {
-                const aptDateTime = parseISO(`${apt.appointment_date}T${apt.appointment_time}`);
+                const aptDateTime = apt.appointment_time
+                  ? parseISO(`${apt.appointment_date}T${apt.appointment_time}`)
+                  : null;
                 return (
                   <div
                     key={apt.appointment_id}
@@ -293,9 +299,11 @@ export const ClinicAdminDashboard = () => {
                         <p className="text-sm font-medium text-carbon">
                           {apt.patient_name || apt.guest_name || t(COMMON.UNKNOWN)}
                         </p>
+                        {aptDateTime && isValid(aptDateTime) && (
                         <p className="text-xs text-carbon/60 mt-1">
                           {format(aptDateTime, 'hh:mm a')}
                         </p>
+                        )}
                         {apt.doctor_name && (
                           <p className="text-xs text-carbon/50 mt-1">{t(COMMON.DR_PREFIX)} {apt.doctor_name}</p>
                         )}

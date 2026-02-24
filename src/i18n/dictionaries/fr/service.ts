@@ -84,6 +84,9 @@ export const serviceFr: Dictionary = {
   'service.duration_min_error': "La durée doit être d'au moins 1 minute",
   'service.max_daily_capacity_label': 'Capacité Max Journalière',
   'service.walk_in_allowed': 'Sans Rendez-vous Autorisé',
+  'service.requires_doctor': 'Médecin Requis',
+  'service.preparation_instructions': 'Instructions de Préparation',
+  'service.preparation_instructions_placeholder': 'Entrez les instructions de préparation pour les patients',
   'service.clinic_required': 'La clinique est requise',
 
   // Form actions

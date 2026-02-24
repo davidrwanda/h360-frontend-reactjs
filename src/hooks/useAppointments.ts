@@ -23,6 +23,17 @@ export const useAppointment = (id: string, enabled: boolean = true) => {
 };
 
 /**
+ * Hook to fetch appointments for a specific patient
+ */
+export const usePatientAppointments = (patientId: string, params?: AppointmentListParams) => {
+  return useQuery({
+    queryKey: ['appointments', 'patient', patientId, params],
+    queryFn: () => appointmentsApi.getByPatientId(patientId, params),
+    enabled: !!patientId,
+  });
+};
+
+/**
  * Hook to create a new appointment
  */
 export const useCreateAppointment = () => {

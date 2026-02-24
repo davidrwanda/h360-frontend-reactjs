@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDoctors } from '@/hooks/useDoctors';
 import { useAppointments } from '@/hooks/useAppointments';
 import { MdEvent, MdPeople, MdSchedule, MdLocalHospital, MdAccessTime, MdPerson } from 'react-icons/md';
-import { format, isToday, isThisWeek, parseISO, isSameDay } from 'date-fns';
+import { format, isToday, isThisWeek, parseISO, isSameDay, isValid } from 'date-fns';
 import { cn } from '@/utils/cn';
 import { useTranslation, COMMON, DASHBOARD } from '@/i18n';
 
@@ -144,8 +144,11 @@ export const DoctorDashboard = () => {
             ) : upcomingAppointments.length > 0 ? (
               <div className="space-y-3">
                 {upcomingAppointments.map((appointment) => {
-                  const appointmentDateTime = parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`);
-                  const isTodayAppt = isToday(appointmentDateTime);
+                  const appointmentDateTime = appointment.appointment_time
+                    ? parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`)
+                    : null;
+                  const aptDateOnly = parseISO(appointment.appointment_date);
+                  const isTodayAppt = isValid(aptDateOnly) && isToday(aptDateOnly);
 
                   return (
                     <div
@@ -169,7 +172,11 @@ export const DoctorDashboard = () => {
                             <div className="flex items-center gap-1">
                               <MdAccessTime className="h-3 w-3" />
                               <span className="font-medium">{t(COMMON.DATE)} </span>
-                              {format(appointmentDateTime, 'MMM dd, yyyy')}
+                              {appointmentDateTime && isValid(appointmentDateTime)
+                                ? format(appointmentDateTime, 'MMM dd, yyyy')
+                                : isValid(aptDateOnly)
+                                  ? format(aptDateOnly, 'MMM dd, yyyy')
+                                  : appointment.appointment_date}
                               {isTodayAppt && (
                                 <span className="text-xs px-1.5 py-0.5 rounded bg-azure-dragon/10 text-azure-dragon ml-1">
                                   {t(COMMON.TODAY)}
@@ -179,7 +186,9 @@ export const DoctorDashboard = () => {
                             <div className="flex items-center gap-1">
                               <MdSchedule className="h-3 w-3" />
                               <span className="font-medium">{t(COMMON.TIME)} </span>
-                              {format(appointmentDateTime, 'hh:mm a')}
+                              {appointmentDateTime && isValid(appointmentDateTime)
+                                ? format(appointmentDateTime, 'hh:mm a')
+                                : '—'}
                             </div>
                             {appointment.service_name && (
                               <div>
@@ -236,7 +245,9 @@ export const DoctorDashboard = () => {
         <div className="space-y-3">
           {selectedDateAppointments.length > 0 ? (
             selectedDateAppointments.map((appointment) => {
-              const appointmentDateTime = parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`);
+              const appointmentDateTime = appointment.appointment_time
+                ? parseISO(`${appointment.appointment_date}T${appointment.appointment_time}`)
+                : null;
 
               return (
                 <div
@@ -274,7 +285,9 @@ export const DoctorDashboard = () => {
                     <div className="flex items-center gap-1">
                       <MdAccessTime className="h-3 w-3" />
                       <span className="font-medium">{t(COMMON.TIME)} </span>
-                      {format(appointmentDateTime, 'hh:mm a')}
+                      {appointmentDateTime && isValid(appointmentDateTime)
+                        ? format(appointmentDateTime, 'hh:mm a')
+                        : '—'}
                     </div>
                     {appointment.service_name && (
                       <div>

@@ -138,6 +138,20 @@ export const clinicRw: Record<string, string> = {
   'clinic.reminderHoursBefore': 'Amasaha y\'ikirikiro mbere',
   'clinic.hours': '{{count}} amasaha',
 
+  // Booking Mode
+  'clinic.bookingMode': 'Uburyo bwo Gufata Igihe',
+  'clinic.bookingModeLabel': 'Uburyo bwo Gufata Igihe cyo Gusura',
+  'clinic.bookingModeHelper': 'Igenzura ibisabwa umurwayi gutanga mu gihe afata igihe cyo gusura.',
+  'clinic.bookingModeBothRequired': 'Umuganga na Serivisi Bisabwa',
+  'clinic.bookingModeDoctorRequired': 'Umuganga Asabwa',
+  'clinic.bookingModeServiceRequired': 'Serivisi Isabwa',
+  'clinic.bookingModeFlexible': 'Byoroshye (nibura kimwe)',
+  'clinic.bookingModeTimeSlotOnly': 'Umwanya gusa',
+  'clinic.autoAssignDoctor': 'Gutanga Umuganga mu buryo bwikora',
+  'clinic.autoAssignDoctorHelper': 'Iyo byashizweho, umuganga azagenwa mu buryo bwikora niba umurwayi atarahitamo umwe.',
+  'clinic.autoCheckIn': 'Kwiyandikisha mu Buryo Bwikora ku Gufata Igihe',
+  'clinic.autoCheckInHelper': 'Iyo byashizweho, abarwayi biyandikisha mu buryo bwikora kandi bahabwa inomero yo gutegereza igihe cyabo cyo gusura gifashwe.',
+
   // Management
   'clinic.establishedDate': 'Itariki yashyizweho',
   'clinic.licenseNumber': 'Inomero y\'uruhushya',

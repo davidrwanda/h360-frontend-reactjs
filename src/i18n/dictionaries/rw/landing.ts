@@ -61,6 +61,22 @@ export const landingRw: Record<string, string> = {
   'landing.noSlotContact': "Niba utabonye umwanya w'igihe ukwiye, nyamuneka vugana n'ivuriro kuri:",
   'landing.contactClinic': 'Vugana n\'ivuriro',
 
+  // Public clinic detail page
+  'landing.clinicDetails': "Ibisobanuro by'Ivuriro",
+  'landing.backToSearch': 'Subira ku Gushakisha',
+  'landing.about': 'Ibyerekeye',
+  'landing.contactInfo': "Amakuru y'Itumanaho",
+  'landing.operatingHours': "Amasaha y'Akazi",
+  'landing.bookingInfo': "Amakuru yo Kwiyandikisha",
+  'landing.availableAppointments': 'Gahunda Zihari',
+  'landing.visitWebsite': 'Sura urubuga',
+  'landing.callClinic': 'Hamagara',
+  'landing.emailClinic': 'Imeyili',
+  'landing.viewOnMap': 'Reba ku ikarita',
+  'landing.clinicNotFoundPublic': 'Ivuriro Ntiribonetse',
+  'landing.clinicNotFoundDescPublic': "Ivuriro ushaka ntiribonetse cyangwa ntirikihari.",
+  'landing.slotDurationInfo': "Gahunda z'iminota {{count}}",
+
   // Footer
   'landing.footerDesc': "Urubuga rwawe rwizewe rwo gucunga ubuzima. Guhuza abarwayi n'abatanga ubuvuzi bwiza.",
   'landing.quickLinks': 'Aho ugera vuba',

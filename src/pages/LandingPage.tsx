@@ -82,7 +82,7 @@ export const LandingPage = () => {
       dateFrom: format(today, 'yyyy-MM-dd'),
       dateTo: format(twoWeeksFromToday, 'yyyy-MM-dd'),
       available_only: true,
-      limit: 100,
+      limit: 1000,
     };
 
     if (selectedClinic) {

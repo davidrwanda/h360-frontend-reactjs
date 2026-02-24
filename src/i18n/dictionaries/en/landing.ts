@@ -61,6 +61,22 @@ export const landingEn: Record<string, string> = {
   'landing.noSlotContact': 'If you do not find a time slot that suits you, please contact the clinic at:',
   'landing.contactClinic': 'Contact clinic',
 
+  // Public clinic detail page
+  'landing.clinicDetails': 'Clinic Details',
+  'landing.backToSearch': 'Back to Search',
+  'landing.about': 'About',
+  'landing.contactInfo': 'Contact Information',
+  'landing.operatingHours': 'Operating Hours',
+  'landing.bookingInfo': 'Booking Information',
+  'landing.availableAppointments': 'Available Appointments',
+  'landing.visitWebsite': 'Visit Website',
+  'landing.callClinic': 'Call',
+  'landing.emailClinic': 'Email',
+  'landing.viewOnMap': 'View on Map',
+  'landing.clinicNotFoundPublic': 'Clinic Not Found',
+  'landing.clinicNotFoundDescPublic': 'The clinic you are looking for could not be found or is no longer available.',
+  'landing.slotDurationInfo': '{{count}} min appointments',
+
   // Footer
   'landing.footerDesc': 'Your trusted healthcare management platform. Connecting patients with quality healthcare providers.',
   'landing.quickLinks': 'Quick Links',

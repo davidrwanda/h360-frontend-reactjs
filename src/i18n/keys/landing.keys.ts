@@ -61,6 +61,22 @@ export const LANDING = {
   NO_SLOT_CONTACT: 'landing.noSlotContact',
   CONTACT_CLINIC: 'landing.contactClinic',
 
+  // Public clinic detail page
+  CLINIC_DETAILS: 'landing.clinicDetails',
+  BACK_TO_SEARCH: 'landing.backToSearch',
+  ABOUT: 'landing.about',
+  CONTACT_INFO: 'landing.contactInfo',
+  OPERATING_HOURS: 'landing.operatingHours',
+  BOOKING_INFO: 'landing.bookingInfo',
+  AVAILABLE_APPOINTMENTS: 'landing.availableAppointments',
+  VISIT_WEBSITE: 'landing.visitWebsite',
+  CALL_CLINIC: 'landing.callClinic',
+  EMAIL_CLINIC: 'landing.emailClinic',
+  VIEW_ON_MAP: 'landing.viewOnMap',
+  CLINIC_NOT_FOUND_PUBLIC: 'landing.clinicNotFoundPublic',
+  CLINIC_NOT_FOUND_DESC_PUBLIC: 'landing.clinicNotFoundDescPublic',
+  SLOT_DURATION_INFO: 'landing.slotDurationInfo',
+
   // Footer
   FOOTER_DESC: 'landing.footerDesc',
   QUICK_LINKS: 'landing.quickLinks',
