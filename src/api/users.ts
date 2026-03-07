@@ -1,6 +1,9 @@
 import apiClient from './client';
-import type { ApiResponse } from '@/types/auth';
 import type { UserRole } from '@/types/auth';
+import { extractResponseData, wrapRequest } from '@/types/api';
+import type { PaginationMeta } from '@/types/api';
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface User {
   user_id: string;
@@ -117,7 +120,6 @@ export interface UserListParams {
   hire_date_from?: string;
   hire_date_to?: string;
   include_terminated?: boolean;
-  // Support both camelCase and snake_case for sorting
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   sort_by?: string;
@@ -148,266 +150,228 @@ export interface UpdatePreferencesRequest {
   in_app_notifications?: boolean;
 }
 
-// Helper to transform role from frontend format to API format
+// ─── Role Transformation Helpers ────────────────────────────────────────────
+
+/**
+ * Convert UPPER_SNAKE_CASE role → PascalCase for API requests.
+ * e.g. "ORG_OWNER" → "OrgOwner", "LAB_TECHNICIAN" → "LabTechnician"
+ */
 const transformRoleToApi = (role: UserRole | string | undefined): string | undefined => {
   if (!role) return undefined;
-  const roleMap: Record<string, string> = {
-    'ADMIN': 'Admin',
-    'MANAGER': 'Manager',
-    'RECEPTIONIST': 'Receptionist',
-    'DOCTOR': 'Doctor',
-    'NURSE': 'Nurse',
-    'PATIENT': 'Patient',
-  };
-  return roleMap[role] || role;
+  // UPPER_SNAKE_CASE → PascalCase: split on _, capitalize each segment, join
+  return role
+    .split('_')
+    .map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase())
+    .join('');
 };
 
-// Helper to transform role from API format to frontend format
+/**
+ * Convert PascalCase role from API → UPPER_SNAKE_CASE for frontend.
+ * e.g. "OrgOwner" → "ORG_OWNER", "NurseAssistant" → "NURSE_ASSISTANT"
+ */
 const transformRoleFromApi = (role: string): UserRole => {
-  const roleMap: Record<string, UserRole> = {
-    'Admin': 'ADMIN',
-    'Manager': 'MANAGER',
-    'Receptionist': 'RECEPTIONIST',
-    'Doctor': 'DOCTOR',
-    'Nurse': 'NURSE',
-    'Patient': 'PATIENT',
-  };
-  return roleMap[role] || (role as UserRole);
+  return role.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase() as UserRole;
 };
+
+// ─── Helper to extract paginated response (supports both ISD and legacy) ────
+
+function extractPaginatedUsers(responseData: unknown): PaginatedResponse<User> {
+  // ISD envelope: { data: [...], meta: { pagination: {...} } }
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'meta' in responseData
+  ) {
+    const envelope = responseData as {
+      data: User[];
+      meta: { pagination?: PaginationMeta };
+    };
+    const pagination = envelope.meta?.pagination;
+    if (pagination) {
+      return {
+        data: envelope.data,
+        total: pagination.total,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages: pagination.total_pages,
+      };
+    }
+    // ISD envelope without pagination (shouldn't happen for list, but handle gracefully)
+    return {
+      data: Array.isArray(envelope.data) ? envelope.data : [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+    };
+  }
+
+  // Legacy envelope: { success: true, data: { data: [...], total, page, limit, totalPages } }
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'success' in responseData &&
+    (responseData as { success: boolean }).success &&
+    'data' in responseData
+  ) {
+    return (responseData as { data: PaginatedResponse<User> }).data;
+  }
+
+  // Direct response
+  return responseData as PaginatedResponse<User>;
+}
+
+// ─── API Methods ────────────────────────────────────────────────────────────
 
 export const usersApi = {
   /**
    * Create a new user
    * POST /api/users
-   * Access: Admin role required
-   *
-   * Creates a user account with all necessary information including
-   * personal details, employment information, and authentication credentials.
-   * Automatically creates employee record if role requires it.
+   * Auth: SYSTEM, ADMIN, MANAGER
    */
   create: async (data: CreateUserRequest): Promise<User> => {
     const apiData = {
       ...data,
       role: transformRoleToApi(data.role) || data.role,
     };
-    
-    const response = await apiClient.post<ApiResponse<User> | User>('/users', apiData);
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      const user = (response.data as ApiResponse<User>).data;
-      return { ...user, role: transformRoleFromApi(user.role as string) };
-    }
-    const user = response.data as User;
+
+    const response = await apiClient.post('/users', wrapRequest(apiData));
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Get list of users with pagination and filters
    * GET /api/users
-   * Access: Any authenticated user
+   * Auth: Any authenticated user
    */
   list: async (params?: UserListParams): Promise<PaginatedResponse<User>> => {
     const apiParams = params ? {
       ...params,
       role: params.role ? transformRoleToApi(params.role) : undefined,
-      // Normalize sorting parameters - prefer snake_case, fallback to camelCase
       sort_by: params.sort_by || params.sortBy,
       sort_order: params.sort_order || params.sortOrder,
     } : undefined;
-    
-    // Remove camelCase sorting params to avoid confusion
+
     if (apiParams) {
       delete apiParams.sortBy;
       delete apiParams.sortOrder;
     }
-    
-    const response = await apiClient.get<
-      ApiResponse<PaginatedResponse<User>> | PaginatedResponse<User>
-    >('/users', { params: apiParams });
-    
-    // Handle wrapped response
-    let result: PaginatedResponse<User>;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      result = (response.data as ApiResponse<PaginatedResponse<User>>).data;
-    } else {
-      result = response.data as PaginatedResponse<User>;
-    }
-    
-    // Transform roles in response
+
+    const response = await apiClient.get('/users', { params: apiParams });
+    const result = extractPaginatedUsers(response.data);
+
     result.data = result.data.map(user => ({
       ...user,
       role: transformRoleFromApi(user.role as string),
     }));
-    
+
     return result;
   },
 
   /**
    * Get user by ID
    * GET /api/users/:id
-   * Access: Any authenticated user
+   * Auth: Any authenticated user
    */
   getById: async (id: string): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User> | User>(`/users/${id}`);
-    // Handle wrapped response
-    let user: User;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      user = (response.data as ApiResponse<User>).data;
-    } else {
-      user = response.data as User;
-    }
+    const response = await apiClient.get(`/users/${id}`);
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Update user
    * PATCH /api/users/:id
-   * Access: Admin role required
+   * Auth: SYSTEM, ADMIN, MANAGER (Activity Log: Yes)
    */
   update: async (id: string, data: UpdateUserRequest): Promise<User> => {
     const apiData = {
       ...data,
       role: data.role ? transformRoleToApi(data.role) : undefined,
     };
-    
-    const response = await apiClient.patch<ApiResponse<User> | User>(
-      `/users/${id}`,
-      apiData
-    );
-    // Handle wrapped response
-    let user: User;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      user = (response.data as ApiResponse<User>).data;
-    } else {
-      user = response.data as User;
-    }
+
+    const response = await apiClient.patch(`/users/${id}`, wrapRequest(apiData));
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Deactivate user
    * PATCH /api/users/:id/deactivate
-   * Access: Admin role required
+   * Auth: SYSTEM, ADMIN (Activity Log: Yes)
    */
   deactivate: async (id: string): Promise<User> => {
-    const response = await apiClient.patch<ApiResponse<User> | User>(
-      `/users/${id}/deactivate`
-    );
-    // Handle wrapped response
-    let user: User;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      user = (response.data as ApiResponse<User>).data;
-    } else {
-      user = response.data as User;
-    }
+    const response = await apiClient.patch(`/users/${id}/deactivate`);
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Activate user
    * PATCH /api/users/:id/activate
-   * Access: Admin role required
+   * Auth: SYSTEM, ADMIN (Activity Log: Yes)
    */
   activate: async (id: string): Promise<User> => {
-    const response = await apiClient.patch<ApiResponse<User> | User>(
-      `/users/${id}/activate`
-    );
-    // Handle wrapped response
-    let user: User;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      user = (response.data as ApiResponse<User>).data;
-    } else {
-      user = response.data as User;
-    }
+    const response = await apiClient.patch(`/users/${id}/activate`);
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Terminate user
    * PATCH /api/users/:id/terminate
-   * Access: Admin role required
+   * Auth: SYSTEM, ADMIN (Activity Log: Yes)
    */
   terminate: async (id: string, terminationDate?: string): Promise<User> => {
-    const url = terminationDate 
+    const url = terminationDate
       ? `/users/${id}/terminate?termination_date=${terminationDate}`
       : `/users/${id}/terminate`;
-    const response = await apiClient.patch<ApiResponse<User> | User>(url);
-    // Handle wrapped response
-    let user: User;
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      user = (response.data as ApiResponse<User>).data;
-    } else {
-      user = response.data as User;
-    }
+    const response = await apiClient.patch(url);
+    const user = extractResponseData<User>(response.data);
     return { ...user, role: transformRoleFromApi(user.role as string) };
   },
 
   /**
    * Get current user's preferences
    * GET /api/users/me/preferences
-   * Access: Any authenticated user
+   * Auth: Any authenticated user
    */
   getMyPreferences: async (): Promise<UserPreferences> => {
-    const response = await apiClient.get<ApiResponse<UserPreferences> | UserPreferences>(
-      '/users/me/preferences'
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<UserPreferences>).data;
-    }
-    return response.data as UserPreferences;
+    const response = await apiClient.get('/users/me/preferences');
+    return extractResponseData<UserPreferences>(response.data);
   },
 
   /**
    * Update current user's preferences
    * PUT /api/users/me/preferences
-   * Access: Any authenticated user
+   * Auth: Any authenticated user
    */
   updateMyPreferences: async (data: UpdatePreferencesRequest): Promise<UserPreferences> => {
-    const response = await apiClient.put<ApiResponse<UserPreferences> | UserPreferences>(
-      '/users/me/preferences',
-      data
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<UserPreferences>).data;
-    }
-    return response.data as UserPreferences;
+    const response = await apiClient.put('/users/me/preferences', wrapRequest(data));
+    return extractResponseData<UserPreferences>(response.data);
   },
 
   /**
    * Get any user's preferences (Admin/System only)
    * GET /api/users/:id/preferences
-   * Access: Admin/System role required
+   * Auth: SYSTEM, ADMIN
    */
   getUserPreferences: async (userId: string): Promise<UserPreferences> => {
-    const response = await apiClient.get<ApiResponse<UserPreferences> | UserPreferences>(
-      `/users/${userId}/preferences`
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<UserPreferences>).data;
-    }
-    return response.data as UserPreferences;
+    const response = await apiClient.get(`/users/${userId}/preferences`);
+    return extractResponseData<UserPreferences>(response.data);
   },
 
   /**
    * Update any user's preferences (Admin/System only)
    * PUT /api/users/:id/preferences
-   * Access: Admin/System role required
+   * Auth: SYSTEM, ADMIN
    */
   updateUserPreferences: async (
     userId: string,
     data: UpdatePreferencesRequest
   ): Promise<UserPreferences> => {
-    const response = await apiClient.put<ApiResponse<UserPreferences> | UserPreferences>(
-      `/users/${userId}/preferences`,
-      data
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<UserPreferences>).data;
-    }
-    return response.data as UserPreferences;
+    const response = await apiClient.put(`/users/${userId}/preferences`, wrapRequest(data));
+    return extractResponseData<UserPreferences>(response.data);
   },
 };

@@ -25,6 +25,7 @@ export const BottomNav = () => {
             <li key={item.id} className="flex-1">
               <NavLink
                 to={item.path}
+                end
                 className={({ isActive }) =>
                   cn(
                     'flex flex-col items-center gap-0.5 px-2 py-2 transition-colors',

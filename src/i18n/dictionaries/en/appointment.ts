@@ -163,4 +163,31 @@ export const appointmentEn: Dictionary = {
   'appointment.check_in_notes': 'Notes',
   'appointment.check_in_notes_placeholder': 'Reason for doctor change...',
   'appointment.checking_in': 'Checking in...',
+
+  // Patient details in appointment modal
+  'appointment.detail_patient_info': 'Patient Information',
+  'appointment.detail_dob': 'Date of Birth',
+  'appointment.detail_age': 'Age',
+  'appointment.detail_gender': 'Gender',
+  'appointment.detail_phone': 'Phone',
+  'appointment.detail_email': 'Email',
+  'appointment.detail_address': 'Address',
+  'appointment.detail_blood_type': 'Blood Type',
+  'appointment.detail_allergies': 'Allergies',
+  'appointment.detail_medications': 'Current Medications',
+  'appointment.detail_insurance': 'Insurance',
+  'appointment.detail_emergency_contact': 'Emergency Contact',
+  'appointment.detail_patient_number': 'Patient Number',
+  'appointment.detail_national_id': 'National ID',
+  'appointment.detail_loading_patient': 'Loading patient details...',
+
+  // Status transition actions
+  'appointment.start_consultation': 'Start Consultation',
+  'appointment.complete_appointment': 'Complete',
+  'appointment.cancel_appointment': 'Cancel Appointment',
+  'appointment.mark_no_show': 'No Show',
+  'appointment.confirm_cancel': 'Are you sure you want to cancel this appointment?',
+  'appointment.confirm_no_show': 'Mark this appointment as no-show?',
+  'appointment.confirm_start': 'Start consultation for this patient?',
+  'appointment.confirm_complete': 'Mark this appointment as completed?',
 };

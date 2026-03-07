@@ -97,6 +97,20 @@ export const DASHBOARD = {
   NO_UPCOMING_STAT_DESC: 'dashboard.noUpcomingStatDesc',
   CLINICS_SUBSCRIBED: 'dashboard.clinicsSubscribed',
 
+  // System dashboard - Organization focused
+  TOTAL_ORGANIZATIONS: 'dashboard.totalOrganizations',
+  ACTIVE_ORGANIZATIONS: 'dashboard.activeOrganizations',
+  ORG_OWNERS: 'dashboard.orgOwners',
+  SYSTEM_ADMINS: 'dashboard.systemAdmins',
+  SYSTEM_SUBTITLE: 'dashboard.systemSubtitle',
+  CREATE_ORGANIZATION: 'dashboard.createOrganization',
+  CREATE_ORG_DESC: 'dashboard.createOrgDesc',
+  MANAGE_ORGANIZATIONS: 'dashboard.manageOrganizations',
+  MANAGE_ORG_OWNERS: 'dashboard.manageOrgOwners',
+  MANAGE_ORG_OWNERS_DESC: 'dashboard.manageOrgOwnersDesc',
+  VIEW_ALL_ORGANIZATIONS: 'dashboard.viewAllOrganizations',
+  SYSTEM_ADMIN_FOOTER: 'dashboard.systemAdminFooter',
+
   // QuickActions
   CREATE_NEW_CLINIC: 'dashboard.createNewClinic',
   CREATE_CLINIC_DESC: 'dashboard.createClinicDesc',

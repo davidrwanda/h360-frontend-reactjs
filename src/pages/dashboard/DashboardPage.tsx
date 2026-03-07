@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { SystemDashboard } from '@/components/dashboard/SystemDashboard';
+import { OrgOwnerDashboard } from '@/components/dashboard/OrgOwnerDashboard';
 import { ClinicAdminDashboard } from '@/components/dashboard/ClinicAdminDashboard';
 import { DoctorDashboard } from '@/components/dashboard/DoctorDashboard';
 import { ReceptionistDashboard } from '@/components/dashboard/ReceptionistDashboard';
@@ -16,6 +17,15 @@ export const DashboardPage = () => {
     return (
       <div className="mx-auto max-w-7xl px-4 py-6">
         <SystemDashboard />
+      </div>
+    );
+  }
+
+  // ORG_OWNER sees their organization dashboard
+  if (role === 'ORG_OWNER') {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <OrgOwnerDashboard />
       </div>
     );
   }

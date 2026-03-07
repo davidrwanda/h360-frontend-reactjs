@@ -56,5 +56,13 @@ export const commonFr: Record<string, string> = {
   'common.back': 'Retour',
   'common.edit': 'Modifier',
   'common.save': 'Enregistrer',
+  'common.saving': 'Enregistrement...',
   'common.loading': 'Chargement...',
+  'common.view': 'Voir',
+  'common.actions': 'Actions',
+  'common.active': 'Actif',
+  'common.inactive': 'Inactif',
+  'common.noData': 'Aucune donnée trouvée',
+  'common.show': 'Afficher',
+  'common.hide': 'Masquer',
 };

@@ -16,4 +16,7 @@ export const NAVIGATION = {
   NOTIFICATIONS: 'navigation.notifications',
   ACTIVITY_LOGS: 'navigation.activityLogs',
   SETTINGS: 'navigation.settings',
+  ORGANIZATIONS: 'navigation.organizations',
+  MY_ORGANIZATION: 'navigation.myOrganization',
+  MEMBERS: 'navigation.members',
 } as const;

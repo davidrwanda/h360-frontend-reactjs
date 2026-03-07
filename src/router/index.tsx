@@ -1,51 +1,21 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MainLayout } from '@/components/layout';
-import { LoginPage } from '@/pages/LoginPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { COMMON } from '@/i18n';
-import { MenuOverviewPage } from '@/pages/MenuOverviewPage';
-import { CreateClinicPage } from '@/pages/CreateClinicPage';
-import { ClinicsPage } from '@/pages/ClinicsPage';
-import { DeletedClinicsPage } from '@/pages/DeletedClinicsPage';
-import { ClinicDetailPage } from '@/pages/ClinicDetailPage';
-import { ClinicInfoPage } from '@/pages/ClinicInfoPage';
-import { EditClinicPage } from '@/pages/EditClinicPage';
-import { UsersPage } from '@/pages/UsersPage';
-import { CreateUserPage } from '@/pages/CreateUserPage';
-import { CreateClinicAdminPage } from '@/pages/CreateClinicAdminPage';
-import { EditClinicAdminPage } from '@/pages/EditClinicAdminPage';
-import { ActivityLogsPage } from '@/pages/ActivityLogsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { PatientsPage } from '@/pages/PatientsPage';
-import { PatientDetailPage } from '@/pages/PatientDetailPage';
-import { CreatePatientPage } from '@/pages/CreatePatientPage';
-import { EditPatientPage } from '@/pages/EditPatientPage';
-import { PatientRegisterPage } from '@/pages/PatientRegisterPage';
-import { BookAppointmentPage } from '@/pages/BookAppointmentPage';
-import { BookAppointmentAuthPage } from '@/pages/BookAppointmentAuthPage';
-import { LandingPage } from '@/pages/LandingPage';
-import { PublicClinicDetailPage } from '@/pages/PublicClinicDetailPage';
-import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
-import { MyProfilePage } from '@/pages/MyProfilePage';
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
-import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
-import { ServicesPage } from '@/pages/ServicesPage';
-import { CreateServicePage } from '@/pages/CreateServicePage';
-import { EditServicePage } from '@/pages/EditServicePage';
-import { ServiceDetailPage } from '@/pages/ServiceDetailPage';
-import { DoctorsPage } from '@/pages/DoctorsPage';
-import CreateDoctorPage from '@/pages/CreateDoctorPage';
-import EditDoctorPage from '@/pages/EditDoctorPage';
-import DoctorDetailPage from '@/pages/DoctorDetailPage';
-import { ClinicCalendarConfigPage } from '@/pages/ClinicCalendarConfigPage';
-import { DoctorCalendarConfigPage } from '@/pages/DoctorCalendarConfigPage';
-import { DoctorBulkSetupPage } from '@/pages/DoctorBulkSetupPage';
-import { SlotGenerationPage } from '@/pages/SlotGenerationPage';
-import { TimetablePage } from '@/pages/TimetablePage';
-import { AppointmentsPage } from '@/pages/AppointmentsPage';
-import { QueuePage } from '@/pages/QueuePage';
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage, PatientRegisterPage, BookAppointmentAuthPage, AcceptInvitePage } from '@/pages/auth';
+import { LandingPage, PublicClinicDetailPage, BookAppointmentPage } from '@/pages/public';
+import { DashboardPage } from '@/pages/dashboard';
+import { OrganizationsPage, CreateOrganizationPage, EditOrganizationPage, OrganizationDetailPage, MyOrganizationPage, MyOrgClinicsPage, MyOrgMembersPage } from '@/pages/organizations';
+import { ClinicsPage, CreateClinicPage, EditClinicPage, ClinicDetailPage, ClinicInfoPage, DeletedClinicsPage, ClinicCalendarConfigPage } from '@/pages/clinics';
+import { UsersPage, CreateUserPage, CreateClinicAdminPage, EditClinicAdminPage } from '@/pages/users';
+import { PatientsPage, CreatePatientPage, EditPatientPage, PatientDetailPage } from '@/pages/patients';
+import { DoctorsPage, CreateDoctorPage, EditDoctorPage, DoctorDetailPage, DoctorCalendarConfigPage, DoctorBulkSetupPage } from '@/pages/doctors';
+import { ServicesPage, CreateServicePage, EditServicePage, ServiceDetailPage } from '@/pages/services';
+import { AppointmentsPage, QueuePage, MyAppointmentsPage } from '@/pages/appointments';
+import { TimetablePage, SlotGenerationPage } from '@/pages/scheduling';
+import { SettingsPage, MyProfilePage } from '@/pages/settings';
+import { ActivityLogsPage } from '@/pages/system';
+import { PlaceholderPage, MenuOverviewPage } from '@/pages/common';
 
 export const router = createBrowserRouter([
   {
@@ -87,6 +57,10 @@ export const router = createBrowserRouter([
   {
     path: '/clinic/:id',
     element: <PublicClinicDetailPage />,
+  },
+  {
+    path: '/invite/accept',
+    element: <AcceptInvitePage />,
   },
   {
     path: '/',
@@ -264,6 +238,87 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'DOCTOR', 'NURSE']}>
         <MainLayout>
           <QueuePage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/organizations',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <OrganizationsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/organizations/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <CreateOrganizationPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/organizations/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <OrganizationDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/organizations/:id/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <EditOrganizationPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  // ORG_OWNER routes — scoped to their own organization
+  {
+    path: '/my-organization',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <MyOrganizationPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-organization/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <EditOrganizationPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-organization/clinics',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <MyOrgClinicsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-organization/members',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <MyOrgMembersPage />
         </MainLayout>
       </ProtectedRoute>
     ),

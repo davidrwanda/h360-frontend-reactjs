@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAppointments } from '@/hooks/useAppointments';
+import { useAppointments, useStartAppointment, useCompleteAppointment, useCancelAppointment, useNoShowAppointment } from '@/hooks/useAppointments';
 import { useCheckIn } from '@/hooks/useQueue';
 import { AppointmentsTable } from '@/components/appointments/AppointmentsTable';
 import { AppointmentDetailModal } from '@/components/appointments/AppointmentDetailModal';
@@ -27,6 +27,10 @@ export const AppointmentsPage = () => {
   const limit = 20;
 
   const checkInMutation = useCheckIn();
+  const startMutation = useStartAppointment();
+  const completeMutation = useCompleteAppointment();
+  const cancelMutation = useCancelAppointment();
+  const noShowMutation = useNoShowAppointment();
 
   const { data, isLoading, error } = useAppointments({
     page,
@@ -63,6 +67,22 @@ export const AppointmentsPage = () => {
       { appointmentId, options },
       { onSuccess: () => setCheckInAppointment(null) }
     );
+  };
+
+  const handleStart = (apt: Appointment) => {
+    startMutation.mutate(apt.appointment_id);
+  };
+
+  const handleComplete = (apt: Appointment) => {
+    completeMutation.mutate(apt.appointment_id);
+  };
+
+  const handleCancel = (apt: Appointment) => {
+    cancelMutation.mutate(apt.appointment_id);
+  };
+
+  const handleNoShow = (apt: Appointment) => {
+    noShowMutation.mutate(apt.appointment_id);
   };
 
   return (
@@ -191,6 +211,10 @@ export const AppointmentsPage = () => {
                 isLoading={isLoading}
                 onView={(apt) => setSelectedAppointment(apt)}
                 onCheckIn={handleCheckInClick}
+                onStart={handleStart}
+                onComplete={handleComplete}
+                onCancel={handleCancel}
+                onNoShow={handleNoShow}
               />
 
               {/* Pagination */}
@@ -230,7 +254,10 @@ export const AppointmentsPage = () => {
         isOpen={!!selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
         onCheckIn={handleCheckInClick}
-        isCheckingIn={checkInMutation.isPending}
+        onStart={handleStart}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
+        onNoShow={handleNoShow}
       />
 
       {/* Check-in Modal */}

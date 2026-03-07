@@ -1,5 +1,7 @@
 import apiClient from './client';
+import { extractResponseData, wrapRequest } from '@/types/api';
 import type { ApiResponse } from '@/types/auth';
+import type { TenantInfo, UpdateTenantSettingsRequest } from '@/types/organization';
 
 export type BookingMode = 'both_required' | 'doctor_required' | 'service_required' | 'flexible' | 'time_slot_only';
 
@@ -326,5 +328,17 @@ export const clinicsApi = {
       return (response.data as ApiResponse<{ message: string }>).data;
     }
     return response.data as { message: string };
+  },
+
+  /** GET /api/clinics/:id/tenant-info — Get Tenant Isolation Status (ISD §1.3) */
+  getTenantInfo: async (id: string): Promise<TenantInfo> => {
+    const response = await apiClient.get(`/clinics/${id}/tenant-info`);
+    return extractResponseData<TenantInfo>(response.data);
+  },
+
+  /** PATCH /api/clinics/:id/tenant-settings — Update Tenant Settings (ISD §1.3) */
+  updateTenantSettings: async (id: string, data: UpdateTenantSettingsRequest): Promise<TenantInfo> => {
+    const response = await apiClient.patch(`/clinics/${id}/tenant-settings`, wrapRequest(data));
+    return extractResponseData<TenantInfo>(response.data);
   },
 };

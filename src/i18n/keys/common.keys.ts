@@ -64,5 +64,13 @@ export const COMMON = {
   BACK: 'common.back',
   EDIT: 'common.edit',
   SAVE: 'common.save',
+  SAVING: 'common.saving',
   LOADING: 'common.loading',
+  VIEW: 'common.view',
+  ACTIONS: 'common.actions',
+  ACTIVE: 'common.active',
+  INACTIVE: 'common.inactive',
+  NO_DATA: 'common.noData',
+  SHOW: 'common.show',
+  HIDE: 'common.hide',
 } as const;

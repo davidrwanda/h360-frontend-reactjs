@@ -14,6 +14,7 @@ import { appointmentFr } from './appointment';
 import { profileFr } from './profile';
 import { timetableFr } from './timetable';
 import { queueFr } from './queue';
+import { organizationFr } from './organization';
 import type { Dictionary } from '../../types';
 
 export const fr: Dictionary = {
@@ -33,4 +34,5 @@ export const fr: Dictionary = {
   ...profileFr,
   ...timetableFr,
   ...queueFr,
+  ...organizationFr,
 };

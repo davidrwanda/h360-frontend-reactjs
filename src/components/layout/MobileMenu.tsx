@@ -60,6 +60,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                   <li key={item.id}>
                     <NavLink
                       to={item.path}
+                      end
                       onClick={onClose}
                       className={({ isActive }) =>
                         cn(

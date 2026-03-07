@@ -62,6 +62,8 @@ export const USERS = {
   // Filters
   SELECT_CLINIC_FILTER: 'users.selectClinicFilter',
   ALL_CLINICS: 'users.allClinics',
+  SELECT_ORGANIZATION: 'users.selectOrganization',
+  ALL_ORGANIZATIONS: 'users.allOrganizations',
   SEARCH_PLACEHOLDER: 'users.searchPlaceholder',
   ALL_ROLES: 'users.allRoles',
   

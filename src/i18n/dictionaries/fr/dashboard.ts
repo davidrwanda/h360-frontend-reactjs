@@ -97,6 +97,20 @@ export const dashboardFr: Record<string, string> = {
   'dashboard.noUpcomingStatDesc': 'Aucun rendez-vous à venir',
   'dashboard.clinicsSubscribed': 'Cliniques auxquelles vous êtes abonné',
 
+  // System dashboard - Organization focused
+  'dashboard.totalOrganizations': 'Total des organisations',
+  'dashboard.activeOrganizations': 'Organisations actives',
+  'dashboard.orgOwners': 'Propriétaires d\'organisations',
+  'dashboard.systemAdmins': 'Administrateurs système',
+  'dashboard.systemSubtitle': 'Gérer les organisations, les propriétaires et les administrateurs système',
+  'dashboard.createOrganization': 'Créer une organisation',
+  'dashboard.createOrgDesc': 'Créer une nouvelle organisation et assigner un propriétaire',
+  'dashboard.manageOrganizations': 'Gérer les organisations',
+  'dashboard.manageOrgOwners': 'Gérer les propriétaires',
+  'dashboard.manageOrgOwnersDesc': 'Voir et gérer les propriétaires d\'organisations',
+  'dashboard.viewAllOrganizations': 'Voir toutes les organisations',
+  'dashboard.systemAdminFooter': 'Les administrateurs système gèrent les organisations et assignent les propriétaires. Les cliniques sont gérées au sein de chaque organisation.',
+
   // QuickActions
   'dashboard.createNewClinic': 'Créer une nouvelle clinique',
   'dashboard.createClinicDesc': 'Créer une clinique et assigner un administrateur',

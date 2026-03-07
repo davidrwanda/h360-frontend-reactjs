@@ -15,4 +15,7 @@ export const navigation: Record<string, string> = {
   'navigation.notifications': 'Ubutumwa',
   'navigation.activityLogs': 'Ibyakozwe',
   'navigation.settings': 'Igenamiterere',
+  'navigation.organizations': 'Imiryango',
+  'navigation.myOrganization': 'Umuryango Wanjye',
+  'navigation.members': 'Abanyamuryango',
 };

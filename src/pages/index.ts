@@ -1,30 +1,28 @@
-export { LoginPage } from './LoginPage';
-export { DashboardPage } from './DashboardPage';
-export { ClinicsPage } from './ClinicsPage';
-export { DeletedClinicsPage } from './DeletedClinicsPage';
-export { CreateClinicPage } from './CreateClinicPage';
-export { ClinicDetailPage } from './ClinicDetailPage';
-export { ClinicInfoPage } from './ClinicInfoPage';
-export { EditClinicPage } from './EditClinicPage';
-export { MenuOverviewPage } from './MenuOverviewPage';
-export { PlaceholderPage } from './PlaceholderPage';
-export { UsersPage } from './UsersPage';
-export { CreateUserPage } from './CreateUserPage';
-export { ActivityLogsPage } from './ActivityLogsPage';
-export { SettingsPage } from './SettingsPage';
-export { PatientsPage } from './PatientsPage';
-export { PatientDetailPage } from './PatientDetailPage';
-export { CreatePatientPage } from './CreatePatientPage';
-export { EditPatientPage } from './EditPatientPage';
-export { PatientRegisterPage } from './PatientRegisterPage';
-export { BookAppointmentPage } from './BookAppointmentPage';
-export { BookAppointmentAuthPage } from './BookAppointmentAuthPage';
-export { LandingPage } from './LandingPage';
-export { MyAppointmentsPage } from './MyAppointmentsPage';
-export { MyProfilePage } from './MyProfilePage';
-export { ForgotPasswordPage } from './ForgotPasswordPage';
-export { ResetPasswordPage } from './ResetPasswordPage';
-export { DoctorsPage } from './DoctorsPage';
-export { default as CreateDoctorPage } from './CreateDoctorPage';
-export { default as EditDoctorPage } from './EditDoctorPage';
-export { default as DoctorDetailPage } from './DoctorDetailPage';
+// Auth
+export * from './auth';
+// Public
+export * from './public';
+// Dashboard
+export * from './dashboard';
+// Organizations
+export * from './organizations';
+// Clinics
+export * from './clinics';
+// Users
+export * from './users';
+// Patients
+export * from './patients';
+// Doctors
+export * from './doctors';
+// Services
+export * from './services';
+// Appointments
+export * from './appointments';
+// Scheduling
+export * from './scheduling';
+// Settings
+export * from './settings';
+// System
+export * from './system';
+// Common
+export * from './common';

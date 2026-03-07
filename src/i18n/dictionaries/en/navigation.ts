@@ -15,4 +15,7 @@ export const navigation: Record<string, string> = {
   'navigation.notifications': 'Notifications',
   'navigation.activityLogs': 'Activity Logs',
   'navigation.settings': 'Settings',
+  'navigation.organizations': 'Organizations',
+  'navigation.myOrganization': 'My Organization',
+  'navigation.members': 'Members',
 };

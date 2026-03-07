@@ -14,6 +14,7 @@ import { appointmentRw } from './appointment';
 import { profileRw } from './profile';
 import { timetableRw } from './timetable';
 import { queueRw } from './queue';
+import { organizationRw } from './organization';
 import type { Dictionary } from '../../types';
 
 export const rw: Dictionary = {
@@ -33,4 +34,5 @@ export const rw: Dictionary = {
   ...profileRw,
   ...timetableRw,
   ...queueRw,
+  ...organizationRw,
 };

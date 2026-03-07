@@ -13,6 +13,7 @@ import {
   MdInfo,
   MdAccountCircle,
   MdSchedule,
+  MdCorporateFare,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
 import { NAVIGATION } from '@/i18n';
@@ -183,8 +184,8 @@ export const getFilteredNavigation = (
     return [];
   }
 
-  // Normalize role for comparison (handle both "Admin" and "ADMIN")
-  const normalizedRole = userRole?.toUpperCase();
+  // Normalize role: PascalCase → UPPER_SNAKE_CASE (e.g. "OrgOwner" → "ORG_OWNER")
+  const normalizedRole = userRole?.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
   
   // Debug logging
   if (import.meta.env.DEV) {
@@ -231,47 +232,34 @@ export const getFilteredNavigation = (
     return doctorMenu;
   }
 
-  // SYSTEM users and Admin role users see: Dashboard, Clinics, Users, Activity Logs, Settings
-  if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
-    const allowedItems = [
-      'dashboard',
-      'clinics',
-      'users',
-      'activity-logs',
-      'settings',
+  // ORG_OWNER: Dashboard, My Organization, Clinics, Members, Settings
+  if (normalizedRole === 'ORG_OWNER') {
+    const orgOwnerMenu: NavigationConfig = [
+      { id: 'dashboard', label: translate(NAVIGATION.DASHBOARD), path: '/dashboard', icon: MdDashboard },
+      { id: 'divider-1', label: '', path: '' },
+      { id: 'my-organization', label: translate(NAVIGATION.MY_ORGANIZATION), path: '/my-organization', icon: MdCorporateFare },
+      { id: 'clinics', label: translate(NAVIGATION.CLINICS), path: '/my-organization/clinics', icon: MdBusiness },
+      { id: 'members', label: translate(NAVIGATION.MEMBERS), path: '/my-organization/members', icon: MdPeople },
+      { id: 'divider-2', label: '', path: '' },
+      { id: 'settings', label: translate(NAVIGATION.SETTINGS), path: '/settings', icon: MdSettings },
     ];
+    return orgOwnerMenu;
+  }
 
-    const filtered = navigationConfig.filter((item) => {
-      // Allow only specific items for SYSTEM users and Admin role
-      return allowedItems.includes(item.id);
-    });
-
-    // Add dividers between sections
-    const cleaned: NavigationConfig = [];
-    
-    for (let i = 0; i < filtered.length; i++) {
-      const item = filtered[i];
-      if (!item) continue;
-
-      // Add divider before clinics (after dashboard)
-      if (item.id === 'clinics' && filtered[i - 1]?.id === 'dashboard') {
-        cleaned.push({ id: 'divider-1', label: '', path: '' });
-      }
-      
-      // Add divider before activity-logs (after users)
-      if (item.id === 'activity-logs' && filtered[i - 1]?.id === 'users') {
-        cleaned.push({ id: 'divider-2', label: '', path: '' });
-      }
-      
-      // Add divider before settings (after activity-logs)
-      if (item.id === 'settings' && filtered[i - 1]?.id === 'activity-logs') {
-        cleaned.push({ id: 'divider-3', label: '', path: '' });
-      }
-
-      cleaned.push(item);
-    }
-
-    return cleaned;
+  // SYSTEM users see: Dashboard, Organizations, Users (System Admins only), Activity Logs, Settings
+  // Clinics are accessed through the Organization detail page, not a separate nav item
+  if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
+    const systemMenu: NavigationConfig = [
+      { id: 'dashboard', label: translate(NAVIGATION.DASHBOARD), path: '/dashboard', icon: MdDashboard },
+      { id: 'divider-1', label: '', path: '' },
+      { id: 'organizations', label: translate(NAVIGATION.ORGANIZATIONS), path: '/organizations', icon: MdCorporateFare },
+      { id: 'divider-2', label: '', path: '' },
+      { id: 'users', label: translate(NAVIGATION.USERS), path: '/users', icon: MdPerson },
+      { id: 'activity-logs', label: translate(NAVIGATION.ACTIVITY_LOGS), path: '/activity-logs', icon: MdHistory },
+      { id: 'divider-3', label: '', path: '' },
+      { id: 'settings', label: translate(NAVIGATION.SETTINGS), path: '/settings', icon: MdSettings },
+    ];
+    return systemMenu;
   }
 
   // Regular role-based filtering for EMPLOYEE users (clinic admins/managers)

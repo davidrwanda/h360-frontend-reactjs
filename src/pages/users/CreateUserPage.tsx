@@ -53,6 +53,15 @@ export const CreateUserPage = () => {
   // Check if current user is SYSTEM ADMIN
   const isSystemAdmin = user?.user_type === 'SYSTEM' || role === 'ADMIN' || user?.permissions === 'ALL';
 
+  // SYSTEM users should not create clinic-level users — redirect to users page
+  // They manage organizations and assign owners, not clinic staff
+  const isSystemUser = user?.user_type === 'SYSTEM';
+  useEffect(() => {
+    if (isSystemUser) {
+      navigate('/users', { replace: true });
+    }
+  }, [isSystemUser, navigate]);
+
   // Fetch active clinics for selection
   const { data: clinicsData } = useClinics({
     is_active: true,

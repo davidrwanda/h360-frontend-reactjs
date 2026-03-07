@@ -35,6 +35,8 @@ export const users: Record<string, string> = {
   'users.clinic': 'Ikigo',
   'users.selectClinicFilter': 'Hitamo Ikigo',
   'users.pleaseSelectClinic': 'Nyamuneka hitamo ikigo',
+  'users.selectOrganization': 'Ishyirahamwe',
+  'users.allOrganizations': 'Amashyirahamwe yose',
   'users.department': 'Ishami',
   'users.position': 'Umwanya',
   'users.hireDate': 'Italiki yo Gutangira Akazi',

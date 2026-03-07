@@ -35,6 +35,8 @@ export const users: Record<string, string> = {
   'users.clinic': 'Clinic',
   'users.selectClinicFilter': 'Select Clinic',
   'users.pleaseSelectClinic': 'Please select clinic',
+  'users.selectOrganization': 'Organization',
+  'users.allOrganizations': 'All Organizations',
   'users.department': 'Department',
   'users.position': 'Position',
   'users.hireDate': 'Hire Date',

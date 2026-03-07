@@ -163,4 +163,31 @@ export const appointmentFr: Dictionary = {
   'appointment.check_in_notes': 'Notes',
   'appointment.check_in_notes_placeholder': 'Raison du changement de médecin...',
   'appointment.checking_in': 'Enregistrement...',
+
+  // Patient details in appointment modal
+  'appointment.detail_patient_info': 'Informations du Patient',
+  'appointment.detail_dob': 'Date de Naissance',
+  'appointment.detail_age': 'Âge',
+  'appointment.detail_gender': 'Genre',
+  'appointment.detail_phone': 'Téléphone',
+  'appointment.detail_email': 'Email',
+  'appointment.detail_address': 'Adresse',
+  'appointment.detail_blood_type': 'Groupe Sanguin',
+  'appointment.detail_allergies': 'Allergies',
+  'appointment.detail_medications': 'Médicaments Actuels',
+  'appointment.detail_insurance': 'Assurance',
+  'appointment.detail_emergency_contact': "Contact d'Urgence",
+  'appointment.detail_patient_number': 'Numéro de Patient',
+  'appointment.detail_national_id': "Carte d'Identité Nationale",
+  'appointment.detail_loading_patient': 'Chargement des détails du patient...',
+
+  // Status transition actions
+  'appointment.start_consultation': 'Démarrer la Consultation',
+  'appointment.complete_appointment': 'Terminer',
+  'appointment.cancel_appointment': 'Annuler le Rendez-vous',
+  'appointment.mark_no_show': 'Absent',
+  'appointment.confirm_cancel': 'Êtes-vous sûr de vouloir annuler ce rendez-vous ?',
+  'appointment.confirm_no_show': 'Marquer ce rendez-vous comme absent ?',
+  'appointment.confirm_start': 'Démarrer la consultation pour ce patient ?',
+  'appointment.confirm_complete': 'Marquer ce rendez-vous comme terminé ?',
 };

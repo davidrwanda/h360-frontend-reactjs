@@ -53,6 +53,17 @@ export const useSystemAdmins = (params?: Omit<UserListParams, 'role' | 'clinic_i
 };
 
 /**
+ * Hook to fetch organization owners (ORG_OWNER role)
+ */
+export const useOrgOwners = (params?: Omit<UserListParams, 'role' | 'clinic_id'>) => {
+  return useQuery({
+    queryKey: ['orgOwners', params],
+    queryFn: () => usersApi.list({ ...params, role: 'ORG_OWNER' }),
+    enabled: params !== undefined,
+  });
+};
+
+/**
  * Hook to fetch a single user by ID
  */
 export const useUser = (userId: string, options?: { enabled?: boolean }) => {

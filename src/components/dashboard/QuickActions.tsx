@@ -145,7 +145,7 @@ export const QuickActions = () => {
   const patientActions: QuickAction[] = [
     {
       labelKey: DASHBOARD.BOOK_APPOINTMENT,
-      path: '/my-appointments',
+      path: '/',
       icon: <MdEvent className="h-4 w-4" />,
       variant: 'primary',
       descriptionKey: DASHBOARD.SCHEDULE_APPOINTMENT,

@@ -1,4 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import type { ApiErrorResponse } from '@/types/api';
+import { isApiError, handleApiError } from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
@@ -27,11 +29,11 @@ const processQueue = (error: Error | null, token: string | null = null) => {
       prom.resolve(token);
     }
   });
-  
+
   failedQueue = [];
 };
 
-// Request interceptor - Add auth token and Accept-Language header
+// Request interceptor - Add auth token, tracing headers, and Accept-Language
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token');
@@ -52,6 +54,14 @@ apiClient.interceptors.request.use(
       // Fallback silently if parsing fails
     }
 
+    // Add ISD tracing headers for GET requests (no body)
+    if (config.method === 'get' && config.headers) {
+      const messageId = `msg_${crypto.randomUUID()}`;
+      config.headers['X-Message-ID'] = messageId;
+      config.headers['X-Correlation-ID'] = messageId;
+      config.headers['X-Source-System'] = 'h360-web';
+    }
+
     return config;
   },
   (error: AxiosError) => {
@@ -62,7 +72,7 @@ apiClient.interceptors.request.use(
 // Response interceptor - Handle errors and token refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<{ message?: string; error?: string }>) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // If error is 401 and we haven't tried refreshing yet
@@ -89,103 +99,104 @@ apiClient.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token');
 
       if (!refreshToken) {
-        // No refresh token, clear everything and reject
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         processQueue(new Error('No refresh token available'), null);
         isRefreshing = false;
-        
-        // Extract error message for better error handling
-        const errorMessage =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          'An error occurred';
-        
-        const customError = new Error(errorMessage);
-        return Promise.reject(customError);
+
+        return Promise.reject(createApiError(error));
       }
 
       try {
-        // Attempt to refresh the token
-        const response = await axios.post<{
-          success?: boolean;
-          data?: {
-            access_token: string;
-            refresh_token: string;
-          };
-          access_token?: string;
-          refresh_token?: string;
-        }>(
+        const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          { refresh_token: refreshToken },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
+          { data: { refresh_token: refreshToken }, meta: { message_id: `msg_${crypto.randomUUID()}`, source_system: 'h360-web' }, extras: {} },
+          { headers: { 'Content-Type': 'application/json' } }
         );
 
-        // Handle both wrapped and direct response formats
-        const newAccessToken =
-          response.data.success && response.data.data
-            ? response.data.data.access_token
-            : response.data.access_token || '';
-        const newRefreshToken =
-          response.data.success && response.data.data
-            ? response.data.data.refresh_token
-            : response.data.refresh_token || '';
+        // Handle both ISD envelope and legacy response
+        const responseData = response.data;
+        let newAccessToken: string;
+        let newRefreshToken: string;
+
+        if (responseData?.data?.access_token) {
+          // ISD envelope
+          newAccessToken = responseData.data.access_token;
+          newRefreshToken = responseData.data.refresh_token;
+        } else if (responseData?.success && responseData?.data) {
+          // Legacy envelope
+          newAccessToken = responseData.data.access_token;
+          newRefreshToken = responseData.data.refresh_token;
+        } else {
+          // Direct response
+          newAccessToken = responseData.access_token || '';
+          newRefreshToken = responseData.refresh_token || '';
+        }
 
         if (newAccessToken && newRefreshToken) {
-          // Update stored tokens
           localStorage.setItem('access_token', newAccessToken);
           localStorage.setItem('refresh_token', newRefreshToken);
 
-          // Update the original request with new token
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
 
-          // Process queued requests
           processQueue(null, newAccessToken);
           isRefreshing = false;
 
-          // Retry the original request
           return apiClient(originalRequest);
         } else {
           throw new Error('Invalid refresh token response');
         }
       } catch (refreshError) {
-        // Refresh failed, clear tokens and reject all queued requests
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         processQueue(refreshError as Error, null);
         isRefreshing = false;
 
-        // Extract error message
-        const refreshAxiosError = refreshError as AxiosError<{ message?: string; error?: string }>;
-        const errorMessage =
-          refreshAxiosError?.response?.data?.message ||
-          refreshAxiosError?.response?.data?.error ||
-          (refreshError as Error)?.message ||
-          'Token refresh failed';
-        
-        const customError = new Error(errorMessage);
-        return Promise.reject(customError);
+        return Promise.reject(createApiError(refreshError as AxiosError));
       }
     }
-    
-    // Extract error message for better error handling
-    const errorMessage =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      'An error occurred';
-    
-    // Create a new error with the message
-    const customError = new Error(errorMessage);
-    return Promise.reject(customError);
+
+    return Promise.reject(createApiError(error));
   }
 );
+
+/**
+ * Create a structured error from an Axios error, handling both ISD and legacy formats.
+ */
+function createApiError(error: AxiosError | Error): Error {
+  if (!('response' in error) || !(error as AxiosError).response) {
+    return error instanceof Error ? error : new Error('An error occurred');
+  }
+
+  const axiosError = error as AxiosError;
+  const responseData = axiosError.response?.data;
+
+  // Handle ISD error envelope
+  if (isApiError(responseData)) {
+    const parsed = handleApiError(responseData as ApiErrorResponse);
+    const apiError = new Error(parsed.message);
+    Object.assign(apiError, {
+      statusCode: parsed.statusCode,
+      errorCode: parsed.errorCode,
+      fieldErrors: parsed.fieldErrors,
+      context: parsed.context,
+      response: responseData,
+    });
+    return apiError;
+  }
+
+  // Handle legacy error format
+  const legacyData = responseData as { message?: string; error?: string; meta?: { message?: string } } | undefined;
+  const errorMessage =
+    legacyData?.meta?.message ||
+    legacyData?.message ||
+    legacyData?.error ||
+    axiosError.message ||
+    'An error occurred';
+
+  return new Error(errorMessage);
+}
 
 export default apiClient;

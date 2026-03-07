@@ -61,4 +61,18 @@ export const authRw: Record<string, string> = {
   'auth.invalidEmail': "Andika aderesi y'imeyili yemewe",
   'auth.otpLength': 'Kode OTP igomba kuba imibare 6',
   'auth.passwordComplexityShort': "Ijambo ry'ibanga rigomba kugira inyuguti nkuru, ntoya, n'umubare",
+
+  // AcceptInvitePage
+  'auth.acceptInvitation': 'Emera ubutumire',
+  'auth.acceptInviteSubtitle': 'Rangiza gutegura konti yawe',
+  'auth.acceptInviteInstructions': "Watumijwe kwinjira mu muryango. Uzuza umwirondoro wawe kugira ngo utangire.",
+  'auth.firstName': "Izina ry'ibanze",
+  'auth.lastName': 'Irindi zina',
+  'auth.acceptAndJoin': 'Emera winjire',
+  'auth.inviteAccepted': "Ubutumire bwemejwe neza! Injira muri konti yawe.",
+  'auth.inviteAcceptFailed': 'Kwemera ubutumire ntibyakunze. Ongera ugerageze.',
+  'auth.inviteExpired': "Iyi link y'ubutumire ntikiri cyangwa yarangiye. Saba ubutumire bushya.",
+  'auth.inviteInvalid': 'Ubutumire budasanzwe',
+  'auth.firstNameRequired': "Izina ry'ibanze rirakenewe",
+  'auth.lastNameRequired': 'Irindi zina rirakenewe',
 };

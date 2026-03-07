@@ -2,7 +2,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { Button } from '@/components/ui';
 import { AppointmentStatusBadge } from './AppointmentStatusBadge';
 import { useTranslation, APPOINTMENT } from '@/i18n';
-import { MdVisibility, MdEvent, MdPerson, MdLogin } from 'react-icons/md';
+import { MdVisibility, MdEvent, MdPerson, MdLogin, MdPlayArrow, MdCheck, MdCancel, MdPersonOff } from 'react-icons/md';
 import type { Appointment } from '@/api/appointments';
 
 interface AppointmentsTableProps {
@@ -10,6 +10,10 @@ interface AppointmentsTableProps {
   isLoading?: boolean;
   onView?: (appointment: Appointment) => void;
   onCheckIn?: (appointment: Appointment) => void;
+  onStart?: (appointment: Appointment) => void;
+  onComplete?: (appointment: Appointment) => void;
+  onCancel?: (appointment: Appointment) => void;
+  onNoShow?: (appointment: Appointment) => void;
 }
 
 const formatDate = (dateStr: string): string => {
@@ -40,6 +44,10 @@ export const AppointmentsTable = ({
   isLoading = false,
   onView,
   onCheckIn,
+  onStart,
+  onComplete,
+  onCancel,
+  onNoShow,
 }: AppointmentsTableProps) => {
   const { t } = useTranslation();
 
@@ -129,6 +137,50 @@ export const AppointmentsTable = ({
                     >
                       <MdLogin className="h-3.5 w-3.5 mr-1" />
                       {t(APPOINTMENT.CHECK_IN)}
+                    </Button>
+                  )}
+                  {apt.status === 'checked_in' && onStart && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onStart(apt)}
+                      className="text-xs"
+                    >
+                      <MdPlayArrow className="h-3.5 w-3.5 mr-1" />
+                      {t(APPOINTMENT.START_CONSULTATION)}
+                    </Button>
+                  )}
+                  {apt.status === 'in_progress' && onComplete && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onComplete(apt)}
+                      className="text-xs"
+                    >
+                      <MdCheck className="h-3.5 w-3.5 mr-1" />
+                      {t(APPOINTMENT.COMPLETE_APPOINTMENT)}
+                    </Button>
+                  )}
+                  {apt.status === 'booked' && onCancel && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onCancel(apt)}
+                      className="text-xs text-carbon/50"
+                    >
+                      <MdCancel className="h-3.5 w-3.5 mr-1" />
+                      {t(APPOINTMENT.CANCEL_APPOINTMENT)}
+                    </Button>
+                  )}
+                  {(apt.status === 'booked' || apt.status === 'checked_in') && onNoShow && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onNoShow(apt)}
+                      className="text-xs text-carbon/50"
+                    >
+                      <MdPersonOff className="h-3.5 w-3.5 mr-1" />
+                      {t(APPOINTMENT.MARK_NO_SHOW)}
                     </Button>
                   )}
                   {onView && (

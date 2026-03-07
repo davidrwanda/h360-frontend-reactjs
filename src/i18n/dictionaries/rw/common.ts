@@ -56,5 +56,13 @@ export const commonRw: Record<string, string> = {
   'common.back': 'Gusubira inyuma',
   'common.edit': 'Hindura',
   'common.save': 'Bika',
+  'common.saving': 'Kubika...',
   'common.loading': 'Gutegereza...',
+  'common.view': 'Reba',
+  'common.actions': 'Ibikorwa',
+  'common.active': 'Birakora',
+  'common.inactive': 'Byahagaritswe',
+  'common.noData': 'Nta makuru yabonetse',
+  'common.show': 'Erekana',
+  'common.hide': 'Hisha',
 };

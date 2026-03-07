@@ -163,4 +163,31 @@ export const appointmentRw: Dictionary = {
   'appointment.check_in_notes': 'Ibisobanuro',
   'appointment.check_in_notes_placeholder': 'Impamvu yo guhindura umuganga...',
   'appointment.checking_in': 'Birimo kwiyandikisha...',
+
+  // Patient details in appointment modal
+  'appointment.detail_patient_info': "Amakuru y'Umurwayi",
+  'appointment.detail_dob': "Itariki y'Amavuko",
+  'appointment.detail_age': 'Imyaka',
+  'appointment.detail_gender': 'Igitsina',
+  'appointment.detail_phone': 'Telefoni',
+  'appointment.detail_email': 'Imeyili',
+  'appointment.detail_address': 'Aderesi',
+  'appointment.detail_blood_type': "Ubwoko bw'Amaraso",
+  'appointment.detail_allergies': 'Indwara zo Kutihangana',
+  'appointment.detail_medications': 'Imiti Ikoresha Ubu',
+  'appointment.detail_insurance': "Ubwishingizi bw'Ubuzima",
+  'appointment.detail_emergency_contact': "Uwo Guhamagara mu Byihutirwa",
+  'appointment.detail_patient_number': "Inomero y'Umurwayi",
+  'appointment.detail_national_id': "Indangamuntu",
+  'appointment.detail_loading_patient': "Birimo gufungura amakuru y'umurwayi...",
+
+  // Status transition actions
+  'appointment.start_consultation': 'Tangira Kuvura',
+  'appointment.complete_appointment': 'Rangiza',
+  'appointment.cancel_appointment': 'Hagarika Igihe cyo Gusura',
+  'appointment.mark_no_show': 'Ntiyaje',
+  'appointment.confirm_cancel': 'Uzi neza ko ushaka guhagarika iki gihe cyo gusura?',
+  'appointment.confirm_no_show': 'Gushyira iki gihe cyo gusura nk\'umuntu utaje?',
+  'appointment.confirm_start': 'Tangira kuvura uyu murwayi?',
+  'appointment.confirm_complete': 'Gushyira iki gihe cyo gusura nk\'icyarangiye?',
 };

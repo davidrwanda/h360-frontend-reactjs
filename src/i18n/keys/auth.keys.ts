@@ -61,4 +61,18 @@ export const AUTH = {
   INVALID_EMAIL: 'auth.invalidEmail',
   OTP_LENGTH: 'auth.otpLength',
   PASSWORD_COMPLEXITY_SHORT: 'auth.passwordComplexityShort',
+
+  // AcceptInvitePage
+  ACCEPT_INVITATION: 'auth.acceptInvitation',
+  ACCEPT_INVITE_SUBTITLE: 'auth.acceptInviteSubtitle',
+  ACCEPT_INVITE_INSTRUCTIONS: 'auth.acceptInviteInstructions',
+  FIRST_NAME: 'auth.firstName',
+  LAST_NAME: 'auth.lastName',
+  ACCEPT_AND_JOIN: 'auth.acceptAndJoin',
+  INVITE_ACCEPTED: 'auth.inviteAccepted',
+  INVITE_ACCEPT_FAILED: 'auth.inviteAcceptFailed',
+  INVITE_EXPIRED: 'auth.inviteExpired',
+  INVITE_INVALID: 'auth.inviteInvalid',
+  FIRST_NAME_REQUIRED: 'auth.firstNameRequired',
+  LAST_NAME_REQUIRED: 'auth.lastNameRequired',
 } as const;

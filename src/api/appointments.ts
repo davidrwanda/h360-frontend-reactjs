@@ -86,6 +86,20 @@ export interface PaginatedResponse<T> {
   totalPages?: number;
 }
 
+export interface UpdateAppointmentRequest {
+  appointment_date?: string;
+  doctor_id?: string;
+  service_id?: string;
+  start_time?: TimeSlot;
+  end_time?: TimeSlot;
+  reason?: string;
+  notes?: string;
+}
+
+export interface CheckInRequest {
+  doctor_id?: string;
+}
+
 export const appointmentsApi = {
   /**
    * Create a new appointment
@@ -151,5 +165,97 @@ export const appointmentsApi = {
       return { data: result, total: result.length, page: 1, limit: result.length };
     }
     return result;
+  },
+
+  /**
+   * Check in an appointment
+   * PATCH /api/appointments/:id/check-in
+   * Access: Admin, Manager, Receptionist, Doctor, Nurse
+   */
+  checkIn: async (id: string, data?: CheckInRequest): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}/check-in`,
+      data || {}
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
+  /**
+   * Start consultation (checked_in -> in_progress)
+   * PATCH /api/appointments/:id/start
+   * Access: Admin, Manager, Doctor
+   */
+  start: async (id: string): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}/start`
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
+  /**
+   * Complete appointment (in_progress -> completed)
+   * PATCH /api/appointments/:id/complete
+   * Access: Admin, Manager, Doctor
+   */
+  complete: async (id: string): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}/complete`
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
+  /**
+   * Cancel appointment (booked -> cancelled)
+   * PATCH /api/appointments/:id/cancel
+   * Access: Admin, Manager, Receptionist, Doctor
+   */
+  cancel: async (id: string): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}/cancel`
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
+  /**
+   * Mark as no-show (booked -> no_show)
+   * PATCH /api/appointments/:id/no-show
+   * Access: Admin, Manager, Receptionist, Doctor, Nurse
+   */
+  noShow: async (id: string): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}/no-show`
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
+  },
+
+  /**
+   * Update appointment details
+   * PATCH /api/appointments/:id
+   * Access: Admin, Manager, Receptionist
+   */
+  update: async (id: string, data: UpdateAppointmentRequest): Promise<Appointment> => {
+    const response = await apiClient.patch<ApiResponse<Appointment> | Appointment>(
+      `/appointments/${id}`,
+      data
+    );
+    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+      return (response.data as ApiResponse<Appointment>).data;
+    }
+    return response.data as Appointment;
   },
 };

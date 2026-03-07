@@ -97,6 +97,20 @@ export const dashboardRw: Record<string, string> = {
   'dashboard.noUpcomingStatDesc': 'Nta gahunda zitegerejwe',
   'dashboard.clinicsSubscribed': 'Amavuriro wiyandikishijeho',
 
+  // System dashboard - Organization focused
+  'dashboard.totalOrganizations': 'Umubare w\'amashyirahamwe',
+  'dashboard.activeOrganizations': 'Amashyirahamwe akora',
+  'dashboard.orgOwners': 'Abanyamashyirahamwe',
+  'dashboard.systemAdmins': 'Abayobozi ba sisitemu',
+  'dashboard.systemSubtitle': 'Cunga amashyirahamwe, abanyamashyirahamwe, n\'abayobozi ba sisitemu',
+  'dashboard.createOrganization': 'Kora ishyirahamwe',
+  'dashboard.createOrgDesc': 'Kora ishyirahamwe rishya ushire nyirayo',
+  'dashboard.manageOrganizations': 'Cunga amashyirahamwe',
+  'dashboard.manageOrgOwners': 'Cunga abanyamashyirahamwe',
+  'dashboard.manageOrgOwnersDesc': 'Reba kandi ucunge abanyamashyirahamwe',
+  'dashboard.viewAllOrganizations': 'Reba amashyirahamwe yose',
+  'dashboard.systemAdminFooter': 'Abayobozi ba sisitemu bacunga amashyirahamwe kandi bashyira abayobozi. Amavuriro acungwa mu mashyirahamwe yayo.',
+
   // QuickActions
   'dashboard.createNewClinic': 'Kora ivuriro rishya',
   'dashboard.createClinicDesc': 'Kora ivuriro ushire umuyobozi',

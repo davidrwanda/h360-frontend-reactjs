@@ -161,4 +161,31 @@ export const APPOINTMENT = {
   CHECK_IN_NOTES: 'appointment.check_in_notes',
   CHECK_IN_NOTES_PLACEHOLDER: 'appointment.check_in_notes_placeholder',
   CHECKING_IN: 'appointment.checking_in',
+
+  // Patient details in appointment modal
+  DETAIL_PATIENT_INFO: 'appointment.detail_patient_info',
+  DETAIL_DOB: 'appointment.detail_dob',
+  DETAIL_AGE: 'appointment.detail_age',
+  DETAIL_GENDER: 'appointment.detail_gender',
+  DETAIL_PHONE: 'appointment.detail_phone',
+  DETAIL_EMAIL: 'appointment.detail_email',
+  DETAIL_ADDRESS: 'appointment.detail_address',
+  DETAIL_BLOOD_TYPE: 'appointment.detail_blood_type',
+  DETAIL_ALLERGIES: 'appointment.detail_allergies',
+  DETAIL_MEDICATIONS: 'appointment.detail_medications',
+  DETAIL_INSURANCE: 'appointment.detail_insurance',
+  DETAIL_EMERGENCY_CONTACT: 'appointment.detail_emergency_contact',
+  DETAIL_PATIENT_NUMBER: 'appointment.detail_patient_number',
+  DETAIL_NATIONAL_ID: 'appointment.detail_national_id',
+  DETAIL_LOADING_PATIENT: 'appointment.detail_loading_patient',
+
+  // Status transition actions
+  START_CONSULTATION: 'appointment.start_consultation',
+  COMPLETE_APPOINTMENT: 'appointment.complete_appointment',
+  CANCEL_APPOINTMENT: 'appointment.cancel_appointment',
+  MARK_NO_SHOW: 'appointment.mark_no_show',
+  CONFIRM_CANCEL: 'appointment.confirm_cancel',
+  CONFIRM_NO_SHOW: 'appointment.confirm_no_show',
+  CONFIRM_START: 'appointment.confirm_start',
+  CONFIRM_COMPLETE: 'appointment.confirm_complete',
 } as const;

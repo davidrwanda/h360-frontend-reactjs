@@ -8,23 +8,59 @@ import { SUPPORTED_LANGS } from '@/i18n/types';
 import type { SupportedLang } from '@/i18n/types';
 
 /**
- * Normalize role to uppercase format (Admin -> ADMIN, Manager -> MANAGER, etc.)
+ * Normalize role from API PascalCase (e.g. "OrgOwner", "NurseAssistant")
+ * to frontend UPPER_SNAKE_CASE (e.g. "ORG_OWNER", "NURSE_ASSISTANT").
+ *
+ * Inserts underscores before uppercase letters that follow a lowercase letter,
+ * then uppercases all. e.g. "OrgOwner" → "ORG_OWNER", "LabTechnician" → "LAB_TECHNICIAN"
  */
 const normalizeRole = (role?: string): UserRole | undefined => {
   if (!role) return undefined;
-  
-  // Normalize common role formats to uppercase
-  const normalized = role.toUpperCase();
-  
-  // Map to valid UserRole types
-  if (normalized === 'ADMIN') return 'ADMIN';
-  if (normalized === 'MANAGER') return 'MANAGER';
-  if (normalized === 'RECEPTIONIST') return 'RECEPTIONIST';
-  if (normalized === 'DOCTOR') return 'DOCTOR';
-  if (normalized === 'NURSE') return 'NURSE';
-  if (normalized === 'PATIENT') return 'PATIENT';
-  
-  return undefined;
+
+  // PascalCase → UPPER_SNAKE_CASE
+  const snaked = role.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
+
+  const validRoles: Record<string, UserRole> = {
+    // Core
+    'SYSTEM': 'SYSTEM',
+    'PATIENT': 'PATIENT',
+    // Organization
+    'ORG_OWNER': 'ORG_OWNER',
+    // Administrative
+    'ADMIN': 'ADMIN',
+    'MANAGER': 'MANAGER',
+    'SUPERVISOR': 'SUPERVISOR',
+    // Medical
+    'DOCTOR': 'DOCTOR',
+    'NURSE': 'NURSE',
+    'NURSE_ASSISTANT': 'NURSE_ASSISTANT',
+    'PHARMACIST': 'PHARMACIST',
+    'PHARMACY_TECHNICIAN': 'PHARMACY_TECHNICIAN',
+    // Support Staff
+    'RECEPTIONIST': 'RECEPTIONIST',
+    'OPERATOR': 'OPERATOR',
+    'MEDICAL_ASSISTANT': 'MEDICAL_ASSISTANT',
+    'LAB_TECHNICIAN': 'LAB_TECHNICIAN',
+    'RADIOLOGIST': 'RADIOLOGIST',
+    'RADIOLOGY_TECHNICIAN': 'RADIOLOGY_TECHNICIAN',
+    'PHYSIOTHERAPIST': 'PHYSIOTHERAPIST',
+    // Admin Support
+    'HR': 'HR',
+    'ACCOUNTANT': 'ACCOUNTANT',
+    'ACCOUNTING_ASSISTANT': 'ACCOUNTING_ASSISTANT',
+    'STOCK_MANAGER': 'STOCK_MANAGER',
+    'STOCK_ASSISTANT': 'STOCK_ASSISTANT',
+    'IT_SUPPORT': 'IT_SUPPORT',
+    // General Support
+    'SECURITY': 'SECURITY',
+    'CLEANER': 'CLEANER',
+    'MAINTENANCE': 'MAINTENANCE',
+    'DRIVER': 'DRIVER',
+    // Fallback
+    'STAFF': 'STAFF',
+  };
+
+  return validRoles[snaked] || undefined;
 };
 
 /**
@@ -69,6 +105,22 @@ const mapUserToRole = (user: User | null): UserRole | undefined => {
 };
 
 /**
+ * Decode JWT payload to extract fields not present in the login response user object
+ * (e.g. organization_id). Returns null on failure.
+ */
+const decodeJwtPayload = (token: string | null): Record<string, unknown> | null => {
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[1]) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Hook to get current authentication state
  */
 export const useAuth = () => {
@@ -87,12 +139,19 @@ export const useAuth = () => {
 
   // Prefer currentUser from API over stored user to ensure we have latest data
   const currentUserData = currentUser || user || null;
-  
+
+  // Extract organization_id from JWT if not present on user object
+  // The login response user often lacks organization_id but the JWT payload has it
+  const jwtPayload = decodeJwtPayload(token);
+  const jwtOrgId = jwtPayload?.organization_id as string | undefined;
+
   // Ensure user has username (use email if username not available)
   const normalizedUser = currentUserData
     ? {
         ...currentUserData,
         username: currentUserData.username || currentUserData.email,
+        // Merge organization_id from JWT if not already on the user or employee
+        organization_id: currentUserData.organization_id || currentUserData.employee?.organization_id || jwtOrgId || null,
       }
     : null;
 
@@ -220,7 +279,7 @@ export const useForgotPassword = () => {
  */
 export const useResetPassword = () => {
   const navigate = useNavigate();
-  
+
   return useMutation({
     mutationFn: (data: {
       email: string;
@@ -232,5 +291,22 @@ export const useResetPassword = () => {
       // Navigate to login after successful password reset
       navigate('/login', { replace: true });
     },
+  });
+};
+
+/**
+ * Hook for accepting an organization invitation.
+ * Server returns JWT — caller handles login via onSuccess.
+ */
+export const useAcceptInvitation = () => {
+  return useMutation({
+    mutationFn: (data: {
+      token: string;
+      email: string;
+      first_name: string;
+      last_name: string;
+      password: string;
+      phone?: string;
+    }) => authApi.acceptInvitation(data),
   });
 };

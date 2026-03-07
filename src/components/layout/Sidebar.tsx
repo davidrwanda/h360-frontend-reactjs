@@ -100,6 +100,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     <li key={item.id}>
                       <NavLink
                         to={item.path}
+                        end
                         onClick={onClose}
                         className={({ isActive }) =>
                           cn(

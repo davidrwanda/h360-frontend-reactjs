@@ -1,5 +1,41 @@
-export type UserRole = 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE' | 'PATIENT';
+// Re-export ISD API types
+export type { ApiErrorResponse, FieldError, PaginationMeta } from './api';
+export type { ApiResponse as IsdApiResponse } from './api';
+
+// Legacy API Response wrapper (used by existing API modules)
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  timestamp?: string;
+  path?: string;
+}
+
+// ─── ISD Roles ──────────────────────────────────────────────────────────────
+// UserType: SYSTEM (platform admin), EMPLOYEE (staff/clinic), PATIENT
 export type UserType = 'EMPLOYEE' | 'SYSTEM' | 'PATIENT';
+
+// OrgMemberRole: see src/types/organization.ts (ORG_OWNER, ADMIN, MANAGER, STAFF, DOCTOR)
+
+// UserRole: all 22 employee roles + SYSTEM + PATIENT
+// API returns PascalCase (e.g. "OrgOwner", "NurseAssistant") — normalize with normalizeRole()
+export type UserRole =
+  | 'SYSTEM'
+  | 'PATIENT'
+  // Organization
+  | 'ORG_OWNER'
+  // Administrative
+  | 'ADMIN' | 'MANAGER' | 'SUPERVISOR'
+  // Medical
+  | 'DOCTOR' | 'NURSE' | 'NURSE_ASSISTANT' | 'PHARMACIST' | 'PHARMACY_TECHNICIAN'
+  // Support Staff
+  | 'RECEPTIONIST' | 'OPERATOR' | 'MEDICAL_ASSISTANT' | 'LAB_TECHNICIAN'
+  | 'RADIOLOGIST' | 'RADIOLOGY_TECHNICIAN' | 'PHYSIOTHERAPIST'
+  // Admin Support
+  | 'HR' | 'ACCOUNTANT' | 'ACCOUNTING_ASSISTANT' | 'STOCK_MANAGER' | 'STOCK_ASSISTANT' | 'IT_SUPPORT'
+  // General Support
+  | 'SECURITY' | 'CLEANER' | 'MAINTENANCE' | 'DRIVER'
+  // Catch-all for unknown roles
+  | 'STAFF';
 export type Permissions = 'ALL' | string;
 
 export interface EmployeeProfile {
@@ -38,7 +74,6 @@ export interface EmployeeProfile {
   updated_at: string;
 }
 
-// Employee object from /api/auth/me (different from employee_profile)
 export interface Employee {
   employee_id: string;
   first_name: string;
@@ -52,6 +87,7 @@ export interface Employee {
   department?: string;
   position?: string;
   clinic_id?: string;
+  organization_id?: string;
   hire_date?: string;
   termination_date?: string | null;
   address?: string;
@@ -109,33 +145,21 @@ export interface User {
   updated_at?: string;
   role?: UserRole | string;
   clinic_id?: string | null;
+  organization_id?: string | null;
   permissions?: Permissions;
-  // Direct fields from API (for employees, legacy support)
   first_name?: string;
   last_name?: string;
   full_name?: string;
   phone?: string;
-  // Employee object (nested object from /auth/me, if user_type is EMPLOYEE)
   employee?: Employee;
-  // Employee profile (legacy/nested object, if available)
   employee_profile?: EmployeeProfile;
-  // Patient profile (nested object from /auth/me, if user_type is PATIENT)
   patient?: PatientProfile;
-  // Preferred language from login response
   preferred_lang?: string;
 }
 
 export interface LoginRequest {
   username: string;
   password: string;
-}
-
-// API Response wrapper
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  timestamp?: string;
-  path?: string;
 }
 
 export interface LoginResponseData {
@@ -158,8 +182,6 @@ export interface RefreshTokenResponse {
   user: User;
 }
 
-export type LoginResponse = ApiResponse<LoginResponseData>;
-
 export interface ChangePasswordRequest {
   current_password: string;
   new_password: string;
@@ -173,3 +195,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+// LoginResponse - supports both ISD and legacy formats
+export type LoginResponse = ApiResponse<LoginResponseData>;

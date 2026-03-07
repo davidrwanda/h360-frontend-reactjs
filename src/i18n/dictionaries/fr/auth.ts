@@ -61,4 +61,18 @@ export const authFr: Record<string, string> = {
   'auth.invalidEmail': 'Veuillez entrer une adresse e-mail valide',
   'auth.otpLength': 'Le code OTP doit contenir 6 chiffres',
   'auth.passwordComplexityShort': 'Le mot de passe doit contenir majuscule, minuscule et chiffre',
+
+  // AcceptInvitePage
+  'auth.acceptInvitation': "Accepter l'invitation",
+  'auth.acceptInviteSubtitle': 'Complétez la configuration de votre compte',
+  'auth.acceptInviteInstructions': "Vous avez été invité à rejoindre une organisation. Complétez votre profil pour commencer.",
+  'auth.firstName': 'Prénom',
+  'auth.lastName': 'Nom de famille',
+  'auth.acceptAndJoin': 'Accepter et rejoindre',
+  'auth.inviteAccepted': 'Invitation acceptée avec succès ! Veuillez vous connecter.',
+  'auth.inviteAcceptFailed': "Échec de l'acceptation de l'invitation. Veuillez réessayer.",
+  'auth.inviteExpired': "Ce lien d'invitation est invalide ou a expiré. Veuillez demander une nouvelle invitation.",
+  'auth.inviteInvalid': 'Invitation invalide',
+  'auth.firstNameRequired': 'Le prénom est requis',
+  'auth.lastNameRequired': 'Le nom de famille est requis',
 };

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useClinics } from '@/hooks/useClinics';
-import { useUsers, useClinicAdmins, useSystemAdmins, useDeactivateUser, useActivateUser } from '@/hooks/useUsers';
+import { useOrganizations, useOrgMembers } from '@/hooks/useOrganizations';
+import { useUsers, useClinicAdmins, useSystemAdmins, useOrgOwners, useDeactivateUser, useActivateUser } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { useTranslation, USERS, CLINIC, COMMON } from '@/i18n';
 import { ClinicAdminsTable } from '@/components/users/ClinicAdminsTable';
@@ -49,7 +50,12 @@ export const UsersPage = () => {
     isClinicManager ? (clinicIdFromStorage || '') : ''
   );
   
-  const [activeTab, setActiveTab] = useState<'clinic-admins' | 'system-admins'>('clinic-admins');
+  const isSystemUser = user?.user_type === 'SYSTEM';
+
+  // SYSTEM users: default to 'org-owners' tab; others: default to 'clinic-admins'
+  const [activeTab, setActiveTab] = useState<'clinic-admins' | 'system-admins' | 'org-owners'>(
+    isSystemUser ? 'org-owners' : 'clinic-admins'
+  );
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
@@ -65,9 +71,18 @@ export const UsersPage = () => {
   const [showCreateSystemAdminModal, setShowCreateSystemAdminModal] = useState(false);
   const [systemAdminToEdit, setSystemAdminToEdit] = useState<User | null>(null);
 
+  // Org Owners state
+  const [orgOwnerSearch, setOrgOwnerSearch] = useState('');
+  const [orgOwnerStatusFilter, setOrgOwnerStatusFilter] = useState<string>('active');
+  const [orgOwnerOrgFilter, setOrgOwnerOrgFilter] = useState<string>('');
+  const [orgOwnerPage, setOrgOwnerPage] = useState(1);
+  const [orgOwnerToDelete, setOrgOwnerToDelete] = useState<User | null>(null);
 
-  // Fetch all clinics for the clinic filter (only for system admins)
-  const { data: clinicsData } = useClinics({ limit: 100, is_active: true });
+  // Fetch all clinics for the clinic filter (only for non-SYSTEM admins)
+  const { data: clinicsData } = useClinics(isSystemUser ? undefined : { limit: 100, is_active: true });
+
+  // Fetch organizations for the org filter (SYSTEM users only)
+  const { data: orgsData } = useOrganizations(isSystemUser ? { limit: 100, is_active: true } : undefined);
 
   // Auto-set clinic_id for clinic managers from storage
   useEffect(() => {
@@ -131,7 +146,58 @@ export const UsersPage = () => {
   const systemAdminDeleteMutation = useDeactivateUser();
   const systemAdminActivateMutation = useActivateUser();
 
-  const selectedClinic = clinicsData?.data.find((c) => c.clinic_id === selectedClinicId);
+  // Org Owners hooks (only for SYSTEM users)
+  // When no org selected: fetch all ORG_OWNER users via /api/users
+  const { data: allOrgOwnersData, isLoading: allOrgOwnersLoading, error: allOrgOwnersError } = useOrgOwners(
+    isSystemUser && !orgOwnerOrgFilter
+      ? {
+          page: orgOwnerPage,
+          limit,
+          search: orgOwnerSearch || undefined,
+          is_active: orgOwnerStatusFilter === 'active' ? true : orgOwnerStatusFilter === 'inactive' ? false : undefined,
+          sortBy: 'created_at',
+          sortOrder: 'DESC',
+        }
+      : undefined
+  );
+
+  // When org selected: fetch ORG_OWNER members via /api/organizations/:id/members
+  const { data: orgMembersData, isLoading: orgMembersLoading, error: orgMembersError } = useOrgMembers(
+    orgOwnerOrgFilter,
+    {
+      page: orgOwnerPage,
+      limit,
+      search: orgOwnerSearch || undefined,
+      role: 'ORG_OWNER',
+    },
+    { enabled: isSystemUser && !!orgOwnerOrgFilter }
+  );
+
+  // Map OrganizationMember to User-compatible shape when filtering by org
+  const orgMembersAsUsers = orgMembersData?.data?.map((member) => ({
+    user_id: member.user_id || member.id,
+    first_name: member.first_name || '',
+    last_name: member.last_name || '',
+    full_name: `${member.first_name || ''} ${member.last_name || ''}`.trim(),
+    email: member.email,
+    username: member.email,
+    role: member.role,
+    is_active: member.status === 'active',
+    created_at: member.created_at,
+    updated_at: member.updated_at,
+  })) as User[] | undefined;
+
+  // Unified data: use members API when org selected, users API otherwise
+  const orgOwnersData = orgOwnerOrgFilter
+    ? (orgMembersData ? { data: orgMembersAsUsers || [], total: orgMembersData.total, page: orgMembersData.page, limit: orgMembersData.limit, totalPages: orgMembersData.totalPages } : undefined)
+    : allOrgOwnersData;
+  const orgOwnersLoading = orgOwnerOrgFilter ? orgMembersLoading : allOrgOwnersLoading;
+  const orgOwnersError = orgOwnerOrgFilter ? orgMembersError : allOrgOwnersError;
+
+  const orgOwnerDeleteMutation = useDeactivateUser();
+  const orgOwnerActivateMutation = useActivateUser();
+
+  const selectedClinic = clinicsData?.data?.find((c) => c.clinic_id === selectedClinicId);
 
   // For clinic managers, clinic_id is always set, so don't count it as a filter
   const hasActiveFilters = search || statusFilter !== 'active' || roleFilter || (isSystemAdmin && selectedClinicId);
@@ -251,6 +317,48 @@ export const UsersPage = () => {
     setSystemAdminPage(1);
   };
 
+  // Org Owners handlers
+  const orgOwnerHasActiveFilters = orgOwnerSearch || orgOwnerStatusFilter !== 'active' || orgOwnerOrgFilter;
+
+  const handleClearOrgOwnerFilters = () => {
+    setOrgOwnerSearch('');
+    setOrgOwnerStatusFilter('active');
+    setOrgOwnerOrgFilter('');
+    setOrgOwnerPage(1);
+  };
+
+  const handleOrgOwnerDelete = (owner: User) => {
+    setOrgOwnerToDelete(owner);
+  };
+
+  const handleOrgOwnerActivate = (owner: User) => {
+    setOrgOwnerToDelete(owner);
+  };
+
+  const handleOrgOwnerDeleteConfirm = async () => {
+    if (!orgOwnerToDelete) return;
+    try {
+      await orgOwnerDeleteMutation.mutateAsync(orgOwnerToDelete.user_id);
+      showSuccess(t(USERS.USER_DEACTIVATED));
+      setOrgOwnerToDelete(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_DEACTIVATE_USER);
+      showError(errorMessage);
+    }
+  };
+
+  const handleOrgOwnerActivateConfirm = async () => {
+    if (!orgOwnerToDelete) return;
+    try {
+      await orgOwnerActivateMutation.mutateAsync(orgOwnerToDelete.user_id);
+      showSuccess(t(USERS.USER_ACTIVATED));
+      setOrgOwnerToDelete(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t(USERS.FAILED_ACTIVATE_USER);
+      showError(errorMessage);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl">
       {/* Header */}
@@ -263,7 +371,7 @@ export const UsersPage = () => {
             {t(USERS.MANAGE_USERS_DESC)}
           </p>
         </div>
-        {activeTab === 'clinic-admins' && (
+        {activeTab === 'clinic-admins' && !isSystemAdmin && !isSystemUser && (
           <Button
             variant="primary"
             size="md"
@@ -288,27 +396,43 @@ export const UsersPage = () => {
       {/* Tabs */}
       <div className="mb-6 border-b border-carbon/10">
         <div className="flex gap-4">
-          <button
-            onClick={() => {
-              setActiveTab('clinic-admins');
-              // Only clear clinic selection for system admins
-              if (isSystemAdmin) {
-                setSelectedClinicId('');
-              }
-              setPage(1);
-            }}
-            className={`
-              px-4 py-2 text-sm font-medium border-b-2 transition-colors
-              ${
-                activeTab === 'clinic-admins'
-                  ? 'border-azure-dragon text-azure-dragon'
-                  : 'border-transparent text-carbon/60 hover:text-carbon'
-              }
-            `}
-          >
-            {t(USERS.USERS_TAB)}
-          </button>
-          {/* Only show System Admins tab for system admins */}
+          {/* SYSTEM users: Org Owners tab instead of Users tab */}
+          {isSystemUser ? (
+            <button
+              onClick={() => { setActiveTab('org-owners'); setOrgOwnerPage(1); }}
+              className={`
+                px-4 py-2 text-sm font-medium border-b-2 transition-colors
+                ${
+                  activeTab === 'org-owners'
+                    ? 'border-azure-dragon text-azure-dragon'
+                    : 'border-transparent text-carbon/60 hover:text-carbon'
+                }
+              `}
+            >
+              Organization Owners
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setActiveTab('clinic-admins');
+                if (isSystemAdmin) {
+                  setSelectedClinicId('');
+                }
+                setPage(1);
+              }}
+              className={`
+                px-4 py-2 text-sm font-medium border-b-2 transition-colors
+                ${
+                  activeTab === 'clinic-admins'
+                    ? 'border-azure-dragon text-azure-dragon'
+                    : 'border-transparent text-carbon/60 hover:text-carbon'
+                }
+              `}
+            >
+              {t(USERS.USERS_TAB)}
+            </button>
+          )}
+          {/* System Admins tab for system admins */}
           {isSystemAdmin && (
             <button
               onClick={() => setActiveTab('system-admins')}
@@ -326,6 +450,161 @@ export const UsersPage = () => {
           )}
         </div>
       </div>
+
+      {/* Org Owners Tab (SYSTEM users only) */}
+      {activeTab === 'org-owners' && isSystemUser && (
+        <>
+          {/* Filters */}
+          <Card variant="elevated" className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <MdFilterList className="h-4 w-4" />
+                  {t(CLINIC.FILTERS_SORTING)}
+                </CardTitle>
+                {orgOwnerHasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearOrgOwnerFilters}
+                    className="text-xs"
+                  >
+                    <MdClear className="h-3 w-3 mr-1" />
+                    {t(CLINIC.CLEAR_ALL)}
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <Select
+                  label={t(USERS.SELECT_ORGANIZATION)}
+                  value={orgOwnerOrgFilter}
+                  onChange={(e) => {
+                    setOrgOwnerOrgFilter(e.target.value);
+                    setOrgOwnerPage(1);
+                  }}
+                  options={[
+                    { value: '', label: t(USERS.ALL_ORGANIZATIONS) },
+                    ...(orgsData?.data?.map((org) => ({
+                      value: org.id,
+                      label: org.name,
+                    })) || []),
+                  ]}
+                />
+                <div className="relative">
+                  <Input
+                    label={t(CLINIC.SEARCH)}
+                    placeholder={t(USERS.SEARCH_PLACEHOLDER)}
+                    value={orgOwnerSearch}
+                    onChange={(e) => {
+                      setOrgOwnerSearch(e.target.value);
+                      setOrgOwnerPage(1);
+                    }}
+                  />
+                  <MdSearch className="absolute right-3 top-8 h-4 w-4 text-carbon/40 pointer-events-none" />
+                </div>
+                <Select
+                  label={t(CLINIC.TH_STATUS)}
+                  value={orgOwnerStatusFilter}
+                  onChange={(e) => {
+                    setOrgOwnerStatusFilter(e.target.value);
+                    setOrgOwnerPage(1);
+                  }}
+                  options={[
+                    { value: 'active', label: t(USERS.ACTIVE) },
+                    { value: 'inactive', label: t(USERS.INACTIVE) },
+                    { value: 'all', label: t(USERS.ALL) },
+                  ]}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Org Owners Table */}
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>
+                Organization Owners ({orgOwnersData?.total || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {orgOwnersError && (
+                <div className="mb-4 rounded-md bg-smudged-lips/10 border border-smudged-lips/25 px-3.5 py-2.5">
+                  <p className="text-xs text-smudged-lips">
+                    {t(USERS.FAILED_LOAD_USERS)}
+                  </p>
+                </div>
+              )}
+
+              <ClinicAdminsTable
+                admins={orgOwnersData?.data || []}
+                isLoading={orgOwnersLoading}
+                onEdit={() => {}}
+                onDelete={handleOrgOwnerDelete}
+                onActivate={handleOrgOwnerActivate}
+              />
+
+              {/* Pagination */}
+              {orgOwnersData && orgOwnersData.total > limit && (
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="text-sm text-carbon/60">
+                    {t(USERS.SHOWING)} {(orgOwnerPage - 1) * limit + 1} {t(USERS.TO)} {Math.min(orgOwnerPage * limit, orgOwnersData.total)} {t(USERS.OF)}{' '}
+                    {orgOwnersData.total} {t(USERS.USERS_LOWER)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrgOwnerPage((p) => Math.max(1, p - 1))}
+                      disabled={orgOwnerPage === 1}
+                    >
+                      {t(USERS.PREVIOUS)}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrgOwnerPage((p) => p + 1)}
+                      disabled={orgOwnerPage * limit >= orgOwnersData.total}
+                    >
+                      {t(USERS.NEXT)}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Deactivate Confirmation Modal */}
+          {orgOwnerToDelete && orgOwnerToDelete.is_active && (
+            <DeleteConfirmationModal
+              isOpen={!!orgOwnerToDelete}
+              onClose={() => setOrgOwnerToDelete(null)}
+              onConfirm={handleOrgOwnerDeleteConfirm}
+              title={t(USERS.DEACTIVATE_CLINIC_ADMIN)}
+              message="Are you sure you want to deactivate this organization owner?"
+              itemName={`${orgOwnerToDelete.first_name} ${orgOwnerToDelete.last_name}`}
+              isLoading={orgOwnerDeleteMutation.isPending}
+              variant="deactivate"
+            />
+          )}
+
+          {/* Activate Confirmation Modal */}
+          {orgOwnerToDelete && !orgOwnerToDelete.is_active && (
+            <DeleteConfirmationModal
+              isOpen={!!orgOwnerToDelete}
+              onClose={() => setOrgOwnerToDelete(null)}
+              onConfirm={handleOrgOwnerActivateConfirm}
+              title={t(USERS.ACTIVATE_CLINIC_ADMIN)}
+              message="Are you sure you want to activate this organization owner?"
+              itemName={`${orgOwnerToDelete.first_name} ${orgOwnerToDelete.last_name}`}
+              isLoading={orgOwnerActivateMutation.isPending}
+              actionLabel={t(USERS.ACTIVATE_ACTION)}
+              variant="delete"
+            />
+          )}
+        </>
+      )}
 
       {/* Clinic Admins Tab */}
       {activeTab === 'clinic-admins' && (

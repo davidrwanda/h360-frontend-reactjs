@@ -30,7 +30,8 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   // Check role-based access
   // SYSTEM users and Admin role users have full access to all routes
   // Normalize role for comparison (handle both "Admin" and "ADMIN")
-  const normalizedRole = role?.toUpperCase();
+  // PascalCase → UPPER_SNAKE_CASE (role from useAuth is already normalized, but be safe)
+  const normalizedRole = role?.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
   const hasFullAccess = user?.user_type === 'SYSTEM' || user?.permissions === 'ALL' || normalizedRole === 'ADMIN';
 
   // If user has full access, grant access immediately

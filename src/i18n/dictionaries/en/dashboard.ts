@@ -97,6 +97,20 @@ export const dashboardEn: Record<string, string> = {
   'dashboard.noUpcomingStatDesc': 'No upcoming appointments',
   'dashboard.clinicsSubscribed': "Clinics you're subscribed to",
 
+  // System dashboard - Organization focused
+  'dashboard.totalOrganizations': 'Total Organizations',
+  'dashboard.activeOrganizations': 'Active Organizations',
+  'dashboard.orgOwners': 'Organization Owners',
+  'dashboard.systemAdmins': 'System Admins',
+  'dashboard.systemSubtitle': 'Manage organizations, owners, and system administrators',
+  'dashboard.createOrganization': 'Create Organization',
+  'dashboard.createOrgDesc': 'Set up a new organization and assign an owner',
+  'dashboard.manageOrganizations': 'Manage Organizations',
+  'dashboard.manageOrgOwners': 'Manage Org Owners',
+  'dashboard.manageOrgOwnersDesc': 'View and manage organization owners',
+  'dashboard.viewAllOrganizations': 'View All Organizations',
+  'dashboard.systemAdminFooter': 'System administrators manage organizations and assign owners. Clinics are managed within each organization.',
+
   // QuickActions
   'dashboard.createNewClinic': 'Create New Clinic',
   'dashboard.createClinicDesc': 'Create a clinic and assign an admin',

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDoctors } from '@/hooks/useDoctors';
 import { useDoctorQueue } from '@/hooks/useQueue';
+import { useStartAppointment, useCompleteAppointment, useNoShowAppointment } from '@/hooks/useAppointments';
 import { QueueStatsCards } from '@/components/queue/QueueStatsCards';
 import { QueueTable } from '@/components/queue/QueueTable';
 import { Card, CardContent, Select, Loading } from '@/components/ui';
@@ -34,6 +35,10 @@ export const QueuePage = () => {
 
   const queue = queueData?.queue || [];
 
+  const startMutation = useStartAppointment();
+  const completeMutation = useCompleteAppointment();
+  const noShowMutation = useNoShowAppointment();
+
   // Doctor filter options for non-doctor roles
   const doctorOptions = useMemo(() => {
     const options = [{ value: '', label: t(QUEUE.ALL_DOCTORS) }];
@@ -47,16 +52,15 @@ export const QueuePage = () => {
   }, [allDoctors, t]);
 
   const handleStartConsultation = (item: QueueItem) => {
-    // For now, use the check-in mutation pattern — extend when backend provides status update
-    void item;
+    startMutation.mutate(item.appointment_id);
   };
 
   const handleComplete = (item: QueueItem) => {
-    void item;
+    completeMutation.mutate(item.appointment_id);
   };
 
   const handleMarkNoShow = (item: QueueItem) => {
-    void item;
+    noShowMutation.mutate(item.appointment_id);
   };
 
   return (
