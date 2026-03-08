@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
+import { useClinicContextStore } from '@/store/clinicContextStore';
 import { authApi } from '@/api/auth';
 import type { LoginRequest, ChangePasswordRequest, User, UserRole } from '@/types/auth';
 import { useNavigate } from 'react-router-dom';
@@ -206,7 +207,7 @@ export const useLogin = (options?: { skipNavigation?: boolean }) => {
 
       // Navigate to dashboard only if navigation is not skipped
       if (!options?.skipNavigation) {
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard', { replace: true, state: { fromLogin: true } });
       }
     },
     onError: (error: Error) => {
@@ -228,31 +229,21 @@ export const useLogout = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { logout: storeLogout, refreshToken } = useAuthStore();
+  const clearActiveClinic = useClinicContextStore((s) => s.clearActiveClinic);
+
+  const doLogout = () => {
+    storeLogout();
+    clearActiveClinic();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    queryClient.clear();
+    navigate('/login', { replace: true });
+  };
 
   return useMutation({
     mutationFn: () => authApi.logout(refreshToken || undefined),
-    onSuccess: () => {
-      // Clear auth store
-      storeLogout();
-      
-      // Clear tokens from localStorage
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      
-      // Clear all queries
-      queryClient.clear();
-      
-      // Navigate to login
-      navigate('/login', { replace: true });
-    },
-    onError: () => {
-      // Even if API call fails, logout locally
-      storeLogout();
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      queryClient.clear();
-      navigate('/login', { replace: true });
-    },
+    onSuccess: doLogout,
+    onError: doLogout,
   });
 };
 
@@ -291,6 +282,20 @@ export const useResetPassword = () => {
       // Navigate to login after successful password reset
       navigate('/login', { replace: true });
     },
+  });
+};
+
+/**
+ * Hook for fetching current user's organization memberships.
+ * GET /api/auth/me/memberships
+ */
+export const useMyMemberships = (options?: { enabled?: boolean }) => {
+  const { isAuthenticated } = useAuthStore();
+  return useQuery({
+    queryKey: ['auth', 'memberships'],
+    queryFn: authApi.getMemberships,
+    enabled: isAuthenticated && (options?.enabled !== false),
+    staleTime: 5 * 60 * 1000,
   });
 };
 

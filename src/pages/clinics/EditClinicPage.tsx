@@ -411,7 +411,7 @@ export const EditClinicPage = () => {
                             loadingText={t(CLINIC.LOADING_CLINIC_TYPES)}
                             options={(clinicTypes || []).map((type) => ({
                               value: type.clinic_type_id,
-                              label: type.name,
+                              label: typeof type.name === 'string' ? type.name : type.name.en,
                               color: type.color,
                             }))}
                             value={field.value || []}
@@ -618,7 +618,7 @@ export const EditClinicPage = () => {
                         loadingText={t(CLINIC.LOADING_CLINIC_TYPES)}
                         options={(clinicTypes || []).map((type) => ({
                           value: type.clinic_type_id,
-                          label: type.name,
+                          label: typeof type.name === 'string' ? type.name : type.name.en,
                           color: type.color,
                         }))}
                         value={field.value || []}

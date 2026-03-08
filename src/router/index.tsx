@@ -5,7 +5,7 @@ import { COMMON } from '@/i18n';
 import { LoginPage, ForgotPasswordPage, ResetPasswordPage, PatientRegisterPage, BookAppointmentAuthPage, AcceptInvitePage } from '@/pages/auth';
 import { LandingPage, PublicClinicDetailPage, BookAppointmentPage } from '@/pages/public';
 import { DashboardPage } from '@/pages/dashboard';
-import { OrganizationsPage, CreateOrganizationPage, EditOrganizationPage, OrganizationDetailPage, MyOrganizationPage, MyOrgClinicsPage, MyOrgMembersPage } from '@/pages/organizations';
+import { OrganizationsPage, CreateOrganizationPage, EditOrganizationPage, OrganizationDetailPage, MyOrganizationPage, MyOrgClinicsPage, MyOrgMembersPage, OrgClinicCreatePage, OrgClinicDetailPage } from '@/pages/organizations';
 import { ClinicsPage, CreateClinicPage, EditClinicPage, ClinicDetailPage, ClinicInfoPage, DeletedClinicsPage, ClinicCalendarConfigPage } from '@/pages/clinics';
 import { UsersPage, CreateUserPage, CreateClinicAdminPage, EditClinicAdminPage } from '@/pages/users';
 import { PatientsPage, CreatePatientPage, EditPatientPage, PatientDetailPage } from '@/pages/patients';
@@ -322,6 +322,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={['ORG_OWNER']}>
         <MainLayout>
           <MyOrgMembersPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-organization/clinics/create',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <OrgClinicCreatePage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-organization/clinics/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ORG_OWNER']}>
+        <MainLayout>
+          <OrgClinicDetailPage />
         </MainLayout>
       </ProtectedRoute>
     ),

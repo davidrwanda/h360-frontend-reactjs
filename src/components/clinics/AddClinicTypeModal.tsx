@@ -99,14 +99,12 @@ export const AddClinicTypeModal = ({
       }
 
       const result = await createMutation.mutateAsync({
-        name: data.name,
+        name: { en: data.name, ...(data.fr_name ? { fr: data.fr_name } : {}), ...(data.rw_name ? { rw: data.rw_name } : {}) },
         code: data.code,
-        description: data.description || undefined,
+        description: data.description ? { en: data.description, ...(data.fr_description ? { fr: data.fr_description } : {}), ...(data.rw_description ? { rw: data.rw_description } : {}) } : undefined,
         icon: data.icon || undefined,
         color: data.color || undefined,
         display_order: data.display_order ?? undefined,
-        is_active: data.is_active,
-        translations: Object.keys(translations).length > 0 ? translations : undefined,
       });
       showSuccess(t(CLINIC.TYPE_CREATED));
       reset();

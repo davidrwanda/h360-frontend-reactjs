@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useLogout } from '@/hooks/useAuth';
-import { MdMenu, MdNotifications, MdAccountCircle } from 'react-icons/md';
+import { useAuth, useLogout, useMyMemberships } from '@/hooks/useAuth';
+import { useClinicContextStore } from '@/store/clinicContextStore';
+import { MdMenu, MdNotifications, MdAccountCircle, MdSwapHoriz } from 'react-icons/md';
 import { LanguageSwitcher } from '@/components/ui';
 import { useTranslation, COMMON } from '@/i18n';
 
@@ -15,6 +16,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { data: memberships } = useMyMemberships();
+  const clearActiveClinic = useClinicContextStore((s) => s.clearActiveClinic);
+  const totalActiveClinics = memberships?.reduce(
+    (sum, org) => sum + org.memberships.filter((m) => m.status === 'active').length,
+    0
+  ) ?? 0;
+  const hasMultipleMemberships = (memberships?.length ?? 0) > 1 || totalActiveClinics > 1;
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -97,6 +105,19 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </p>
                     )}
                   </div>
+                  {hasMultipleMemberships && (
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        clearActiveClinic();
+                        navigate('/dashboard');
+                      }}
+                      className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-azure-dragon transition-colors hover:bg-white-smoke"
+                    >
+                      <MdSwapHoriz className="h-4 w-4" />
+                      Switch Workspace
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowUserMenu(false);

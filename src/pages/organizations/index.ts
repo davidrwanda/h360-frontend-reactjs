@@ -5,3 +5,5 @@ export { OrganizationDetailPage } from './OrganizationDetailPage';
 export { MyOrganizationPage } from './MyOrganizationPage';
 export { MyOrgClinicsPage } from './MyOrgClinicsPage';
 export { MyOrgMembersPage } from './MyOrgMembersPage';
+export { OrgClinicCreatePage } from './OrgClinicCreatePage';
+export { OrgClinicDetailPage } from './OrgClinicDetailPage';

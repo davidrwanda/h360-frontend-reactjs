@@ -1,38 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { clinicTypesApi, type ClinicTypeListParams, type CreateClinicTypeRequest, type UpdateClinicTypeRequest } from '@/api/clinicTypes';
+import {
+  clinicTypesApi,
+  type ClinicTypeListParams,
+  type CreateClinicTypeRequest,
+  type UpdateClinicTypeRequest,
+} from '@/api/clinic-types';
 
-/**
- * Hook to fetch clinic types list
- * Public endpoint - no authentication required
- */
 export const useClinicTypes = (params?: ClinicTypeListParams) => {
   return useQuery({
-    queryKey: ['clinic-types', 'list', params],
+    queryKey: ['clinic-types', params],
     queryFn: () => clinicTypesApi.list(params),
-    staleTime: 300000, // 5 minutes - clinic types don't change often
+    staleTime: 5 * 60_000,
   });
 };
 
-/**
- * Hook to fetch a single clinic type by ID
- * Public endpoint - no authentication required
- */
 export const useClinicType = (id: string | undefined) => {
   return useQuery({
     queryKey: ['clinic-types', id],
     queryFn: () => clinicTypesApi.getById(id!),
     enabled: !!id,
-    staleTime: 300000, // 5 minutes
   });
 };
 
-/**
- * Hook to create a new clinic type
- * Admin access required
- */
 export const useCreateClinicType = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: CreateClinicTypeRequest) => clinicTypesApi.create(data),
     onSuccess: () => {
@@ -41,32 +32,21 @@ export const useCreateClinicType = () => {
   });
 };
 
-/**
- * Hook to update a clinic type
- * Admin access required
- */
 export const useUpdateClinicType = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateClinicTypeRequest }) =>
       clinicTypesApi.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinic-types'] });
-      queryClient.invalidateQueries({ queryKey: ['clinic-types', variables.id] });
     },
   });
 };
 
-/**
- * Hook to deactivate (soft delete) a clinic type
- * Admin access required
- */
-export const useDeleteClinicType = () => {
+export const useDeactivateClinicType = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (id: string) => clinicTypesApi.delete(id),
+    mutationFn: (id: string) => clinicTypesApi.deactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinic-types'] });
     },

@@ -466,7 +466,7 @@ export const LandingPage = () => {
                 <option value="">{t(LANDING.CLINIC_TYPE_OPTIONAL)}</option>
                 {clinicTypes?.map((type) => (
                   <option key={type.clinic_type_id} value={type.clinic_type_id}>
-                    {type.name}
+                    {typeof type.name === 'string' ? type.name : type.name.en}
                   </option>
                 ))}
               </select>

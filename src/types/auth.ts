@@ -198,3 +198,22 @@ export interface AuthState {
 
 // LoginResponse - supports both ISD and legacy formats
 export type LoginResponse = ApiResponse<LoginResponseData>;
+
+// ─── Memberships ────────────────────────────────────────────────────────────
+
+/** One per-clinic role entry inside an organization */
+export interface ClinicMembership {
+  membership_id?: string;
+  clinic_id: string;
+  clinic_name?: string;
+  role: string;
+  status: 'active' | 'pending' | 'suspended';
+  joined_at?: string;
+}
+
+/** Top-level entry returned by GET /api/auth/me/memberships */
+export interface UserMembership {
+  organization_id: string;
+  organization_name: string;
+  memberships: ClinicMembership[];
+}

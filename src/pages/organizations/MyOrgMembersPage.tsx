@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrganization, useOrgMembers, useInviteOrgMember, useRemoveOrgMember, useResendOrgInvitation } from '@/hooks/useOrganizations';
+import { useOrgMembers, useInviteOrgMember, useRemoveOrgMember, useResendOrgInvitation } from '@/hooks/useOrganizations';
+import { useOrgClinics } from '@/hooks/useClinics';
 import { useToastStore } from '@/store/toastStore';
 import { useTranslation, ORGANIZATION, COMMON } from '@/i18n';
 import { Button, Card, CardHeader, CardTitle, CardContent, Loading, Input, Select, Modal } from '@/components/ui';
@@ -39,7 +40,7 @@ export const MyOrgMembersPage = () => {
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; email: string } | null>(null);
 
   // Hooks
-  const { data: orgData } = useOrganization(orgId);
+  const { data: clinicsData } = useOrgClinics(orgId || undefined, { limit: 100 });
   const { data, isLoading, error } = useOrgMembers(orgId, { limit: 50 });
   const inviteMutation = useInviteOrgMember();
   const removeMutation = useRemoveOrgMember();
@@ -47,7 +48,7 @@ export const MyOrgMembersPage = () => {
 
   const members = data?.data || [];
 
-  const orgClinics = orgData?.clinics || [];
+  const orgClinics = clinicsData?.data || [];
   const needsClinic = inviteRole !== 'ORG_OWNER';
 
   const toggleClinicId = (clinicId: string) => {
@@ -268,17 +269,17 @@ export const MyOrgMembersPage = () => {
                   <div className="space-y-1.5 max-h-40 overflow-y-auto rounded-md border border-carbon/20 p-2">
                     {orgClinics.map((clinic) => (
                       <label
-                        key={clinic.id}
+                        key={clinic.clinic_id}
                         className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-carbon/5 cursor-pointer"
                       >
                         <input
                           type="checkbox"
-                          checked={inviteClinicIds.includes(clinic.id)}
-                          onChange={() => toggleClinicId(clinic.id)}
+                          checked={inviteClinicIds.includes(clinic.clinic_id)}
+                          onChange={() => toggleClinicId(clinic.clinic_id)}
                           className="h-4 w-4 rounded border-carbon/30 text-azure-dragon focus:ring-azure-dragon/30"
                         />
                         <MdBusiness className="h-3.5 w-3.5 text-carbon/40 flex-shrink-0" />
-                        <span className="text-sm text-carbon">{clinic.facility_name}</span>
+                        <span className="text-sm text-carbon">{clinic.name}</span>
                       </label>
                     ))}
                   </div>

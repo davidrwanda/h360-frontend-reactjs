@@ -5,6 +5,7 @@ import type {
   ChangePasswordRequest,
   User,
   RefreshTokenResponse,
+  UserMembership,
 } from '@/types/auth';
 import { extractResponseData, wrapRequest } from '@/types/api';
 
@@ -100,6 +101,15 @@ export const authApi = {
       return { message: responseData.meta.message };
     }
     return extractResponseData<{ message: string }>(response.data);
+  },
+
+  /**
+   * Get current user's organization memberships
+   * GET /api/auth/me/memberships
+   */
+  getMemberships: async (): Promise<UserMembership[]> => {
+    const response = await apiClient.get('/auth/me/memberships');
+    return extractResponseData<UserMembership[]>(response.data);
   },
 
   /**

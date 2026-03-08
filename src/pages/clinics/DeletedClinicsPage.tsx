@@ -23,8 +23,8 @@ export const DeletedClinicsPage = () => {
     search: search || undefined,
     city: cityFilter || undefined,
     state: stateFilter || undefined,
-    sortBy: 'updated_at',
-    sortOrder: 'DESC',
+    sort_by: 'updated_at',
+    sort_order: 'DESC',
   });
 
   const activateMutation = useActivateClinic();

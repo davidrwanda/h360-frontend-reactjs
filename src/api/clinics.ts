@@ -1,19 +1,116 @@
 import apiClient from './client';
 import { extractResponseData, wrapRequest } from '@/types/api';
-import type { ApiResponse } from '@/types/auth';
 import type { TenantInfo, UpdateTenantSettingsRequest } from '@/types/organization';
 
-export type BookingMode = 'both_required' | 'doctor_required' | 'service_required' | 'flexible' | 'time_slot_only';
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+export type BookingMode =
+  | 'both_required'
+  | 'doctor_required'
+  | 'service_required'
+  | 'flexible'
+  | 'time_slot_only';
+
+export type ClinicVisibility = 'public' | 'unlisted' | 'private';
+
+export type DayOfWeek =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+// ─── Operating Hours ─────────────────────────────────────────────────────────
+
+export interface DayHours {
+  open?: string;
+  close?: string;
+  closed?: boolean;
+}
 
 export interface OperatingHours {
-  monday?: { open?: string; close?: string; closed?: boolean };
-  tuesday?: { open?: string; close?: string; closed?: boolean };
-  wednesday?: { open?: string; close?: string; closed?: boolean };
-  thursday?: { open?: string; close?: string; closed?: boolean };
-  friday?: { open?: string; close?: string; closed?: boolean };
-  saturday?: { open?: string; close?: string; closed?: boolean };
-  sunday?: { open?: string; close?: string; closed?: boolean };
+  monday?: DayHours;
+  tuesday?: DayHours;
+  wednesday?: DayHours;
+  thursday?: DayHours;
+  friday?: DayHours;
+  saturday?: DayHours;
+  sunday?: DayHours;
 }
+
+// ─── Timetable ───────────────────────────────────────────────────────────────
+
+export interface TimetableTime {
+  hours: number;
+  minutes: number;
+  time: number; // hours * 60 + minutes
+}
+
+export interface TimetableSlot {
+  timetable_id: string;
+  clinic_id: string;
+  day_of_week: DayOfWeek;
+  start_time: TimetableTime;
+  end_time: TimetableTime;
+  notes?: string;
+  is_active: boolean;
+  slot_order?: number;
+  formatted_time?: string;
+  created_by?: string;
+  updated_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TimetableSlotInput {
+  day_of_week: DayOfWeek;
+  start_time: TimetableTime;
+  end_time: TimetableTime;
+  notes?: string;
+}
+
+// ISD §3 — POST /api/clinics/:id/timetables/initialize
+export interface TimetableInitTimeSlot {
+  start_time: string; // "HH:MM"
+  end_time: string;   // "HH:MM"
+}
+
+export interface TimetableScheduleDay {
+  day_of_week: DayOfWeek;
+  time_slots: TimetableInitTimeSlot[];
+}
+
+export interface InitializeTimetableRequest {
+  schedule: TimetableScheduleDay[];
+  replace_existing?: boolean;
+  is_active?: boolean;
+}
+
+// ─── Clinic Types (embedded) ─────────────────────────────────────────────────
+
+export interface ClinicTypeRef {
+  clinic_type_id: string;
+  name: string | { en: string; fr?: string; rw?: string };
+  code: string;
+  icon?: string;
+  color?: string;
+  display_order?: number;
+  is_active?: boolean;
+  is_system?: boolean;
+}
+
+// ─── FHIR ────────────────────────────────────────────────────────────────────
+
+export interface ClinicFhirStatus {
+  fhir_validated: boolean;
+  fhir_last_validated_at: string | null;
+  errors: string[];
+  warnings: string[];
+}
+
+// ─── Clinic ──────────────────────────────────────────────────────────────────
 
 export interface Clinic {
   clinic_id: string;
@@ -45,6 +142,7 @@ export interface Clinic {
   send_email_reminders?: boolean;
   reminder_hours_before?: number;
   is_active: boolean;
+  is_license_expired?: boolean;
   established_date?: string;
   license_number?: string;
   license_expiry_date?: string;
@@ -53,30 +151,35 @@ export interface Clinic {
   image_url?: string;
   tax_id?: string;
   registration_number?: string;
+  organization_id?: string;
+  parent_clinic_id?: string;
   type_ids?: string[];
-  types?: Array<{
-    clinic_type_id: string;
-    name: string;
-    code: string;
-    icon?: string;
-    color?: string;
-  }>;
-  clinic_types?: Array<{
-    clinic_type_id: string;
-    name: string;
-    code: string;
-    description?: string;
-    icon?: string;
-    color?: string;
-    display_order: number;
-    is_active: boolean;
-    is_system: boolean;
-    created_at: string;
-    updated_at: string;
-  }>;
+  types?: ClinicTypeRef[];
+  clinic_types?: ClinicTypeRef[];
+  // Directory / SEO
+  claim_status?: string;
+  seo_slug?: string;
+  seo_title?: string;
+  seo_description?: string;
+  visibility?: ClinicVisibility;
+  profile_completeness?: number;
+  // FHIR
+  fhir_identifiers?: unknown;
+  fhir_organization_type?: string;
+  fhir_service_categories?: unknown;
+  fhir_validated?: boolean;
+  fhir_last_validated_at?: string | null;
+  // Subscription / feature flags
+  subscription_plan?: string;
+  feature_flags?: string[];
+  // Audit
+  created_by?: string;
+  updated_by?: string;
   created_at: string;
   updated_at: string;
 }
+
+// ─── Requests ────────────────────────────────────────────────────────────────
 
 export interface CreateClinicRequest {
   name: string;
@@ -115,41 +218,33 @@ export interface CreateClinicRequest {
   image_url?: string;
   tax_id?: string;
   registration_number?: string;
+  organization_id?: string;
+  parent_clinic_id?: string;
   type_ids?: string[];
-  // Admin fields (optional — creates clinic admin in one request)
+  fhir_identifiers?: unknown;
+  fhir_organization_type?: string;
+  fhir_service_categories?: unknown;
+  // Auto-creates admin user when provided
   admin_email?: string;
   admin_first_name?: string;
   admin_last_name?: string;
   admin_phone?: string;
 }
 
-export interface UpdateClinicRequest extends Partial<Omit<CreateClinicRequest, 'admin_email' | 'admin_first_name' | 'admin_last_name' | 'admin_phone'>> {
-  is_active?: boolean;
+export interface UpdateClinicRequest
+  extends Partial<
+    Omit<
+      CreateClinicRequest,
+      'admin_email' | 'admin_first_name' | 'admin_last_name' | 'admin_phone'
+    >
+  > {
+  seo_slug?: string;
+  seo_title?: string;
+  seo_description?: string;
+  visibility?: ClinicVisibility;
 }
 
-export interface TimeSlot {
-  start_time: { hour: number; minute: number };
-  end_time: { hour: number; minute: number };
-  slot_order: number;
-}
-
-export interface DaySchedule {
-  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  time_slots: TimeSlot[];
-}
-
-export interface InitializeTimetableRequest {
-  schedules: DaySchedule[];
-  replace_existing?: boolean;
-  is_active?: boolean;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
+// ─── Params ──────────────────────────────────────────────────────────────────
 
 export interface ClinicListParams {
   page?: number;
@@ -159,8 +254,21 @@ export interface ClinicListParams {
   state?: string;
   country?: string;
   is_active?: boolean;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  organization_id?: string;
+  booking_mode?: BookingMode;
+  allow_online_booking?: boolean;
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
+}
+
+/** Params for GET /api/organizations/:id/clinics (ISD §3) */
+export interface OrgClinicListParams {
+  search?: string;
+  is_active?: boolean;
+  page?: number;
+  limit?: number;
+  sort_by?: 'name' | 'created_at' | 'city' | 'profile_completeness';
+  sort_order?: 'ASC' | 'DESC';
 }
 
 export interface NearestClinicsParams {
@@ -170,175 +278,176 @@ export interface NearestClinicsParams {
   limit?: number;
 }
 
+// ─── Paginated Response ───────────────────────────────────────────────────────
+
+export interface PaginatedClinics {
+  data: Clinic[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+function extractPaginatedClinics(raw: unknown): PaginatedClinics {
+  if (raw && typeof raw === 'object' && 'meta' in raw) {
+    const envelope = raw as {
+      data: Clinic[];
+      meta: { total?: number; page?: number; limit?: number; totalPages?: number; pagination?: { total: number; page: number; limit: number; total_pages: number } };
+    };
+    const p = envelope.meta?.pagination;
+    if (p) {
+      return { data: envelope.data, total: p.total, page: p.page, limit: p.limit, totalPages: p.total_pages };
+    }
+    return {
+      data: Array.isArray(envelope.data) ? envelope.data : [],
+      total: envelope.meta?.total ?? 0,
+      page: envelope.meta?.page ?? 1,
+      limit: envelope.meta?.limit ?? 20,
+      totalPages: envelope.meta?.totalPages ?? 0,
+    };
+  }
+  // Legacy flat format: { data: [...], total, page, limit, totalPages }
+  if (raw && typeof raw === 'object' && 'data' in raw && Array.isArray((raw as PaginatedClinics).data)) {
+    return raw as PaginatedClinics;
+  }
+  return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+}
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+
 export const clinicsApi = {
-  /**
-   * Create a new clinic
-   * POST /api/clinics
-   * Access: Admin, Manager
-   */
+  // ── Clinic CRUD ──────────────────────────────────────────────────────────
+
+  /** POST /api/clinics — Create clinic (auto-creates admin if admin_* provided). Roles: ADMIN, MANAGER */
   create: async (data: CreateClinicRequest): Promise<Clinic> => {
-    const response = await apiClient.post<ApiResponse<Clinic> | Clinic>('/clinics', data);
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic>).data;
-    }
-    return response.data as Clinic;
+    const response = await apiClient.post('/clinics', wrapRequest(data));
+    return extractResponseData<Clinic>(response.data);
   },
 
-  /**
-   * Get list of clinics with pagination and filters
-   * GET /api/clinics
-   * Access: Admin, Manager, Receptionist
-   */
-  list: async (params?: ClinicListParams): Promise<PaginatedResponse<Clinic>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Clinic>> | PaginatedResponse<Clinic>>(
-      '/clinics',
-      { params }
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<PaginatedResponse<Clinic>>).data;
-    }
-    return response.data as PaginatedResponse<Clinic>;
+  /** GET /api/clinics — List clinics. Public (reduced) or auth (full) */
+  list: async (params?: ClinicListParams): Promise<PaginatedClinics> => {
+    const response = await apiClient.get('/clinics', { params });
+    return extractPaginatedClinics(response.data);
   },
 
-  /**
-   * Get clinic by ID
-   * GET /api/clinics/:id
-   * Access: Admin, Manager, Receptionist
-   */
+  /** GET /api/organizations/:id/clinics — ORG_OWNER scoped clinic list (ISD §3) */
+  listByOrganization: async (orgId: string, params?: OrgClinicListParams): Promise<PaginatedClinics> => {
+    const response = await apiClient.get(`/organizations/${orgId}/clinics`, { params });
+    return extractPaginatedClinics(response.data);
+  },
+
+  /** GET /api/clinics/:id — Single clinic */
   getById: async (id: string): Promise<Clinic> => {
-    const response = await apiClient.get<ApiResponse<Clinic> | Clinic>(`/clinics/${id}`);
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic>).data;
-    }
-    return response.data as Clinic;
+    const response = await apiClient.get(`/clinics/${id}`);
+    return extractResponseData<Clinic>(response.data);
   },
 
-  /**
-   * Update clinic
-   * PATCH /api/clinics/:id
-   * Access: Admin, Manager
-   */
+  /** PATCH /api/clinics/:id — Update clinic. Roles: ADMIN, MANAGER */
   update: async (id: string, data: UpdateClinicRequest): Promise<Clinic> => {
-    const response = await apiClient.patch<ApiResponse<Clinic> | Clinic>(`/clinics/${id}`, data);
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic>).data;
-    }
-    return response.data as Clinic;
+    const response = await apiClient.patch(`/clinics/${id}`, wrapRequest(data));
+    return extractResponseData<Clinic>(response.data);
   },
 
-  /**
-   * Deactivate clinic (soft delete)
-   * DELETE /api/clinics/:id or PATCH /api/clinics/:id with {is_active: false}
-   * Access: Admin, Manager
-   */
-  delete: async (id: string): Promise<{ message: string }> => {
-    const response = await apiClient.delete<ApiResponse<{ message: string }> | { message: string }>(
-      `/clinics/${id}`
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<{ message: string }>).data;
-    }
-    return response.data as { message: string };
+  /** DELETE /api/clinics/:id — Soft delete. Roles: ADMIN */
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/clinics/${id}`);
   },
 
-  /**
-   * Deactivate clinic (set is_active to false)
-   * PATCH /api/clinics/:id
-   * Access: Admin, Manager
-   */
-  deactivate: async (id: string): Promise<Clinic> => {
-    const response = await apiClient.patch<ApiResponse<Clinic> | Clinic>(`/clinics/${id}`, {
-      is_active: false,
-    });
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic>).data;
-    }
-    return response.data as Clinic;
+  /** GET /api/clinics/deleted — Soft-deleted clinics. Roles: ADMIN */
+  listDeleted: async (params?: ClinicListParams): Promise<PaginatedClinics> => {
+    const response = await apiClient.get('/clinics/deleted', { params });
+    return extractPaginatedClinics(response.data);
   },
 
-  /**
-   * Activate clinic (set is_active to true)
-   * PATCH /api/clinics/:id
-   * Access: Admin, Manager
-   */
-  activate: async (id: string): Promise<Clinic> => {
-    const response = await apiClient.patch<ApiResponse<Clinic> | Clinic>(`/clinics/${id}`, {
-      is_active: true,
-    });
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic>).data;
-    }
-    return response.data as Clinic;
-  },
-
-  /**
-   * Get list of deactivated clinics
-   * GET /api/clinics/deleted
-   * Access: Admin role only
-   */
-  listDeleted: async (params?: ClinicListParams): Promise<PaginatedResponse<Clinic>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Clinic>> | PaginatedResponse<Clinic>>(
-      '/clinics/deleted',
-      { params }
-    );
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<PaginatedResponse<Clinic>>).data;
-    }
-    return response.data as PaginatedResponse<Clinic>;
-  },
-
-  /**
-   * Find nearest clinics by geolocation
-   * GET /api/clinics/nearest
-   * Access: Public
-   */
+  /** GET /api/clinics/nearest — Geo search. Public */
   nearest: async (params: NearestClinicsParams): Promise<Clinic[]> => {
-    const response = await apiClient.get<ApiResponse<Clinic[]> | Clinic[]>(
-      '/clinics/nearest',
-      { params }
-    );
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<Clinic[]>).data;
-    }
-    return response.data as Clinic[];
+    const response = await apiClient.get('/clinics/nearest', { params });
+    return extractResponseData<Clinic[]>(response.data);
   },
 
-  /**
-   * Initialize clinic timetable (bulk create schedules)
-   * POST /api/clinics/:clinicId/timetables/initialize
-   * Access: Admin, Manager
-   */
-  initializeTimetable: async (
-    clinicId: string,
-    data: InitializeTimetableRequest
-  ): Promise<{ message: string }> => {
-    const response = await apiClient.post<
-      ApiResponse<{ message: string }> | { message: string }
-    >(`/clinics/${clinicId}/timetables/initialize`, data);
-    // Handle wrapped response
-    if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-      return (response.data as ApiResponse<{ message: string }>).data;
-    }
-    return response.data as { message: string };
-  },
+  // ── Tenant ───────────────────────────────────────────────────────────────
 
-  /** GET /api/clinics/:id/tenant-info — Get Tenant Isolation Status (ISD §1.3) */
+  /** GET /api/clinics/:id/tenant-info — Tenant record counts + sharing settings. Roles: SYSTEM, ADMIN */
   getTenantInfo: async (id: string): Promise<TenantInfo> => {
     const response = await apiClient.get(`/clinics/${id}/tenant-info`);
     return extractResponseData<TenantInfo>(response.data);
   },
 
-  /** PATCH /api/clinics/:id/tenant-settings — Update Tenant Settings (ISD §1.3) */
+  /** PATCH /api/clinics/:id/tenant-settings — Update sharing settings. Roles: SYSTEM, ADMIN */
   updateTenantSettings: async (id: string, data: UpdateTenantSettingsRequest): Promise<TenantInfo> => {
     const response = await apiClient.patch(`/clinics/${id}/tenant-settings`, wrapRequest(data));
     return extractResponseData<TenantInfo>(response.data);
+  },
+
+  // ── Timetable ────────────────────────────────────────────────────────────
+
+  /**
+   * POST /api/clinics/:id/timetables/initialize — Bulk setup (onboarding).
+   * Replaces existing slots. Roles: ADMIN, MANAGER
+   */
+  initializeTimetable: async (clinicId: string, data: InitializeTimetableRequest): Promise<void> => {
+    await apiClient.post(`/clinics/${clinicId}/timetables/initialize`, wrapRequest(data));
+  },
+
+  /** GET /api/clinics/:id/timetables — All slots. Auth required */
+  listTimetableSlots: async (clinicId: string): Promise<TimetableSlot[]> => {
+    const response = await apiClient.get(`/clinics/${clinicId}/timetables`);
+    return extractResponseData<TimetableSlot[]>(response.data);
+  },
+
+  /** GET /api/clinics/:id/timetables/day/:dayOfWeek — Slots for one day */
+  getTimetableByDay: async (clinicId: string, day: DayOfWeek): Promise<TimetableSlot[]> => {
+    const response = await apiClient.get(`/clinics/${clinicId}/timetables/day/${day}`);
+    return extractResponseData<TimetableSlot[]>(response.data);
+  },
+
+  /** GET /api/clinics/:id/timetables/:slotId — Single slot */
+  getTimetableSlot: async (clinicId: string, slotId: string): Promise<TimetableSlot> => {
+    const response = await apiClient.get(`/clinics/${clinicId}/timetables/${slotId}`);
+    return extractResponseData<TimetableSlot>(response.data);
+  },
+
+  /** POST /api/clinics/:id/timetables — Add single slot. Roles: ADMIN, MANAGER */
+  addTimetableSlot: async (clinicId: string, data: TimetableSlotInput): Promise<TimetableSlot> => {
+    const response = await apiClient.post(`/clinics/${clinicId}/timetables`, wrapRequest(data));
+    return extractResponseData<TimetableSlot>(response.data);
+  },
+
+  /** PATCH /api/clinics/:id/timetables/:slotId — Update slot. Roles: ADMIN, MANAGER */
+  updateTimetableSlot: async (
+    clinicId: string,
+    slotId: string,
+    data: Partial<TimetableSlotInput>
+  ): Promise<TimetableSlot> => {
+    const response = await apiClient.patch(
+      `/clinics/${clinicId}/timetables/${slotId}`,
+      wrapRequest(data)
+    );
+    return extractResponseData<TimetableSlot>(response.data);
+  },
+
+  /** DELETE /api/clinics/:id/timetables/:slotId — Remove slot (204). Roles: ADMIN, MANAGER */
+  deleteTimetableSlot: async (clinicId: string, slotId: string): Promise<void> => {
+    await apiClient.delete(`/clinics/${clinicId}/timetables/${slotId}`);
+  },
+
+  // ── FHIR ─────────────────────────────────────────────────────────────────
+
+  /** GET /api/clinics/:id/fhir — Export FHIR R4 Organization JSON. Any auth */
+  getFhir: async (id: string): Promise<unknown> => {
+    const response = await apiClient.get(`/clinics/${id}/fhir`);
+    return response.data;
+  },
+
+  /** GET /api/clinics/:id/fhir/status — Last validation result. Any auth */
+  getFhirStatus: async (id: string): Promise<ClinicFhirStatus> => {
+    const response = await apiClient.get(`/clinics/${id}/fhir/status`);
+    return extractResponseData<ClinicFhirStatus>(response.data);
+  },
+
+  /** POST /api/clinics/:id/fhir/validate — Re-run validation. Roles: ADMIN, MANAGER */
+  validateFhir: async (id: string): Promise<ClinicFhirStatus> => {
+    const response = await apiClient.post(`/clinics/${id}/fhir/validate`);
+    return extractResponseData<ClinicFhirStatus>(response.data);
   },
 };

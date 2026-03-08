@@ -34,8 +34,8 @@ export const ClinicsPage = () => {
     state: stateFilter || undefined,
     country: countryFilter || undefined,
     is_active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
-    sortBy: sortBy || undefined,
-    sortOrder: sortOrder || undefined,
+    sort_by: sortBy || undefined,
+    sort_order: (sortOrder || undefined) as 'ASC' | 'DESC' | undefined,
   });
 
   const hasActiveFilters = 
