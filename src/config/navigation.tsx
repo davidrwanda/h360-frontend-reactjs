@@ -14,6 +14,9 @@ import {
   MdAccountCircle,
   MdSchedule,
   MdCorporateFare,
+  MdPayment,
+  MdSearch,
+  MdExtension,
 } from 'react-icons/md';
 import type { NavigationConfig } from '@/types/navigation';
 import { NAVIGATION } from '@/i18n';
@@ -246,17 +249,21 @@ export const getFilteredNavigation = (
     return orgOwnerMenu;
   }
 
-  // SYSTEM users see: Dashboard, Organizations, Users (System Admins only), Activity Logs, Settings
+  // SYSTEM users see: Dashboard, Organizations, Users, Plans, Directory Admin, Integrations, Activity Logs, Settings
   // Clinics are accessed through the Organization detail page, not a separate nav item
   if (userType === 'SYSTEM' || normalizedRole === 'ADMIN') {
     const systemMenu: NavigationConfig = [
       { id: 'dashboard', label: translate(NAVIGATION.DASHBOARD), path: '/dashboard', icon: MdDashboard },
       { id: 'divider-1', label: '', path: '' },
       { id: 'organizations', label: translate(NAVIGATION.ORGANIZATIONS), path: '/organizations', icon: MdCorporateFare },
+      { id: 'plans', label: translate(NAVIGATION.PLANS), path: '/system-admins/plans', icon: MdPayment },
       { id: 'divider-2', label: '', path: '' },
       { id: 'users', label: translate(NAVIGATION.USERS), path: '/users', icon: MdPerson },
       { id: 'activity-logs', label: translate(NAVIGATION.ACTIVITY_LOGS), path: '/activity-logs', icon: MdHistory },
       { id: 'divider-3', label: '', path: '' },
+      { id: 'directory', label: translate(NAVIGATION.DIRECTORY), path: '/admin/claims', icon: MdSearch },
+      { id: 'integrations', label: translate(NAVIGATION.INTEGRATIONS), path: '/integrations', icon: MdExtension },
+      { id: 'divider-4', label: '', path: '' },
       { id: 'settings', label: translate(NAVIGATION.SETTINGS), path: '/settings', icon: MdSettings },
     ];
     return systemMenu;
@@ -326,6 +333,9 @@ export const getFilteredNavigation = (
       const item = filtered.find(i => i.id === id);
       if (item) reordered.push(item);
     });
+
+    // Integrations (API Keys, Webhooks)
+    reordered.push({ id: 'integrations', label: translate(NAVIGATION.INTEGRATIONS), path: '/integrations', icon: MdExtension });
 
     // Add divider
     reordered.push({ id: 'divider-5', label: '', path: '' });

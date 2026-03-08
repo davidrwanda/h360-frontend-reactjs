@@ -6,6 +6,8 @@ export * from './public';
 export * from './dashboard';
 // Organizations
 export * from './organizations';
+// Onboarding
+export * from './onboarding';
 // Clinics
 export * from './clinics';
 // Users
@@ -24,5 +26,9 @@ export * from './scheduling';
 export * from './settings';
 // System
 export * from './system';
+// Integrations
+export * from './integrations';
+// Directory
+export * from './directory';
 // Common
 export * from './common';

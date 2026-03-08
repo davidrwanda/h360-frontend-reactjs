@@ -133,11 +133,33 @@ export const activityLogsApi = {
     const response = await apiClient.get<
       ApiResponse<PaginatedResponse<ActivityLog>> | PaginatedResponse<ActivityLog>
     >(`/activity-logs/entity/${entityType}/${entityId}`, { params });
-    
+
     // Handle wrapped response
     if (typeof response.data === 'object' && 'success' in response.data && response.data.success) {
       return (response.data as ApiResponse<PaginatedResponse<ActivityLog>>).data;
     }
     return response.data as PaginatedResponse<ActivityLog>;
+  },
+
+  /**
+   * Export activity logs as CSV or JSON
+   * GET /api/activity-logs/export
+   * Auth: ADMIN
+   * ISD §8.3
+   */
+  export: async (params?: {
+    format?: 'csv' | 'json';
+    start_date?: string;
+    end_date?: string;
+    action_type?: ActionType;
+    entity_type?: EntityType;
+    clinic_id?: string;
+    user_id?: string;
+  }): Promise<Blob> => {
+    const response = await apiClient.get('/activity-logs/export', {
+      params: { format: 'csv', ...params },
+      responseType: 'blob',
+    });
+    return response.data as Blob;
   },
 };

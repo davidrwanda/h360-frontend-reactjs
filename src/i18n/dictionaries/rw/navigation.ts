@@ -18,4 +18,11 @@ export const navigation: Record<string, string> = {
   'navigation.organizations': 'Imiryango',
   'navigation.myOrganization': 'Umuryango Wanjye',
   'navigation.members': 'Abanyamuryango',
+  'navigation.plans': 'Gahunda',
+  'navigation.systemAdmins': 'Abayobozi ba Sisitemu',
+  'navigation.directory': 'Ububiko',
+  'navigation.integrations': 'Guhuza Sisitemu',
+  'navigation.apiKeys': 'Impfunguzo za API',
+  'navigation.webhooks': 'Webhooks',
+  'navigation.onboarding': 'Kwinjira',
 };

@@ -15,6 +15,8 @@ import { profileEn } from './profile';
 import { timetableEn } from './timetable';
 import { queueEn } from './queue';
 import { organizationEn } from './organization';
+import { directoryEn } from './directory';
+import { integrationsEn } from './integrations';
 import type { Dictionary } from '../../types';
 
 export const en: Dictionary = {
@@ -35,4 +37,6 @@ export const en: Dictionary = {
   ...timetableEn,
   ...queueEn,
   ...organizationEn,
+  ...directoryEn,
+  ...integrationsEn,
 };

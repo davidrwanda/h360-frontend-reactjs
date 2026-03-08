@@ -2,21 +2,20 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useUpdateUser } from '@/hooks/useUsers';
+import { useUpdateSystemAdmin } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson } from 'react-icons/md';
-import type { User } from '@/api/users';
+import type { SystemAdmin } from '@/types/organization';
 import { useTranslation, USERS } from '@/i18n';
 
 interface EditSystemAdminFormData {
-  first_name: string;
-  last_name: string;
+  name: string;
   email: string;
 }
 
 interface EditSystemAdminFormProps {
-  admin: User;
+  admin: SystemAdmin;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -27,15 +26,13 @@ export const EditSystemAdminForm = ({
   onCancel,
 }: EditSystemAdminFormProps) => {
   const [error, setError] = useState<string | null>(null);
-  const updateMutation = useUpdateUser();
+  const updateMutation = useUpdateSystemAdmin();
   const { success: showSuccess, error: showError } = useToastStore();
   const { t } = useTranslation();
 
   const editSystemAdminSchema = useMemo(() => z.object({
-    first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
-    last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
+    name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
     email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
-    // System admins don't have clinic_id (global admins)
   }), [t]);
 
   const {
@@ -47,12 +44,10 @@ export const EditSystemAdminForm = ({
     resolver: zodResolver(editSystemAdminSchema),
   });
 
-  // Update form when admin data loads
   useEffect(() => {
     if (admin) {
       reset({
-        first_name: admin.first_name,
-        last_name: admin.last_name,
+        name: admin.name || '',
         email: admin.email,
       });
     }
@@ -62,13 +57,10 @@ export const EditSystemAdminForm = ({
     setError(null);
 
     try {
+      // ISD §7.6 PATCH: only name, password, is_active accepted
       await updateMutation.mutateAsync({
-        id: admin.user_id,
-        data: {
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-        },
+        id: admin.id,
+        data: { name: data.name },
       });
 
       showSuccess(t(USERS.SYSTEM_ADMIN_UPDATED_SUCCESS));
@@ -101,19 +93,12 @@ export const EditSystemAdminForm = ({
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input
-                label={t(USERS.FIRST_NAME)}
+                label={t(USERS.TH_NAME)}
                 placeholder={t(USERS.ENTER_FIRST_NAME)}
-                error={errors.first_name?.message}
+                error={errors.name?.message}
                 required
-                {...register('first_name')}
-              />
-
-              <Input
-                label={t(USERS.LAST_NAME)}
-                placeholder={t(USERS.ENTER_LAST_NAME)}
-                error={errors.last_name?.message}
-                required
-                {...register('last_name')}
+                className="md:col-span-2"
+                {...register('name')}
               />
 
               <Input
@@ -122,6 +107,8 @@ export const EditSystemAdminForm = ({
                 placeholder={t(USERS.ENTER_EMAIL)}
                 error={errors.email?.message}
                 required
+                disabled
+                className="md:col-span-2"
                 {...register('email')}
               />
             </div>

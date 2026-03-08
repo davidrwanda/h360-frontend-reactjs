@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useClinics } from '@/hooks/useClinics';
 import { useOrganizations, useOrgMembers } from '@/hooks/useOrganizations';
-import { useUsers, useClinicAdmins, useSystemAdmins, useOrgOwners, useDeactivateUser, useActivateUser } from '@/hooks/useUsers';
+import { useUsers, useClinicAdmins, useSystemAdmins, useOrgOwners, useDeactivateUser, useActivateUser, useDeactivateSystemAdmin, useUpdateSystemAdmin } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { useTranslation, USERS, CLINIC, COMMON } from '@/i18n';
 import { ClinicAdminsTable } from '@/components/users/ClinicAdminsTable';
@@ -13,6 +13,7 @@ import { EditSystemAdminForm } from '@/components/users/EditSystemAdminForm';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, DeleteConfirmationModal, Select, Modal } from '@/components/ui';
 import { MdAdd, MdSearch, MdFilterList, MdClear, MdPerson } from 'react-icons/md';
 import type { User } from '@/api/users';
+import type { SystemAdmin } from '@/types/organization';
 
 export const UsersPage = () => {
   const navigate = useNavigate();
@@ -67,9 +68,9 @@ export const UsersPage = () => {
   const [systemAdminSearch, setSystemAdminSearch] = useState('');
   const [systemAdminStatusFilter, setSystemAdminStatusFilter] = useState<string>('active');
   const [systemAdminPage, setSystemAdminPage] = useState(1);
-  const [systemAdminToDelete, setSystemAdminToDelete] = useState<User | null>(null);
+  const [systemAdminToDelete, setSystemAdminToDelete] = useState<SystemAdmin | null>(null);
   const [showCreateSystemAdminModal, setShowCreateSystemAdminModal] = useState(false);
-  const [systemAdminToEdit, setSystemAdminToEdit] = useState<User | null>(null);
+  const [systemAdminToEdit, setSystemAdminToEdit] = useState<SystemAdmin | null>(null);
 
   // Org Owners state
   const [orgOwnerSearch, setOrgOwnerSearch] = useState('');
@@ -137,14 +138,12 @@ export const UsersPage = () => {
           limit,
           search: systemAdminSearch || undefined,
           is_active: systemAdminStatusFilter === 'active' ? true : systemAdminStatusFilter === 'inactive' ? false : undefined,
-          sortBy: 'created_at',
-          sortOrder: 'DESC',
         }
       : undefined
   );
 
-  const systemAdminDeleteMutation = useDeactivateUser();
-  const systemAdminActivateMutation = useActivateUser();
+  const systemAdminDeleteMutation = useDeactivateSystemAdmin();
+  const systemAdminActivateMutation = useUpdateSystemAdmin();
 
   // Org Owners hooks (only for SYSTEM users)
   // When no org selected: fetch all ORG_OWNER users via /api/users
@@ -261,15 +260,15 @@ export const UsersPage = () => {
   };
 
   // System Admins handlers
-  const handleSystemAdminEdit = (admin: User) => {
+  const handleSystemAdminEdit = (admin: SystemAdmin) => {
     setSystemAdminToEdit(admin);
   };
 
-  const handleSystemAdminDelete = (admin: User) => {
+  const handleSystemAdminDelete = (admin: SystemAdmin) => {
     setSystemAdminToDelete(admin);
   };
 
-  const handleSystemAdminActivate = (admin: User) => {
+  const handleSystemAdminActivate = (admin: SystemAdmin) => {
     setSystemAdminToDelete(admin);
   };
 
@@ -277,7 +276,7 @@ export const UsersPage = () => {
     if (!systemAdminToDelete) return;
 
     try {
-      await systemAdminDeleteMutation.mutateAsync(systemAdminToDelete.user_id);
+      await systemAdminDeleteMutation.mutateAsync(systemAdminToDelete.id);
       showSuccess(t(USERS.SYSTEM_ADMIN_DEACTIVATED));
       setSystemAdminToDelete(null);
     } catch (error) {
@@ -291,7 +290,7 @@ export const UsersPage = () => {
     if (!systemAdminToDelete) return;
 
     try {
-      await systemAdminActivateMutation.mutateAsync(systemAdminToDelete.user_id);
+      await systemAdminActivateMutation.mutateAsync({ id: systemAdminToDelete.id, data: { is_active: true } });
       showSuccess(t(USERS.SYSTEM_ADMIN_ACTIVATED));
       setSystemAdminToDelete(null);
     } catch (error) {
@@ -922,7 +921,7 @@ export const UsersPage = () => {
               onConfirm={handleSystemAdminDeleteConfirm}
               title={t(USERS.DEACTIVATE_SYSTEM_ADMIN)}
               message={t(USERS.DEACTIVATE_SYSTEM_ADMIN_MSG)}
-              itemName={`${systemAdminToDelete.first_name} ${systemAdminToDelete.last_name}`}
+              itemName={systemAdminToDelete.name || systemAdminToDelete.email}
               isLoading={systemAdminDeleteMutation.isPending}
               variant="deactivate"
             />
@@ -936,7 +935,7 @@ export const UsersPage = () => {
               onConfirm={handleSystemAdminActivateConfirm}
               title={t(USERS.ACTIVATE_SYSTEM_ADMIN)}
               message={t(USERS.ACTIVATE_SYSTEM_ADMIN_MSG)}
-              itemName={`${systemAdminToDelete.first_name} ${systemAdminToDelete.last_name}`}
+              itemName={systemAdminToDelete.name || systemAdminToDelete.email}
               isLoading={systemAdminActivateMutation.isPending}
               actionLabel={t(USERS.ACTIVATE_ACTION)}
               variant="delete"

@@ -629,4 +629,5 @@ export interface SystemAdminListParams {
   search?: string;
   page?: number;
   limit?: number;
+  is_active?: boolean;
 }

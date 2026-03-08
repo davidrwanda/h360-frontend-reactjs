@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateUser } from '@/hooks/useUsers';
+import { useCreateSystemAdmin } from '@/hooks/useUsers';
 import { useToastStore } from '@/store/toastStore';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { MdPerson, MdRefresh, MdVisibility, MdVisibilityOff } from 'react-icons/md';
@@ -12,7 +12,6 @@ interface CreateSystemAdminFormData {
   first_name: string;
   last_name: string;
   email: string;
-  username: string;
   password: string;
   confirm_password: string;
 }
@@ -59,7 +58,7 @@ export const CreateSystemAdminForm = ({
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const createMutation = useCreateUser();
+  const createMutation = useCreateSystemAdmin();
   const { success: showSuccess, error: showError } = useToastStore();
   const { t } = useTranslation();
 
@@ -67,7 +66,6 @@ export const CreateSystemAdminForm = ({
     first_name: z.string().min(1, t(USERS.FIRST_NAME_REQUIRED)),
     last_name: z.string().min(1, t(USERS.LAST_NAME_REQUIRED)),
     email: z.string().email(t(USERS.EMAIL_INVALID)).min(1, t(USERS.EMAIL_REQUIRED)),
-    username: z.string().min(3, t(USERS.USERNAME_MIN_LENGTH)),
     password: z
       .string()
       .min(8, t(USERS.PASSWORD_MIN_LENGTH))
@@ -76,7 +74,6 @@ export const CreateSystemAdminForm = ({
         t(USERS.PASSWORD_COMPLEXITY)
       ),
     confirm_password: z.string(),
-    // System admins don't have clinic_id (global admins)
   }).refine((data) => data.password === data.confirm_password, {
     message: t(USERS.PASSWORDS_DONT_MATCH),
     path: ['confirm_password'],
@@ -102,13 +99,11 @@ export const CreateSystemAdminForm = ({
     setError(null);
 
     try {
+      // ISD §7.6: only email, password, name are accepted
       await createMutation.mutateAsync({
-        first_name: data.first_name,
-        last_name: data.last_name,
         email: data.email,
-        username: data.username,
         password: data.password,
-        role: 'ADMIN', // System admins are Admins (no clinic_id - global admins)
+        name: `${data.first_name} ${data.last_name}`.trim(),
       });
 
       reset();
@@ -163,15 +158,8 @@ export const CreateSystemAdminForm = ({
                 placeholder={t(USERS.ENTER_EMAIL)}
                 error={errors.email?.message}
                 required
+                className="md:col-span-2"
                 {...register('email')}
-              />
-
-              <Input
-                label={t(USERS.USERNAME)}
-                placeholder={t(USERS.ENTER_USERNAME)}
-                error={errors.username?.message}
-                required
-                {...register('username')}
               />
 
               <div>

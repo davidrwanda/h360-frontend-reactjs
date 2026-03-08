@@ -1,15 +1,15 @@
-import { User } from '@/api/users';
 import { Button } from '@/components/ui';
 import { MdEdit, MdDelete, MdPerson, MdCheckCircle } from 'react-icons/md';
 import { cn } from '@/utils/cn';
 import { useTranslation, USERS } from '@/i18n';
+import type { SystemAdmin } from '@/types/organization';
 
 interface SystemAdminsTableProps {
-  admins: User[];
+  admins: SystemAdmin[];
   isLoading?: boolean;
-  onEdit?: (admin: User) => void;
-  onDelete?: (admin: User) => void;
-  onActivate?: (admin: User) => void;
+  onEdit?: (admin: SystemAdmin) => void;
+  onDelete?: (admin: SystemAdmin) => void;
+  onActivate?: (admin: SystemAdmin) => void;
 }
 
 export const SystemAdminsTable = ({
@@ -47,8 +47,6 @@ export const SystemAdminsTable = ({
           <tr className="border-b border-carbon/10">
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_NAME)}</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_EMAIL)}</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_USERNAME)}</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_PHONE)}</th>
             <th className="text-left py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_STATUS)}</th>
             <th className="text-right py-3 px-4 text-xs font-medium text-carbon/60">{t(USERS.TH_ACTIONS)}</th>
           </tr>
@@ -56,25 +54,19 @@ export const SystemAdminsTable = ({
         <tbody>
           {admins.map((admin) => (
             <tr
-              key={admin.user_id}
+              key={admin.id}
               className="border-b border-carbon/5 hover:bg-white-smoke transition-colors"
             >
               <td className="py-3 px-4">
                 <div className="flex items-center gap-2">
                   <MdPerson className="h-4 w-4 text-azure-dragon" />
                   <span className="text-sm font-medium text-carbon">
-                    {admin.first_name} {admin.last_name}
+                    {admin.name || admin.email}
                   </span>
                 </div>
               </td>
               <td className="py-3 px-4">
                 <div className="text-sm text-carbon/70">{admin.email}</div>
-              </td>
-              <td className="py-3 px-4">
-                <div className="text-sm text-carbon/70">{admin.username}</div>
-              </td>
-              <td className="py-3 px-4">
-                <div className="text-sm text-carbon/70">{admin.phone || '—'}</div>
               </td>
               <td className="py-3 px-4">
                 <span

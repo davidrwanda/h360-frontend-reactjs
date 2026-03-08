@@ -22,6 +22,7 @@ import {
   MdDownload,
   MdCalendarToday,
 } from 'react-icons/md';
+import { activityLogsApi } from '@/api/activityLogs';
 import type { ActivityLog, ActionType, EntityType } from '@/api/activityLogs';
 import { format } from 'date-fns';
 
@@ -181,74 +182,100 @@ export const ActivityLogsPage = () => {
     setPage(1);
   };
 
-  const handleExport = () => {
-    if (!logsData || !logsData.data || logsData.data.length === 0) {
-      alert(t(ACTIVITY_LOG.NO_LOGS_TO_EXPORT));
-      return;
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Try server-side export first (ISD §8.3)
+      const blob = await activityLogsApi.export({
+        format: 'csv',
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        action_type: actionType || undefined,
+        entity_type: entityType || undefined,
+        clinic_id: effectiveClinicId || undefined,
+        user_id: effectiveUserId || undefined,
+      });
+
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      const filterStr = [
+        actionType && `action-${actionType}`,
+        entityType && `entity-${entityType}`,
+        startDate && `from-${startDate}`,
+        endDate && `to-${endDate}`,
+      ]
+        .filter(Boolean)
+        .join('_');
+      const filename = `activity-logs_${dateStr}${filterStr ? `_${filterStr}` : ''}.csv`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fallback: client-side CSV export from current data
+      if (!logsData || !logsData.data || logsData.data.length === 0) {
+        alert(t(ACTIVITY_LOG.NO_LOGS_TO_EXPORT));
+        return;
+      }
+
+      const headers = [
+        t(ACTIVITY_LOG.CSV_TIMESTAMP),
+        t(ACTIVITY_LOG.CSV_USER),
+        t(ACTIVITY_LOG.CSV_EMAIL),
+        t(ACTIVITY_LOG.CSV_ACTION),
+        t(ACTIVITY_LOG.CSV_ENTITY_TYPE),
+        t(ACTIVITY_LOG.CSV_ENTITY_ID),
+        t(ACTIVITY_LOG.CSV_ENTITY_NAME),
+        t(ACTIVITY_LOG.CSV_CLINIC),
+        t(ACTIVITY_LOG.CSV_DESCRIPTION),
+        t(ACTIVITY_LOG.CSV_IP_ADDRESS),
+        t(ACTIVITY_LOG.CSV_USER_AGENT),
+      ];
+
+      const csvRows = [
+        headers.join(','),
+        ...logsData.data.map((log) => {
+          const row = [
+            format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
+            log.employee_name || t(ACTIVITY_LOG.SYSTEM),
+            log.employee_email || '',
+            log.action_type,
+            log.entity_type,
+            log.entity_id || '',
+            log.entity_name || '',
+            log.clinic_name || '',
+            log.description ? `"${log.description.replace(/"/g, '""')}"` : '',
+            log.ip_address || '',
+            log.user_agent ? `"${log.user_agent.replace(/"/g, '""')}"` : '',
+          ];
+          return row.join(',');
+        }),
+      ];
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      const filename = `activity-logs_${dateStr}.csv`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
     }
-
-    // Fetch all logs with current filters (without pagination limit)
-    // For now, export current page data. In production, you might want to fetch all matching logs
-    const logsToExport = logsData.data;
-
-    // Convert to CSV format
-    const headers = [
-      t(ACTIVITY_LOG.CSV_TIMESTAMP),
-      t(ACTIVITY_LOG.CSV_USER),
-      t(ACTIVITY_LOG.CSV_EMAIL),
-      t(ACTIVITY_LOG.CSV_ACTION),
-      t(ACTIVITY_LOG.CSV_ENTITY_TYPE),
-      t(ACTIVITY_LOG.CSV_ENTITY_ID),
-      t(ACTIVITY_LOG.CSV_ENTITY_NAME),
-      t(ACTIVITY_LOG.CSV_CLINIC),
-      t(ACTIVITY_LOG.CSV_DESCRIPTION),
-      t(ACTIVITY_LOG.CSV_IP_ADDRESS),
-      t(ACTIVITY_LOG.CSV_USER_AGENT),
-    ];
-
-    const csvRows = [
-      headers.join(','),
-      ...logsToExport.map((log) => {
-        const row = [
-          format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
-          log.employee_name || t(ACTIVITY_LOG.SYSTEM),
-          log.employee_email || '',
-          log.action_type,
-          log.entity_type,
-          log.entity_id || '',
-          log.entity_name || '',
-          log.clinic_name || '',
-          log.description ? `"${log.description.replace(/"/g, '""')}"` : '',
-          log.ip_address || '',
-          log.user_agent ? `"${log.user_agent.replace(/"/g, '""')}"` : '',
-        ];
-        return row.join(',');
-      }),
-    ];
-
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    // Generate filename with current date and filters
-    const dateStr = format(new Date(), 'yyyy-MM-dd');
-    const filterStr = [
-      actionType && `action-${actionType}`,
-      entityType && `entity-${entityType}`,
-      startDate && `from-${startDate}`,
-      endDate && `to-${endDate}`,
-    ]
-      .filter(Boolean)
-      .join('_');
-    const filename = `activity-logs_${dateStr}${filterStr ? `_${filterStr}` : ''}.csv`;
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleViewDetails = (log: ActivityLog) => {
@@ -277,9 +304,9 @@ export const ActivityLogsPage = () => {
             }
           </p>
         </div>
-        <Button variant="outline" size="md" onClick={handleExport}>
+        <Button variant="outline" size="md" onClick={handleExport} disabled={exporting}>
           <MdDownload className="h-4 w-4 mr-2" />
-          {t(ACTIVITY_LOG.EXPORT)}
+          {exporting ? t(ACTIVITY_LOG.EXPORT) + '...' : t(ACTIVITY_LOG.EXPORT)}
         </Button>
       </div>
 

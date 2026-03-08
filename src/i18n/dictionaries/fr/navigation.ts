@@ -18,4 +18,11 @@ export const navigation: Record<string, string> = {
   'navigation.organizations': 'Organisations',
   'navigation.myOrganization': 'Mon Organisation',
   'navigation.members': 'Membres',
+  'navigation.plans': 'Forfaits',
+  'navigation.systemAdmins': 'Administrateurs Système',
+  'navigation.directory': 'Annuaire',
+  'navigation.integrations': 'Intégrations',
+  'navigation.apiKeys': 'Clés API',
+  'navigation.webhooks': 'Webhooks',
+  'navigation.onboarding': 'Intégration',
 };

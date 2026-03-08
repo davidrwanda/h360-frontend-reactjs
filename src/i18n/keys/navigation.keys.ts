@@ -19,4 +19,11 @@ export const NAVIGATION = {
   ORGANIZATIONS: 'navigation.organizations',
   MY_ORGANIZATION: 'navigation.myOrganization',
   MEMBERS: 'navigation.members',
+  PLANS: 'navigation.plans',
+  SYSTEM_ADMINS: 'navigation.systemAdmins',
+  DIRECTORY: 'navigation.directory',
+  INTEGRATIONS: 'navigation.integrations',
+  API_KEYS: 'navigation.apiKeys',
+  WEBHOOKS: 'navigation.webhooks',
+  ONBOARDING: 'navigation.onboarding',
 } as const;

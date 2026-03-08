@@ -15,3 +15,5 @@ export { PROFILE } from './profile.keys';
 export { TIMETABLE } from './timetable.keys';
 export { QUEUE } from './queue.keys';
 export { ORGANIZATION, PLAN, SUBSCRIPTION, ONBOARDING, SYSTEM_ADMIN } from './organization.keys';
+export { DIRECTORY } from './directory.keys';
+export { INTEGRATIONS } from './integrations.keys';

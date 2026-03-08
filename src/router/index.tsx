@@ -14,7 +14,10 @@ import { ServicesPage, CreateServicePage, EditServicePage, ServiceDetailPage } f
 import { AppointmentsPage, QueuePage, MyAppointmentsPage } from '@/pages/appointments';
 import { TimetablePage, SlotGenerationPage } from '@/pages/scheduling';
 import { SettingsPage, MyProfilePage } from '@/pages/settings';
-import { ActivityLogsPage } from '@/pages/system';
+import { ActivityLogsPage, PlansPage, CreatePlanPage, EditPlanPage, PlanDetailPage, SubscriptionDetailPage } from '@/pages/system';
+import { OnboardingPage, ChecklistPage } from '@/pages/onboarding';
+import { DirectorySearchPage, DirectoryClinicDetailPage, ClaimClinicPage, AdminClaimsPage, AdminFeaturedPage, AdminCorrectionsPage, AdminBookingAttemptsPage } from '@/pages/directory';
+import { IntegrationsPage, ApiKeysPage, WebhooksPage } from '@/pages/integrations';
 import { PlaceholderPage, MenuOverviewPage } from '@/pages/common';
 
 export const router = createBrowserRouter([
@@ -433,12 +436,74 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+  // System Admin — Plans management
+  {
+    path: '/system-admins/plans',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <PlansPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/system-admins/plans/create',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <CreatePlanPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/system-admins/plans/:id',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <PlanDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/system-admins/plans/:id/edit',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <EditPlanPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/settings',
     element: (
       <ProtectedRoute>
         <MainLayout>
           <SettingsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  // Onboarding
+  {
+    path: '/onboarding',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <OnboardingPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/onboarding/checklist',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER', 'STAFF']}>
+        <MainLayout>
+          <ChecklistPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -519,6 +584,102 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <MainLayout>
           <MenuOverviewPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  // Subscription detail (SYSTEM, ADMIN)
+  {
+    path: '/subscriptions/clinic/:clinicId',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <SubscriptionDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  // Directory — Public routes
+  {
+    path: '/directory',
+    element: <DirectorySearchPage />,
+  },
+  {
+    path: '/directory/:slug',
+    element: <DirectoryClinicDetailPage />,
+  },
+  {
+    path: '/directory/:slug/claim',
+    element: <ClaimClinicPage />,
+  },
+  // Directory — Admin routes (SYSTEM only)
+  {
+    path: '/admin/claims',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <AdminClaimsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/featured',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <AdminFeaturedPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/corrections',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <AdminCorrectionsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/booking-attempts',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <AdminBookingAttemptsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  // Integrations routes (ADMIN only)
+  {
+    path: '/integrations',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN', 'MANAGER']}>
+        <MainLayout>
+          <IntegrationsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/integrations/api-keys',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <ApiKeysPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/integrations/webhooks',
+    element: (
+      <ProtectedRoute requiredRole={['ADMIN']}>
+        <MainLayout>
+          <WebhooksPage />
         </MainLayout>
       </ProtectedRoute>
     ),

@@ -1547,6 +1547,82 @@ Resends the invitation email for a pending member. Resets the expiration to 7 da
 
 ---
 
+### `POST /api/invitations/accept` — Accept Organization Invitation
+
+> **Auth:** `@Public` (no authentication required)
+
+Accepts a pending invitation. Creates the user account (User + Employee) and activates the organization member record. Returns an access token so the user is immediately logged in.
+
+**Request Body**
+```json
+{
+  "data": {
+    "token": "fa9e7b49ff17947afad51e2849d5ce5a94b8202ddb05e25eb98550083b4c1f0d",
+    "email": "nurse@example.com",
+    "first_name": "Alice",
+    "last_name": "Uwimana",
+    "password": "SecurePass123!",
+    "phone": "+250788111111"
+  },
+  "meta": {
+    "message_id": "msg_accept-001",
+    "source_system": "h360-web"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.token` | string | **Yes** | Raw invitation token from email link |
+| `data.email` | string | **Yes** | Must match the email the invitation was sent to |
+| `data.first_name` | string | **Yes** | Min 1, max 100 |
+| `data.last_name` | string | **Yes** | Min 1, max 100 |
+| `data.password` | string | **Yes** | Min 8, max 100 |
+| `data.phone` | string | No | Max 20 |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "access_token": "eyJhbG...",
+    "token_type": "Bearer",
+    "expires_in": "24h",
+    "user": {
+      "user_id": "uuid",
+      "email": "nurse@example.com",
+      "role": "Nurse",
+      "organization_id": "uuid",
+      "first_name": "Alice",
+      "last_name": "Uwimana"
+    },
+    "member": {
+      "id": "uuid",
+      "organization_id": "uuid",
+      "role": "STAFF",
+      "clinic_ids": ["uuid"],
+      "status": "active"
+    }
+  },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2026-03-07T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `400` | `INVALID_TOKEN` | Token does not match any pending invitation |
+| `400` | `TOKEN_EXPIRED` | Invitation has expired (> 7 days) |
+| `400` | `MEMBER_NOT_FOUND` | No pending invitation for this email |
+| `409` | `EMAIL_EXISTS` | Email already registered in the system |
+
+---
+
 ### `PATCH /api/organizations/:id/settings` — Update Organization Settings
 
 > **Auth:** `SYSTEM`, `ORG_OWNER` (own org only) | **Activity Log:** Yes
@@ -3669,6 +3745,8 @@ All errors follow the **Standard Error Envelope** (see [Standard Error Response]
 | 404 | `MEMBER_NOT_FOUND` | Member not found in this organization. | — |
 | 409 | `MEMBER_ALREADY_EXISTS` | User is already a member of this organization. | `{ existing_member_id, role }` |
 | 409 | `INVITATION_PENDING` | An active invitation already exists for this email. | `{ invitation_id, expires_at }` |
+| 400 | `INVALID_TOKEN` | Invitation token is invalid. | — |
+| 400 | `TOKEN_EXPIRED` | Invitation has expired. Please request a new invitation. | `{ expired_at }` |
 
 ---
 
@@ -3678,7 +3756,7 @@ All errors follow the **Standard Error Envelope** (see [Standard Error Response]
 |----|-----------|-------------|
 | **FR-001** | `GET /clinics/:id/tenant-info`, `PATCH /clinics/:id/tenant-settings` | Tenant isolation per clinic with configurable sharing within organization |
 | **FR-002** | `POST /organizations`, `GET/PATCH/DELETE /organizations/:id`, `POST/DELETE /organizations/:id/clinics` | Multi-clinic organizations — create, manage, add/remove branches |
-| **FR-002a** | `POST/GET /organizations/:id/members`, `PATCH/DELETE /organizations/:id/members/:memberId`, `POST /.../resend-invitation` | Organization member management — invite, list, update roles, remove, resend invitations |
+| **FR-002a** | `POST/GET /organizations/:id/members`, `PATCH/DELETE /organizations/:id/members/:memberId`, `POST /.../resend-invitation`, `POST /invitations/accept` | Organization member management — invite, list, update roles, remove, resend invitations, accept invitation |
 | **FR-002b** | `GET/PATCH /organizations/:id/settings` | Organization settings — branding, notifications, booking, data sharing with clinic inheritance |
 | **FR-002c** | `POST /organizations/:id/transfer-ownership` | Ownership transfer with password/OTP confirmation |
 | **FR-002d** | `GET /organizations/:id/analytics`, `GET /.../analytics/clinics-comparison` | Organization-level analytics dashboard and cross-clinic comparison |
@@ -3707,6 +3785,7 @@ All errors follow the **Standard Error Envelope** (see [Standard Error Response]
 | `PATCH` | `/api/organizations/:id/members/:memberId` | SYSTEM, ORG_OWNER | FR-002a |
 | `DELETE` | `/api/organizations/:id/members/:memberId` | SYSTEM, ORG_OWNER | FR-002a |
 | `POST` | `/api/organizations/:id/members/:memberId/resend-invitation` | SYSTEM, ORG_OWNER | FR-002a |
+| `POST` | `/api/invitations/accept` | Public | FR-002a |
 | `GET` | `/api/organizations/:id/settings` | SYSTEM, ORG_OWNER | FR-002b |
 | `PATCH` | `/api/organizations/:id/settings` | SYSTEM, ORG_OWNER | FR-002b |
 | `POST` | `/api/organizations/:id/transfer-ownership` | SYSTEM, ORG_OWNER | FR-002c |
@@ -3744,7 +3823,7 @@ All errors follow the **Standard Error Envelope** (see [Standard Error Response]
 | `GET` | `/api/imports/:id/errors/export` | ADMIN | FR-006 |
 | `GET` | `/api/imports/templates/:type` | Public | FR-006 |
 
-**Section 1 Total: 49 endpoints across 6 sub-modules**
+**Section 1 Total: 50 endpoints across 6 sub-modules**
 
 ---
 
@@ -7016,9 +7095,1222 @@ Soft-deletes by setting `is_active = false`. Does not permanently remove the rec
 | `DELETE` | `/api/system-admins/:id` | SYSTEM | FR-034 |
 
 **Section 7 Total: 28 endpoints across 5 sub-modules**
-<!-- Section 8: Activity Logging & Audit Trail — TO BE ADDED -->
+
+---
+
+# Section 8 — Activity Logging & Audit Trail
+
+> **FRs covered:** FR-070, FR-071, FR-072, FR-073
+> **Priority:** P0 (FR-070–072), P1 (FR-073)
+
+---
+
+## 8.0 Overview
+
+This module provides a comprehensive, tamper-protected audit trail for all critical actions across H360. Every mutation (create, update, delete) and security-sensitive action (login, logout, export) is automatically captured via a global interceptor. Logs are clinic-scoped, searchable, filterable, and exportable for compliance reviews.
+
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Activity Log** | An immutable audit record capturing who did what, when, where, and what changed |
+| **Action Type** | The category of action performed (CREATE, UPDATE, DELETE, LOGIN, etc.) |
+| **Entity Type** | The type of resource affected (Patient, Appointment, User, Organization, etc.) |
+| **Clinic Scope** | Logs are associated with a `clinic_id` for tenant-boundary enforcement |
+| **Change Snapshot** | Before/after JSONB snapshots (`old_values`, `new_values`) for full change tracking |
+| **Activity Logging Interceptor** | Global NestJS interceptor that auto-captures logs for decorated endpoints |
+
+### What Gets Logged
+
+| Category | Actions | FR |
+|----------|---------|-----|
+| **Patient access** | View, create, update patient records | FR-070 |
+| **Appointments** | Create, reschedule, cancel, complete, no-show | FR-070 |
+| **Queue** | Check-in, check-out, skip, reorder, complete | FR-070 |
+| **Staff/Roles** | Create user, change role, deactivate, terminate | FR-070 |
+| **Payments** | Create, refund, void payment records | FR-070 |
+| **Authentication** | Login, logout, password change, password reset | FR-070 |
+| **Organization** | Create, update, delete org; invite/remove members | FR-070 |
+| **Configuration** | Update clinic settings, plans, subscriptions | FR-070 |
+| **Data operations** | CSV import, data export | FR-070 |
+
+### Tamper Protection (FR-072)
+
+- Activity logs are **append-only** — no UPDATE or DELETE endpoints exist
+- The `activity_logs` table has no `updated_at` column — records cannot be modified after creation
+- Standard users (ADMIN, MANAGER) can only **read** logs, never modify or delete them
+- SYSTEM users can read all logs but also cannot modify or delete existing records
+- Database-level: `created_at` is set by the database, not application code
+
+---
+
+## 8.1 Data Models
+
+### 8.1.1 ActivityLog
+
+```
+activity_log
+├── log_id              UUID, PK
+├── user_id             UUID, FK → users.user_id, NULLABLE (NULL for system actions)
+├── action_type         ENUM: 'CREATE' | 'UPDATE' | 'DELETE' | 'CHECK_IN' | 'CHECK_OUT' |
+│                             'COMPLETE' | 'CANCEL' | 'LOGIN' | 'LOGOUT' | 'VIEW' |
+│                             'EXPORT' | 'ASSIGN' | 'UNASSIGN' | 'UPGRADE' | 'DOWNGRADE' |
+│                             'REACTIVATE' | 'SKIP' | 'IMPORT' | 'CONFIGURE'
+├── entity_type         ENUM: 'Patient' | 'Appointment' | 'Doctor' | 'Clinic' | 'ClinicType' |
+│                             'User' | 'Service' | 'Slot' | 'Queue' | 'Timetable' |
+│                             'Organization' | 'Plan' | 'Subscription' | 'Onboarding' |
+│                             'Checklist' | 'Import' | 'OrganizationMember'
+├── entity_id           UUID, NULLABLE
+├── entity_name         VARCHAR(255), NULLABLE
+├── clinic_id           UUID, NULLABLE (clinic context for scoping)
+├── is_system_user      BOOLEAN, DEFAULT false
+├── old_values          JSONB, NULLABLE (snapshot before change)
+├── new_values          JSONB, NULLABLE (snapshot after change)
+├── ip_address          VARCHAR(45), NULLABLE
+├── user_agent          TEXT, NULLABLE
+├── description         TEXT, NULLABLE (human-readable action description)
+├── metadata            TEXT, NULLABLE (additional JSON metadata)
+├── request_data        JSONB, NULLABLE (request body, query params, route params)
+├── response_data       JSONB, NULLABLE (response payload)
+└── created_at          TIMESTAMPTZ (DB-set, immutable)
+```
+
+**Indexes**
+| Index | Columns | Purpose |
+|-------|---------|---------|
+| `idx_activity_log_user` | `user_id` | Filter logs by user |
+| `idx_activity_log_entity` | `entity_type, entity_id` | Get all logs for a specific entity |
+| `idx_activity_log_action` | `action_type` | Filter by action category |
+| `idx_activity_log_created` | `created_at` | Date range queries, sorting |
+| `idx_activity_log_system` | `is_system_user` | Separate system vs user actions |
+| `idx_activity_log_clinic` | `clinic_id` (partial: WHERE clinic_id IS NOT NULL) | Clinic-scoped queries |
+
+**Relations**
+| Relation | Target | Type | On Delete |
+|----------|--------|------|-----------|
+| `user` | `users.user_id` | ManyToOne, NULLABLE | SET NULL |
+
+---
+
+## 8.2 Activity Logs — Query & Search (FR-070, FR-071)
+
+### `GET /api/activity-logs` — List Activity Logs
+
+> **Auth:** ADMIN, MANAGER | **Activity Log:** No
+
+**Query Parameters**
+
+| Parameter | Type | Required | Validation | Default |
+|-----------|------|----------|------------|---------|
+| `page` | integer | No | ≥ 1 | `1` |
+| `limit` | integer | No | 1–100 | `20` |
+| `user_id` | UUID | No | Valid UUID | — |
+| `action_type` | string | No | Must be valid `ActivityActionType` enum | — |
+| `entity_type` | string | No | Must be valid `EntityType` enum | — |
+| `entity_id` | UUID | No | Valid UUID | — |
+| `clinic_id` | UUID | No | Valid UUID | — |
+| `is_system_user` | boolean | No | `true` / `false` | — |
+| `start_date` | string | No | ISO date `YYYY-MM-DD` | — |
+| `end_date` | string | No | ISO date `YYYY-MM-DD` | — |
+| `search` | string | No | Free text (matches description, user name, email) | — |
+| `sortBy` | string | No | `created_at`, `action_type`, `entity_type` | `created_at` |
+| `sortOrder` | string | No | `ASC`, `DESC` | `DESC` |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "data": [
+      {
+        "log_id": "uuid",
+        "user_id": "uuid",
+        "user_name": "Jean Mugabo",
+        "action_type": "CREATE",
+        "entity_type": "Patient",
+        "entity_id": "uuid",
+        "entity_name": "Marie Uwimana",
+        "clinic_id": "uuid",
+        "is_system_user": false,
+        "old_values": null,
+        "new_values": {
+          "first_name": "Marie",
+          "last_name": "Uwimana",
+          "phone": "+250788111111"
+        },
+        "ip_address": "192.168.1.10",
+        "user_agent": "Mozilla/5.0...",
+        "description": "Created patient Marie Uwimana",
+        "metadata": null,
+        "request_data": { "body": { "...": "..." } },
+        "response_data": { "patient_id": "uuid" },
+        "created_at": "2026-03-08T10:30:00Z"
+      }
+    ],
+    "total": 156,
+    "page": 1,
+    "limit": 20
+  },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2026-03-08T10:30:05Z",
+    "message": "Activity logs retrieved successfully"
+  },
+  "extras": {}
+}
+```
+
+**Clinic Boundary Enforcement**
+- **ADMIN** users: See all logs (no clinic filter applied)
+- **MANAGER** users: Only see logs where `clinic_id` matches their own `clinic_id`, or logs with `clinic_id = NULL`
+- SYSTEM users: See all logs across all clinics
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `400` | `VALIDATION_ERROR` | Invalid query parameters |
+| `401` | `UNAUTHORIZED` | Missing or invalid JWT |
+| `403` | `FORBIDDEN` | Insufficient role (not ADMIN or MANAGER) |
+
+---
+
+### `GET /api/activity-logs/:id` — Get Activity Log by ID
+
+> **Auth:** ADMIN, MANAGER | **Activity Log:** No
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | Activity log ID |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "log_id": "uuid",
+    "user_id": "uuid",
+    "user_name": "Jean Mugabo",
+    "action_type": "UPDATE",
+    "entity_type": "Appointment",
+    "entity_id": "uuid",
+    "entity_name": "Appointment #APT-001",
+    "clinic_id": "uuid",
+    "is_system_user": false,
+    "old_values": { "status": "scheduled" },
+    "new_values": { "status": "completed" },
+    "ip_address": "192.168.1.10",
+    "user_agent": "Mozilla/5.0...",
+    "description": "Updated appointment status to completed",
+    "metadata": null,
+    "request_data": { "body": { "status": "completed" } },
+    "response_data": null,
+    "created_at": "2026-03-08T11:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_def456",
+    "timestamp": "2026-03-08T11:00:05Z"
+  },
+  "extras": {}
+}
+```
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `403` | `ACCESS_DENIED` | Log belongs to a different clinic (MANAGER boundary) |
+| `404` | `LOG_NOT_FOUND` | Activity log does not exist |
+
+---
+
+### `GET /api/activity-logs/entity/:entityType/:entityId` — Get Logs for Entity
+
+> **Auth:** ADMIN, MANAGER | **Activity Log:** No
+
+Retrieves all activity logs for a specific entity (e.g., all changes to a particular patient or appointment).
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `entityType` | string | Entity type enum (e.g., `Patient`, `Appointment`, `User`) |
+| `entityId` | UUID | Entity ID |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default |
+|-----------|------|----------|---------|
+| `limit` | integer | No | No limit |
+
+**Response `200 OK`**
+```json
+{
+  "data": [
+    {
+      "log_id": "uuid",
+      "user_id": "uuid",
+      "user_name": "Jean Mugabo",
+      "action_type": "CREATE",
+      "entity_type": "Patient",
+      "entity_id": "uuid",
+      "entity_name": "Marie Uwimana",
+      "clinic_id": "uuid",
+      "is_system_user": false,
+      "old_values": null,
+      "new_values": { "first_name": "Marie", "last_name": "Uwimana" },
+      "description": "Created patient record",
+      "created_at": "2026-03-01T08:00:00Z"
+    },
+    {
+      "log_id": "uuid",
+      "user_id": "uuid",
+      "user_name": "Dr. Kamanzi",
+      "action_type": "UPDATE",
+      "entity_type": "Patient",
+      "entity_id": "uuid",
+      "entity_name": "Marie Uwimana",
+      "clinic_id": "uuid",
+      "is_system_user": false,
+      "old_values": { "phone": "+250788111111" },
+      "new_values": { "phone": "+250788222222" },
+      "description": "Updated patient phone number",
+      "created_at": "2026-03-05T14:30:00Z"
+    }
+  ],
+  "meta": {
+    "request_id": "req_ghi789",
+    "timestamp": "2026-03-08T11:05:00Z"
+  },
+  "extras": {}
+}
+```
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `400` | `INVALID_ENTITY_TYPE` | Entity type not a valid enum value |
+
+---
+
+## 8.3 Activity Log Export (FR-073)
+
+### `GET /api/activity-logs/export` — Export Activity Logs to CSV
+
+> **Auth:** ADMIN | **Activity Log:** Yes (EXPORT action)
+
+Exports filtered activity logs as a CSV file for compliance reviews. Accepts the same query parameters as the list endpoint but returns a downloadable file instead of JSON.
+
+**Query Parameters**
+
+Same as `GET /api/activity-logs` (see §8.2), plus:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | No | Export format. Default: `csv`. Allowed: `csv` |
+
+**Response `200 OK`**
+
+```
+Content-Type: text/csv
+Content-Disposition: attachment; filename="activity-logs-2026-03-08.csv"
+
+log_id,user_name,action_type,entity_type,entity_id,entity_name,clinic_id,description,ip_address,created_at
+uuid,"Jean Mugabo",CREATE,Patient,uuid,"Marie Uwimana",uuid,"Created patient record","192.168.1.10","2026-03-08T10:30:00Z"
+...
+```
+
+**CSV Columns**
+
+| Column | Source Field |
+|--------|-------------|
+| `log_id` | `log_id` |
+| `user_name` | Resolved from employee name or user email |
+| `action_type` | `action_type` |
+| `entity_type` | `entity_type` |
+| `entity_id` | `entity_id` |
+| `entity_name` | `entity_name` |
+| `clinic_id` | `clinic_id` |
+| `description` | `description` |
+| `ip_address` | `ip_address` |
+| `created_at` | `created_at` |
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `403` | `FORBIDDEN` | Only ADMIN can export logs |
+| `400` | `EXPORT_DATE_RANGE_REQUIRED` | Must specify `start_date` and `end_date` for export |
+| `400` | `EXPORT_RANGE_TOO_LARGE` | Date range exceeds 90 days |
+
+---
+
+## 8.4 Activity Logging Interceptor — Automatic Capture
+
+Endpoints decorated with `@ActivityLog()` are automatically captured by the `ActivityLoggingInterceptor`. The interceptor extracts:
+
+- **Who**: `user_id` from JWT payload, `is_system_user` flag
+- **What**: `action_type` and `entity_type` from the decorator metadata
+- **Where**: `clinic_id` from JWT payload, `ip_address` and `user_agent` from request
+- **When**: `created_at` set by database
+- **Changes**: `old_values` / `new_values` from comparing request/response payloads
+- **Context**: `request_data` (route params, query, body) and `response_data`
+
+### Decorator Usage
+
+```typescript
+@ActivityLog({
+  action: ActivityActionType.CREATE,
+  entity: EntityType.PATIENT,
+})
+@Post()
+createPatient(@Body() dto: CreatePatientDto) { ... }
+```
+
+### Non-blocking Logging
+
+Activity log creation uses `createAsync()` — a fire-and-forget pattern that never throws errors back to the main operation. If logging fails, it is silently logged to the application logger but does not break the user's request.
+
+---
+
+## 8.5 Error Codes
+
+| HTTP | `error_code` | `meta.message` (EN) | `extras.context` |
+|------|-------------|-------------|-------------------|
+| 400 | `VALIDATION_ERROR` | Validation failed. | — (see `extras.errors[]`) |
+| 400 | `INVALID_ENTITY_TYPE` | Invalid entity type. Must be one of: Patient, Appointment, ... | `{ allowed_values[] }` |
+| 400 | `EXPORT_DATE_RANGE_REQUIRED` | Export requires start_date and end_date. | — |
+| 400 | `EXPORT_RANGE_TOO_LARGE` | Export date range cannot exceed 90 days. | `{ max_days: 90 }` |
+| 403 | `FORBIDDEN` | Insufficient permissions to access activity logs. | — |
+| 403 | `ACCESS_DENIED` | Access denied to this activity log. | `{ clinic_id }` |
+| 404 | `LOG_NOT_FOUND` | Activity log not found. | — |
+
+---
+
+## 8.6 FR Traceability
+
+| FR | Endpoints | Description |
+|----|-----------|-------------|
+| **FR-070** | `GET /activity-logs`, `GET /activity-logs/:id`, `GET /activity-logs/entity/:entityType/:entityId` | Audit logs for critical actions (patient access, appointments, queue, roles, payments) |
+| **FR-071** | `GET /activity-logs` (query params) | Searchable/filterable audit logs by date, user, action, entity, clinic |
+| **FR-072** | (Architectural) | Tamper-protected: append-only table, no UPDATE/DELETE endpoints, DB-set timestamps |
+| **FR-073** | `GET /activity-logs/export` | Audit log export to CSV for compliance reviews |
+
+---
+
+## 8.7 Endpoint Summary
+
+| Method | Endpoint | Auth | FR |
+|--------|----------|------|----|
+| `GET` | `/api/activity-logs` | ADMIN, MANAGER | FR-070, FR-071 |
+| `GET` | `/api/activity-logs/:id` | ADMIN, MANAGER | FR-070 |
+| `GET` | `/api/activity-logs/entity/:entityType/:entityId` | ADMIN, MANAGER | FR-070 |
+| `GET` | `/api/activity-logs/export` | ADMIN | FR-073 |
+
+**Section 8 Total: 4 endpoints**
+
+---
+
+# Section 12 — Integrations, API & Webhooks
+
+> **FRs covered:** FR-110, FR-111, FR-112
+> **Priority:** P0 (FR-110, FR-111), P1 (FR-112)
+
+---
+
+## 12.0 Overview
+
+This module provides programmatic access to H360 via API keys, webhook subscriptions for event-driven integrations, and documented API endpoints for core objects. It enables third-party EMR systems, embeddable booking widgets, and custom integrations to interact with H360 securely.
+
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **API Key** | A clinic-scoped bearer token for programmatic access (integrations, widgets, server-to-server) |
+| **Webhook** | An outbound HTTP POST sent to a subscriber URL when specific events occur |
+| **Webhook Subscription** | A registration binding a URL to one or more event types |
+| **Rate Limit** | Per-key request throttling to prevent abuse |
+| **Key Rotation** | Generating a new key while temporarily keeping the old one active for migration |
+
+---
+
+## 12.1 Data Models
+
+### 12.1.1 ApiKey
+
+```
+api_key
+├── api_key_id          UUID, PK
+├── name                VARCHAR(100), NOT NULL
+├── key_hash            VARCHAR(255), NOT NULL (bcrypt hash of full key)
+├── key_prefix          VARCHAR(16), NOT NULL (first 16 hex chars for O(1) lookup)
+├── clinic_id           UUID, FK → clinics.clinic_id, NULLABLE
+├── permissions         TEXT[] (simple-array of resource:action strings)
+├── is_active           BOOLEAN, DEFAULT true
+├── expires_at          TIMESTAMPTZ, NULLABLE (NULL = never expires)
+├── last_used_at        TIMESTAMPTZ, NULLABLE
+├── created_by          UUID, FK → users.user_id, NULLABLE
+├── created_at          TIMESTAMPTZ
+└── updated_at          TIMESTAMPTZ
+```
+
+**Computed Properties**
+| Property | Logic |
+|----------|-------|
+| `is_expired` | `expires_at IS NOT NULL AND expires_at < NOW()` |
+
+**Indexes**
+| Index | Columns | Purpose |
+|-------|---------|---------|
+| `idx_api_key_prefix_active` | `key_prefix, is_active` | O(1) key resolution |
+| `idx_api_key_clinic` | `clinic_id` | List keys by clinic |
+| `idx_api_key_created_by` | `created_by` | Audit: who created the key |
+
+### 12.1.2 WebhookSubscription
+
+```
+webhook_subscription
+├── subscription_id     UUID, PK
+├── clinic_id           UUID, FK → clinics.clinic_id, NOT NULL
+├── url                 VARCHAR(500), NOT NULL (HTTPS required)
+├── events              TEXT[] (array of event type strings)
+├── secret              VARCHAR(255), NOT NULL (HMAC-SHA256 signing secret, hashed)
+├── is_active           BOOLEAN, DEFAULT true
+├── description         VARCHAR(255), NULLABLE
+├── created_by          UUID, FK → users.user_id
+├── last_triggered_at   TIMESTAMPTZ, NULLABLE
+├── failure_count       INT, DEFAULT 0
+├── created_at          TIMESTAMPTZ
+└── updated_at          TIMESTAMPTZ
+```
+
+**Supported Event Types**
+
+| Event | Trigger |
+|-------|---------|
+| `appointment.created` | New appointment booked |
+| `appointment.updated` | Appointment rescheduled or details changed |
+| `appointment.canceled` | Appointment canceled |
+| `appointment.completed` | Appointment marked complete |
+| `appointment.no_show` | Patient marked as no-show |
+| `patient.created` | New patient registered |
+| `patient.updated` | Patient record modified |
+| `queue.checked_in` | Patient checked in |
+| `queue.completed` | Queue visit completed |
+| `payment.created` | Payment request created |
+| `payment.completed` | Payment received |
+| `payment.failed` | Payment failed |
+| `payment.refunded` | Payment refunded |
+
+### 12.1.3 WebhookDelivery
+
+```
+webhook_delivery
+├── delivery_id         UUID, PK
+├── subscription_id     UUID, FK → webhook_subscriptions.subscription_id
+├── event_type          VARCHAR(100), NOT NULL
+├── payload             JSONB, NOT NULL
+├── response_status     INT, NULLABLE (HTTP status from receiver)
+├── response_body       TEXT, NULLABLE (first 1KB of response)
+├── attempt_number      INT, DEFAULT 1
+├── delivered_at        TIMESTAMPTZ, NULLABLE
+├── next_retry_at       TIMESTAMPTZ, NULLABLE
+├── status              ENUM: 'pending' | 'delivered' | 'failed' | 'retrying'
+├── error_message       TEXT, NULLABLE
+├── created_at          TIMESTAMPTZ
+└── updated_at          TIMESTAMPTZ
+```
+
+**Retry Policy**
+| Attempt | Delay |
+|---------|-------|
+| 1 | Immediate |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+| After 5 | Marked `failed`, subscription `failure_count` incremented |
+
+---
+
+## 12.2 API Key Management (FR-112)
+
+### `POST /api/api-keys` — Create API Key
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+**Request Body**
+```json
+{
+  "data": {
+    "name": "Booking Widget",
+    "clinic_id": "uuid",
+    "permissions": ["appointments:read", "appointments:write", "services:read", "doctors:read", "slots:read"],
+    "expires_at": "2027-03-08T00:00:00Z"
+  },
+  "meta": {
+    "message_id": "msg_apikey-001",
+    "source_system": "h360-web"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.name` | string | Yes | 1–100 chars |
+| `data.clinic_id` | UUID | No | Valid clinic UUID. If omitted, scoped to user's clinic |
+| `data.permissions` | string[] | Yes | Array of valid `resource:action` strings |
+| `data.expires_at` | ISO 8601 | No | Must be in the future. NULL = never expires |
+
+**Response `201 Created`**
+```json
+{
+  "data": {
+    "api_key_id": "uuid",
+    "name": "Booking Widget",
+    "key": "h360_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+    "key_prefix": "a1b2c3d4e5f6g7h8",
+    "clinic_id": "uuid",
+    "permissions": ["appointments:read", "appointments:write", "services:read", "doctors:read", "slots:read"],
+    "is_active": true,
+    "expires_at": "2027-03-08T00:00:00Z",
+    "created_at": "2026-03-08T10:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2026-03-08T10:00:00Z",
+    "message": "API key created successfully. Store the key securely — it will not be shown again."
+  },
+  "extras": {}
+}
+```
+
+> **Important:** The full `key` is returned **only** in the creation response. It is hashed before storage and cannot be retrieved later.
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `400` | `VALIDATION_ERROR` | Missing name or permissions |
+| `400` | `INVALID_PERMISSIONS` | One or more permission strings are invalid |
+| `400` | `EXPIRY_IN_PAST` | `expires_at` is in the past |
+| `404` | `CLINIC_NOT_FOUND` | Specified clinic does not exist |
+
+---
+
+### `GET /api/api-keys` — List API Keys
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default |
+|-----------|------|----------|---------|
+| `clinic_id` | UUID | No | Current user's clinic |
+| `is_active` | boolean | No | — |
+| `page` | integer | No | `1` |
+| `limit` | integer | No | `20` |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "data": [
+      {
+        "api_key_id": "uuid",
+        "name": "Booking Widget",
+        "key_prefix": "a1b2c3d4e5f6g7h8",
+        "clinic_id": "uuid",
+        "permissions": ["appointments:read", "appointments:write"],
+        "is_active": true,
+        "expires_at": "2027-03-08T00:00:00Z",
+        "last_used_at": "2026-03-08T09:45:00Z",
+        "created_by": "uuid",
+        "created_at": "2026-03-01T10:00:00Z"
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "limit": 20
+  },
+  "meta": {
+    "request_id": "req_def456",
+    "timestamp": "2026-03-08T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+> **Note:** The full key is **never** returned in list responses — only `key_prefix` for identification.
+
+---
+
+### `GET /api/api-keys/:id` — Get API Key Details
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "api_key_id": "uuid",
+    "name": "Booking Widget",
+    "key_prefix": "a1b2c3d4e5f6g7h8",
+    "clinic_id": "uuid",
+    "permissions": ["appointments:read", "appointments:write", "services:read", "doctors:read", "slots:read"],
+    "is_active": true,
+    "expires_at": "2027-03-08T00:00:00Z",
+    "last_used_at": "2026-03-08T09:45:00Z",
+    "created_by": "uuid",
+    "created_at": "2026-03-01T10:00:00Z",
+    "updated_at": "2026-03-01T10:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_ghi789",
+    "timestamp": "2026-03-08T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `404` | `API_KEY_NOT_FOUND` | API key does not exist |
+
+---
+
+### `PATCH /api/api-keys/:id` — Update API Key
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+**Request Body**
+```json
+{
+  "data": {
+    "name": "Booking Widget v2",
+    "permissions": ["appointments:read", "services:read", "doctors:read", "slots:read"],
+    "is_active": false
+  },
+  "meta": {
+    "message_id": "msg_apikey-002"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.name` | string | No | 1–100 chars |
+| `data.permissions` | string[] | No | Array of valid `resource:action` strings |
+| `data.is_active` | boolean | No | Activate or deactivate the key |
+| `data.expires_at` | ISO 8601 | No | Must be in the future or `null` (remove expiry) |
+
+**Response `200 OK`** — Returns updated API key (same shape as GET).
+
+---
+
+### `DELETE /api/api-keys/:id` — Revoke API Key
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+Permanently deactivates the API key. Sets `is_active = false`. The key cannot be re-activated after deletion.
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "api_key_id": "uuid",
+    "name": "Booking Widget",
+    "is_active": false,
+    "revoked_at": "2026-03-08T10:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_jkl012",
+    "timestamp": "2026-03-08T10:00:00Z",
+    "message": "API key revoked successfully"
+  },
+  "extras": {}
+}
+```
+
+---
+
+### `POST /api/api-keys/:id/rotate` — Rotate API Key
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+Generates a new key for the same API key record. The old key remains valid for a grace period (default: 24 hours) to allow migration. After the grace period, the old key is automatically invalidated.
+
+**Request Body**
+```json
+{
+  "data": {
+    "grace_period_hours": 24
+  },
+  "meta": {
+    "message_id": "msg_apikey-003"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.grace_period_hours` | integer | No | 0–168 (0 = immediate invalidation). Default: `24` |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "api_key_id": "uuid",
+    "name": "Booking Widget",
+    "new_key": "h360_live_z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c6b5a4",
+    "new_key_prefix": "z9y8x7w6v5u4t3s2",
+    "old_key_prefix": "a1b2c3d4e5f6g7h8",
+    "old_key_valid_until": "2026-03-09T10:00:00Z",
+    "permissions": ["appointments:read", "appointments:write"],
+    "created_at": "2026-03-08T10:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_mno345",
+    "timestamp": "2026-03-08T10:00:00Z",
+    "message": "API key rotated. Old key valid until 2026-03-09T10:00:00Z. Store the new key securely."
+  },
+  "extras": {}
+}
+```
+
+---
+
+## 12.3 Webhook Subscriptions (FR-111)
+
+### `POST /api/webhooks` — Create Webhook Subscription
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+**Request Body**
+```json
+{
+  "data": {
+    "url": "https://partner-emr.rw/webhooks/h360",
+    "events": ["appointment.created", "appointment.canceled", "payment.completed"],
+    "description": "Partner EMR appointment sync"
+  },
+  "meta": {
+    "message_id": "msg_webhook-001",
+    "source_system": "h360-web"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.url` | string | Yes | Valid HTTPS URL, max 500 chars |
+| `data.events` | string[] | Yes | Non-empty array of valid event types |
+| `data.description` | string | No | Max 255 chars |
+
+**Response `201 Created`**
+```json
+{
+  "data": {
+    "subscription_id": "uuid",
+    "clinic_id": "uuid",
+    "url": "https://partner-emr.rw/webhooks/h360",
+    "events": ["appointment.created", "appointment.canceled", "payment.completed"],
+    "secret": "whsec_a1b2c3d4e5f6...",
+    "is_active": true,
+    "description": "Partner EMR appointment sync",
+    "created_at": "2026-03-08T10:00:00Z"
+  },
+  "meta": {
+    "request_id": "req_pqr678",
+    "timestamp": "2026-03-08T10:00:00Z",
+    "message": "Webhook created. Store the signing secret — it will not be shown again."
+  },
+  "extras": {}
+}
+```
+
+> **Important:** The `secret` is returned **only** in the creation response. It is used to verify webhook signatures (HMAC-SHA256).
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `400` | `INVALID_WEBHOOK_URL` | URL is not HTTPS or malformed |
+| `400` | `INVALID_WEBHOOK_EVENTS` | One or more event types are invalid |
+| `409` | `WEBHOOK_URL_EXISTS` | A subscription with this URL already exists for this clinic |
+
+---
+
+### `GET /api/webhooks` — List Webhook Subscriptions
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default |
+|-----------|------|----------|---------|
+| `is_active` | boolean | No | — |
+| `page` | integer | No | `1` |
+| `limit` | integer | No | `20` |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "data": [
+      {
+        "subscription_id": "uuid",
+        "clinic_id": "uuid",
+        "url": "https://partner-emr.rw/webhooks/h360",
+        "events": ["appointment.created", "appointment.canceled"],
+        "is_active": true,
+        "description": "Partner EMR sync",
+        "last_triggered_at": "2026-03-08T09:50:00Z",
+        "failure_count": 0,
+        "created_at": "2026-03-01T10:00:00Z"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 20
+  },
+  "meta": {
+    "request_id": "req_stu901",
+    "timestamp": "2026-03-08T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+---
+
+### `GET /api/webhooks/:id` — Get Webhook Subscription
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+Returns full subscription details including recent delivery history.
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "subscription_id": "uuid",
+    "clinic_id": "uuid",
+    "url": "https://partner-emr.rw/webhooks/h360",
+    "events": ["appointment.created", "appointment.canceled"],
+    "is_active": true,
+    "description": "Partner EMR sync",
+    "last_triggered_at": "2026-03-08T09:50:00Z",
+    "failure_count": 0,
+    "created_by": "uuid",
+    "created_at": "2026-03-01T10:00:00Z",
+    "updated_at": "2026-03-01T10:00:00Z",
+    "recent_deliveries": [
+      {
+        "delivery_id": "uuid",
+        "event_type": "appointment.created",
+        "status": "delivered",
+        "response_status": 200,
+        "attempt_number": 1,
+        "delivered_at": "2026-03-08T09:50:01Z"
+      }
+    ]
+  },
+  "meta": {
+    "request_id": "req_vwx234",
+    "timestamp": "2026-03-08T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+---
+
+### `PATCH /api/webhooks/:id` — Update Webhook Subscription
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+**Request Body**
+```json
+{
+  "data": {
+    "url": "https://partner-emr.rw/webhooks/h360-v2",
+    "events": ["appointment.created", "appointment.canceled", "appointment.completed"],
+    "is_active": true
+  },
+  "meta": {
+    "message_id": "msg_webhook-002"
+  },
+  "extras": {}
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `data.url` | string | No | Valid HTTPS URL |
+| `data.events` | string[] | No | Non-empty array of valid event types |
+| `data.is_active` | boolean | No | Activate/deactivate |
+| `data.description` | string | No | Max 255 chars |
+
+**Response `200 OK`** — Returns updated subscription (same shape as GET).
+
+---
+
+### `DELETE /api/webhooks/:id` — Delete Webhook Subscription
+
+> **Auth:** ADMIN | **Activity Log:** Yes
+
+Permanently removes the webhook subscription. All pending deliveries are canceled.
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "subscription_id": "uuid",
+    "deleted": true
+  },
+  "meta": {
+    "request_id": "req_yza567",
+    "timestamp": "2026-03-08T10:00:00Z",
+    "message": "Webhook subscription deleted"
+  },
+  "extras": {}
+}
+```
+
+---
+
+### `POST /api/webhooks/:id/test` — Test Webhook
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+Sends a test payload to the webhook URL to verify connectivity.
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "subscription_id": "uuid",
+    "test_delivery_id": "uuid",
+    "url": "https://partner-emr.rw/webhooks/h360",
+    "response_status": 200,
+    "response_time_ms": 245,
+    "success": true
+  },
+  "meta": {
+    "request_id": "req_bcd890",
+    "timestamp": "2026-03-08T10:00:05Z",
+    "message": "Webhook test successful"
+  },
+  "extras": {}
+}
+```
+
+**Errors**
+
+| Code | Error Code | Condition |
+|------|-----------|-----------|
+| `502` | `WEBHOOK_DELIVERY_FAILED` | Target URL returned non-2xx or timed out |
+
+---
+
+### `GET /api/webhooks/:id/deliveries` — List Webhook Deliveries
+
+> **Auth:** ADMIN | **Activity Log:** No
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default |
+|-----------|------|----------|---------|
+| `status` | string | No | — (`pending`, `delivered`, `failed`, `retrying`) |
+| `event_type` | string | No | — |
+| `page` | integer | No | `1` |
+| `limit` | integer | No | `20` |
+
+**Response `200 OK`**
+```json
+{
+  "data": {
+    "data": [
+      {
+        "delivery_id": "uuid",
+        "subscription_id": "uuid",
+        "event_type": "appointment.created",
+        "status": "delivered",
+        "response_status": 200,
+        "attempt_number": 1,
+        "delivered_at": "2026-03-08T09:50:01Z",
+        "created_at": "2026-03-08T09:50:00Z"
+      },
+      {
+        "delivery_id": "uuid",
+        "subscription_id": "uuid",
+        "event_type": "payment.completed",
+        "status": "failed",
+        "response_status": 500,
+        "attempt_number": 5,
+        "error_message": "Server returned 500 Internal Server Error",
+        "created_at": "2026-03-07T14:00:00Z"
+      }
+    ],
+    "total": 48,
+    "page": 1,
+    "limit": 20
+  },
+  "meta": {
+    "request_id": "req_efg123",
+    "timestamp": "2026-03-08T10:00:00Z"
+  },
+  "extras": {}
+}
+```
+
+---
+
+## 12.4 Webhook Payload Format
+
+All webhook payloads follow a standard structure:
+
+```json
+{
+  "event": "appointment.created",
+  "timestamp": "2026-03-08T10:00:00Z",
+  "delivery_id": "uuid",
+  "subscription_id": "uuid",
+  "data": {
+    "appointment_id": "uuid",
+    "patient_id": "uuid",
+    "doctor_id": "uuid",
+    "service_id": "uuid",
+    "clinic_id": "uuid",
+    "scheduled_at": "2026-03-10T09:00:00Z",
+    "status": "scheduled"
+  }
+}
+```
+
+### Signature Verification
+
+Each webhook delivery includes an `X-H360-Signature` header containing an HMAC-SHA256 signature:
+
+```
+X-H360-Signature: sha256=5d7b5f3c9a1e2d4f6a8b0c1e3f5a7b9d...
+X-H360-Delivery-ID: uuid
+X-H360-Event: appointment.created
+X-H360-Timestamp: 1709884800
+```
+
+**Verification algorithm:**
+```
+expected = HMAC-SHA256(secret, timestamp + "." + raw_body)
+valid = timing_safe_compare(expected, signature)
+```
+
+Receivers should reject payloads older than 5 minutes (`X-H360-Timestamp`) to prevent replay attacks.
+
+---
+
+## 12.5 API Documentation (FR-110)
+
+H360 provides documented APIs for core objects via:
+
+| Resource | Documentation Method |
+|----------|---------------------|
+| **OpenAPI/Swagger** | Auto-generated at `/api/docs` from NestJS decorators |
+| **Core objects** | Clinics, Providers, Appointments, Patients, Services, Slots, Queue |
+| **Authentication** | Bearer JWT (users) or API key (integrations) |
+| **Versioning** | All endpoints under `/api/` (v1 implicit). Breaking changes via `/api/v2/` in future. |
+
+### API Key Authentication
+
+API keys are sent via the `X-API-Key` header:
+
+```
+GET /api/appointments?date=2026-03-08
+X-API-Key: h360_live_a1b2c3d4...
+```
+
+- The key prefix (first 16 hex chars) is used for O(1) lookup
+- The full key is verified against the stored bcrypt hash
+- Each request updates `last_used_at` on the API key record
+- Permissions are checked against the key's `permissions[]` array
+- Clinic scope is enforced via the key's `clinic_id`
+
+### Rate Limits (FR-112)
+
+| Tier | Requests/min | Requests/hour | Requests/day |
+|------|-------------|---------------|--------------|
+| **Standard** | 60 | 1,000 | 10,000 |
+| **Professional** | 120 | 5,000 | 50,000 |
+| **Enterprise** | 300 | 15,000 | 150,000 |
+
+Rate limit headers included in every response:
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1709884860
+```
+
+---
+
+## 12.6 Error Codes
+
+| HTTP | `error_code` | `meta.message` (EN) | `extras.context` |
+|------|-------------|-------------|-------------------|
+| 400 | `VALIDATION_ERROR` | Validation failed. | — (see `extras.errors[]`) |
+| 400 | `INVALID_PERMISSIONS` | Invalid permission strings provided. | `{ invalid: ["bad:perm"] }` |
+| 400 | `EXPIRY_IN_PAST` | Expiration date must be in the future. | `{ expires_at }` |
+| 400 | `INVALID_WEBHOOK_URL` | Webhook URL must be a valid HTTPS URL. | — |
+| 400 | `INVALID_WEBHOOK_EVENTS` | Invalid event types provided. | `{ invalid: ["bad.event"], allowed: [...] }` |
+| 401 | `INVALID_API_KEY` | API key is invalid or revoked. | — |
+| 401 | `API_KEY_EXPIRED` | API key has expired. | `{ expired_at }` |
+| 403 | `API_KEY_INSUFFICIENT_PERMISSIONS` | API key lacks required permissions. | `{ required: ["patients:read"], key_permissions: [...] }` |
+| 404 | `API_KEY_NOT_FOUND` | API key not found. | — |
+| 404 | `WEBHOOK_NOT_FOUND` | Webhook subscription not found. | — |
+| 409 | `WEBHOOK_URL_EXISTS` | A webhook subscription with this URL already exists. | `{ existing_subscription_id }` |
+| 429 | `RATE_LIMIT_EXCEEDED` | Rate limit exceeded. Try again later. | `{ limit, remaining: 0, reset_at }` |
+| 502 | `WEBHOOK_DELIVERY_FAILED` | Webhook delivery failed. | `{ url, response_status, error }` |
+
+---
+
+## 12.7 FR Traceability
+
+| FR | Endpoints | Description |
+|----|-----------|-------------|
+| **FR-110** | `/api/docs` (Swagger UI) | Documented APIs for core objects (clinics, providers, appointments, patients) |
+| **FR-111** | `POST/GET/PATCH/DELETE /webhooks`, `POST /webhooks/:id/test`, `GET /webhooks/:id/deliveries` | Webhooks for appointment lifecycle + payment status changes |
+| **FR-112** | `POST/GET/PATCH/DELETE /api-keys`, `POST /api-keys/:id/rotate` | API keys, permissions, rate limits, key rotation |
+
+---
+
+## 12.8 Endpoint Summary
+
+| Method | Endpoint | Auth | FR |
+|--------|----------|------|----|
+| `POST` | `/api/api-keys` | ADMIN | FR-112 |
+| `GET` | `/api/api-keys` | ADMIN | FR-112 |
+| `GET` | `/api/api-keys/:id` | ADMIN | FR-112 |
+| `PATCH` | `/api/api-keys/:id` | ADMIN | FR-112 |
+| `DELETE` | `/api/api-keys/:id` | ADMIN | FR-112 |
+| `POST` | `/api/api-keys/:id/rotate` | ADMIN | FR-112 |
+| `POST` | `/api/webhooks` | ADMIN | FR-111 |
+| `GET` | `/api/webhooks` | ADMIN | FR-111 |
+| `GET` | `/api/webhooks/:id` | ADMIN | FR-111 |
+| `PATCH` | `/api/webhooks/:id` | ADMIN | FR-111 |
+| `DELETE` | `/api/webhooks/:id` | ADMIN | FR-111 |
+| `POST` | `/api/webhooks/:id/test` | ADMIN | FR-111 |
+| `GET` | `/api/webhooks/:id/deliveries` | ADMIN | FR-111 |
+
+**Section 12 Total: 13 endpoints across 2 sub-modules**
+
 <!-- Section 9: Communications — TO BE ADDED -->
 <!-- Section 10: Payments & Billing — TO BE ADDED -->
 <!-- Section 11: Analytics & Reporting — TO BE ADDED -->
-<!-- Section 12: Integrations, API & Webhooks — TO BE ADDED -->
 <!-- Section 13: FHIR Interoperability — TO BE ADDED -->

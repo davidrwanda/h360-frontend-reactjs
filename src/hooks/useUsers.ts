@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/api/users';
+import { systemAdminsApi } from '@/api/system-admins';
 import type {
   CreateUserRequest,
   UpdateUserRequest,
@@ -7,6 +8,7 @@ import type {
   UpdatePreferencesRequest,
   UserPreferences,
 } from '@/api/users';
+import type { CreateSystemAdminRequest } from '@/types/organization';
 
 /**
  * Hook to fetch list of users with filters
@@ -34,21 +36,13 @@ export const useClinicAdmins = (
 };
 
 /**
- * Hook to fetch system admins (Admins without clinic_id - global admins only)
+ * Hook to fetch system admins via GET /api/system-admins (ISD §7.6)
  */
-export const useSystemAdmins = (params?: Omit<UserListParams, 'role' | 'clinic_id'>) => {
+export const useSystemAdmins = (params?: Parameters<typeof systemAdminsApi.list>[0]) => {
   return useQuery({
-    queryKey: ['systemAdmins', { ...params, role: 'Admin' }],
-    queryFn: async () => {
-      // Fetch all Admins, then filter to only those without clinic_id
-      const result = await usersApi.list({ ...params, role: 'Admin' });
-      // Filter to only show global admins (no clinic_id)
-      return {
-        ...result,
-        data: result.data.filter((user) => !user.clinic_id),
-      };
-    },
-    enabled: params !== undefined, // Only run if params are provided
+    queryKey: ['systemAdmins', params],
+    queryFn: () => systemAdminsApi.list(params),
+    enabled: params !== undefined,
   });
 };
 
@@ -71,6 +65,53 @@ export const useUser = (userId: string, options?: { enabled?: boolean }) => {
     queryKey: ['user', userId],
     queryFn: () => usersApi.getById(userId),
     enabled: !!userId && (options?.enabled !== false),
+  });
+};
+
+/**
+ * Hook for creating a new system admin via POST /api/system-admins
+ */
+export const useCreateSystemAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSystemAdminRequest) => systemAdminsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemAdmins'] });
+    },
+    onError: (error) => {
+      console.error('Error creating system admin:', error);
+      throw error;
+    },
+  });
+};
+
+/**
+ * Hook for updating a system admin via PATCH /api/system-admins/:id (ISD §7.6)
+ */
+export const useUpdateSystemAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('@/types/organization').UpdateSystemAdminRequest }) =>
+      systemAdminsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemAdmins'] });
+    },
+  });
+};
+
+/**
+ * Hook for deactivating a system admin via DELETE /api/system-admins/:id (ISD §7.6)
+ */
+export const useDeactivateSystemAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => systemAdminsApi.deactivate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemAdmins'] });
+    },
   });
 };
 
